@@ -1,0 +1,16 @@
+# Node.js
+node_modules
+
+# Discord
+.env
+.env.example
+
+# Supabase
+.supabase
+.supabase.example
+
+# NPM
+package-lock.json
+
+#Propmt 
+prompt.md
