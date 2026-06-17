@@ -28,6 +28,9 @@ const CATEGORIES = [
         ['baucua', 'bầu cua tôm cá'],
         ['blackjack', 'xì dách'],
     ] },
+    { name: '💬 Trò chuyện', cmds: [
+        ['ask', 'trò chuyện với Waguri (hoặc @tag Waguri để nói chuyện)'],
+    ] },
     { name: '🏆 Khác', cmds: [
         ['leaderboard', 'bảng xếp hạng'],
         ['ping', 'độ trễ & trạng thái bot'],

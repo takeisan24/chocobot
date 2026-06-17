@@ -12,6 +12,7 @@
     "test": "node --test"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@supabase/supabase-js": "^2.99.1",
     "discord.js": "^14.25.1",
     "dotenv": "^17.3.1"
