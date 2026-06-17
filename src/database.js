@@ -392,6 +392,20 @@ async function getLeaderboard(sort, limit = 10) {
     }
 }
 
+/** Bán vật phẩm (atomic, 50% giá). Trả {status:'ok',gain} | {status:'no_have'|...} | null. */
+async function sellItem(userId, itemId, quantity = 1) {
+    try {
+        const { data, error } = await supabase.rpc('sell_item', {
+            p_user_id: userId, p_item_id: itemId, p_quantity: quantity,
+        });
+        if (error) throw error;
+        return data;
+    } catch (error) {
+        console.error('[DATABASE ERROR] sellItem():', error);
+        return null;
+    }
+}
+
 module.exports = {
     supabase,
     getUser,
@@ -420,4 +434,5 @@ module.exports = {
     claimDaily,
     transferBank,
     getLeaderboard,
+    sellItem,
 };

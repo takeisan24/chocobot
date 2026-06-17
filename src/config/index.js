@@ -40,5 +40,26 @@ module.exports = {
         EXP_BASE: 8,
         EXP_PER_LEVEL: 1.5,
         EXP_RANDOM: 3,
+        JACKPOT_CHANCE: 0.08, // xác suất trúng lớn (trong các lần KHÔNG xui)
+        JACKPOT_MULT: 3,      // jackpot = max_wage * mult
+    },
+
+    // Cờ bạc — house edge nhẹ để không thành máy in tiền
+    GAMBLE: {
+        MIN_BET: 10,
+        MAX_BET: 1_000_000,
+        COINFLIP_MULT: 1.95,
+        TAIXIU_MULT: 1.95,
+        // Bầu cua: thắng nhận lại bet * (1 + số_con_trùng)
+    },
+
+    // Cướp tiền (PvP)
+    ROB: {
+        COOLDOWN_SECONDS: 3600,
+        SUCCESS_RATE: 0.5,
+        STEAL_MIN_PCT: 0.10,
+        STEAL_MAX_PCT: 0.30,
+        FINE_PCT: 0.10,
+        MIN_TARGET_WALLET: 100,
     },
 };

@@ -1,7 +1,15 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const db = require('../../database.js');
 const config = require('../../config');
+const scripts = require('../../data/workScripts');
 const { getLevelFromExp } = require('../../lib/leveling');
+
+const fmt = n => Number(n).toLocaleString('vi-VN');
+
+function pickLine(jobKey, category) {
+    const set = (scripts[jobKey] && scripts[jobKey][category]) || scripts.default[category];
+    return set[Math.floor(Math.random() * set.length)];
+}
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -11,13 +19,13 @@ module.exports = {
         await interaction.deferReply();
         const userId = interaction.user.id;
 
-        // 1. Tiêu năng lượng NGUYÊN TỬ (gate chính, thay cho cooldown)
+        // 1. Tiêu năng lượng (gate chính)
         const energyLeft = await db.spendEnergy(userId, config.ENERGY.COST_PER_WORK);
         if (energyLeft < 0) {
             const cur = await db.getEnergy(userId);
             return interaction.editReply(
                 `Cậu hết năng lượng rồi (${cur}/${config.ENERGY.MAX} ⚡, cần ${config.ENERGY.COST_PER_WORK}). ` +
-                `Nghỉ ngơi chút để hồi sức, hoặc ăn gì đó bằng \`/eat\` nhé~ 🌸`
+                `Nghỉ ngơi chút hoặc ăn gì đó bằng \`/eat\` nhé~ 🌸`
             );
         }
 
@@ -25,37 +33,44 @@ module.exports = {
             const user = await db.getUser(userId);
             if (!user) return interaction.editReply('Hơ, mình chưa lấy được dữ liệu của cậu, thử lại sau nhé~ 🌸');
 
-            // 2. Thông số nghề (mặc định nếu chưa apply)
+            // 2. Thông số nghề
             let { name: jobName, min_wage: minWage, max_wage: maxWage, risk_rate: riskRate, required_level: jobLevel } = config.WORK.DEFAULT_JOB;
+            let jobKey = 'default';
             if (user.job_id) {
                 const job = await db.getJob(user.job_id);
                 if (job) {
                     jobName = job.name; minWage = job.min_wage; maxWage = job.max_wage;
-                    riskRate = job.risk_rate; jobLevel = job.required_level;
+                    riskRate = job.risk_rate; jobLevel = job.required_level; jobKey = job.id;
                 }
             }
 
-            // 3. Buff thu nhập (nếu còn hạn)
-            const now = Date.now();
-            const buffActive = user.buff_expires_at && new Date(user.buff_expires_at).getTime() > now;
+            // 3. Buff thu nhập
+            const buffActive = user.buff_expires_at && new Date(user.buff_expires_at).getTime() > Date.now();
             const buffMult = buffActive ? Number(user.buff_mult) : 1;
 
-            // 4. Rủi ro / thành công
-            const isUnlucky = Math.random() < riskRate;
-            let earnedMoney = 0;
-            let resultMessage = '';
-
-            if (isUnlucky) {
-                earnedMoney = -Math.floor(Math.random() * (minWage / 2));
-                await db.addMoney(userId, earnedMoney, 'wallet');
-                resultMessage = `⚠️ Ôi, hôm nay làm **${jobName}** gặp chút trục trặc, cậu mất **${Math.abs(earnedMoney)}** ${config.CURRENCY}. Lần sau may mắn hơn nhé!`;
+            // 4. Kết quả: 20% (risk) xui · còn lại có 8% jackpot · 70%+ thành công
+            let category, earnedMoney, color;
+            if (Math.random() < riskRate) {
+                category = 'fail';
+                earnedMoney = -(Math.floor(Math.random() * (minWage / 2)) + 1);
+                color = config.COLORS.WARNING;
+            } else if (Math.random() < config.WORK.JACKPOT_CHANCE) {
+                category = 'jackpot';
+                earnedMoney = Math.round(maxWage * config.WORK.JACKPOT_MULT * buffMult);
+                color = config.COLORS.JACKPOT;
             } else {
-                let base = Math.floor(Math.random() * (maxWage - minWage + 1)) + minWage;
+                category = 'success';
+                const base = Math.floor(Math.random() * (maxWage - minWage + 1)) + minWage;
                 earnedMoney = Math.round(base * buffMult);
-                await db.addMoney(userId, earnedMoney, 'wallet');
-                const buffNote = buffActive ? ` *(buff +${Math.round((buffMult - 1) * 100)}%)*` : '';
-                resultMessage = `✅ Tốt lắm! Cậu làm **${jobName}** và kiếm được **${earnedMoney}** ${config.CURRENCY}${buffNote}.`;
+                color = config.COLORS.SUCCESS;
             }
+            await db.addMoney(userId, earnedMoney, 'wallet');
+
+            const amtStr = `${fmt(Math.abs(earnedMoney))} ${config.CURRENCY}`;
+            let resultMessage = pickLine(jobKey, category)
+                .replace(/\{amount\}/g, amtStr)
+                .replace(/\{job\}/g, jobName);
+            if (buffActive && earnedMoney > 0) resultMessage += ` *(buff +${Math.round((buffMult - 1) * 100)}%)*`;
 
             // 5. EXP theo cấp nghề
             const gainedExp = Math.round(config.WORK.EXP_BASE + config.WORK.EXP_PER_LEVEL * jobLevel)
@@ -66,7 +81,7 @@ module.exports = {
 
             // 6. Embed
             const embed = new EmbedBuilder()
-                .setColor(isUnlucky ? config.COLORS.WARNING : config.COLORS.SUCCESS)
+                .setColor(color)
                 .setTitle('💼 Kết quả làm việc')
                 .setDescription(resultMessage)
                 .addFields(
@@ -75,11 +90,9 @@ module.exports = {
                     { name: 'Năng lượng', value: `${energyLeft}/${config.ENERGY.MAX} ⚡`, inline: true },
                 )
                 .setTimestamp();
-
             if (newLevel > oldLevel) {
-                embed.addFields({ name: '🎉 Lên cấp!', value: `Chúc mừng cậu đã đạt **Level ${newLevel}**! Cố lên nhé~`, inline: false });
+                embed.addFields({ name: '🎉 Lên cấp!', value: `Chúc mừng cậu đạt **Level ${newLevel}**! Cố lên nhé~`, inline: false });
             }
-
             await interaction.editReply({ embeds: [embed] });
 
         } catch (error) {
