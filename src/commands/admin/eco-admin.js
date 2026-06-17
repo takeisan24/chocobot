@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
 const db = require('../../database.js');
 const config = require('../../config');
+const { isOwner } = require('../../lib/owner');
 
 const fmt = n => Number(n).toLocaleString('vi-VN');
 
@@ -39,8 +40,8 @@ module.exports = {
     },
 
     async execute(interaction) {
-        // Chặn người không phải owner
-        if (!config.OWNER_IDS.includes(interaction.user.id)) {
+        // Chặn người không phải owner (chủ app tự nhận + OWNER_IDS env)
+        if (!await isOwner(interaction.client, interaction.user.id)) {
             return interaction.reply({ content: 'Lệnh này chỉ dành cho owner thôi nhé~ 🌸', flags: MessageFlags.Ephemeral });
         }
         await interaction.deferReply();

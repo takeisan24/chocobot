@@ -40,6 +40,10 @@ const CATEGORIES = [
         ['lixi', 'phát lì xì cho cả kênh 🧧'],
         ['marry', 'cầu hôn kết đôi 💍'],
         ['divorce', 'chia tay người ấy 💔'],
+        ['confession', 'gửi confession ẩn danh 🤫'],
+    ] },
+    { name: '⚙️ Quản trị (cần quyền)', cmds: [
+        ['config', 'cấu hình bot cho server (Quản lý Server)'],
     ] },
     { name: '🏆 Khác', cmds: [
         ['leaderboard', 'bảng xếp hạng'],

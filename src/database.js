@@ -508,6 +508,41 @@ async function divorceUser(userId) {
 }
 
 // ============================================================
+//  GUILD SETTINGS — cấu hình theo server
+// ============================================================
+/** Lấy object settings của một guild ({} nếu chưa có). */
+async function getGuildSettings(guildId) {
+    try {
+        const { data, error } = await supabase.from('guild_settings').select('settings').eq('guild_id', guildId).single();
+        if (error && error.code !== 'PGRST116') throw error;
+        return data?.settings || {};
+    } catch (error) {
+        console.error('[DATABASE ERROR] getGuildSettings():', error);
+        return {};
+    }
+}
+
+/** Đặt 1 khóa cấu hình cho guild. */
+async function setGuildSetting(guildId, key, value) {
+    try {
+        const { error } = await supabase.rpc('set_guild_setting', { p_guild: guildId, p_key: key, p_value: String(value) });
+        if (error) throw error;
+        return true;
+    } catch (error) {
+        console.error('[DATABASE ERROR] setGuildSetting():', error);
+        return false;
+    }
+}
+
+/** Tăng & trả số thứ tự confession kế tiếp của guild. */
+async function nextConfessionNumber(guildId) {
+    const s = await getGuildSettings(guildId);
+    const n = Number(s.confession_count || 0) + 1;
+    await setGuildSetting(guildId, 'confession_count', n);
+    return n;
+}
+
+// ============================================================
 //  ADMIN — chỉ owner dùng (qua /eco-admin)
 // ============================================================
 /** Đặt cứng số dư ví/bank. */
@@ -617,6 +652,10 @@ module.exports = {
     // marriage
     marryUsers,
     divorceUser,
+    // guild settings
+    getGuildSettings,
+    setGuildSetting,
+    nextConfessionNumber,
     // admin
     setBalance,
     setExp,

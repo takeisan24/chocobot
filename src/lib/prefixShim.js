@@ -19,7 +19,7 @@ async function parseOptions(message, commandData, tokens) {
         }
     }
 
-    const strings = {}, integers = {}, booleans = {}, users = {}, members = {};
+    const strings = {}, integers = {}, booleans = {}, users = {}, members = {}, channels = {};
     for (let i = 0; i < optionDefs.length; i++) {
         const def = optionDefs[i];
         if (tokens[i] === undefined) continue;
@@ -40,13 +40,18 @@ async function parseOptions(message, commandData, tokens) {
             case ApplicationCommandOptionType.Boolean:
                 booleans[def.name] = /^(true|1|có|yes|y)$/i.test(raw);
                 break;
+            case ApplicationCommandOptionType.Channel: {
+                const id = raw.replace(/[<#>]/g, '');
+                channels[def.name] = message.mentions.channels.first() || message.guild?.channels?.cache.get(id) || null;
+                break;
+            }
             default: // String
                 // Option string cuối cùng gom hết phần còn lại (cho chuỗi có dấu cách)
                 if (i === optionDefs.length - 1) raw = tokens.slice(i).join(' ');
                 strings[def.name] = raw;
         }
     }
-    return { subcommand, strings, integers, booleans, users, members };
+    return { subcommand, strings, integers, booleans, users, members, channels };
 }
 
 /**
@@ -85,6 +90,7 @@ async function buildPrefixInteraction(message, command, tokens) {
             getBoolean: (n) => (parsed.booleans[n] === undefined ? null : parsed.booleans[n]),
             getUser: (n) => (parsed.users[n] ?? null),
             getMember: (n) => (parsed.members[n] ?? null),
+            getChannel: (n) => (parsed.channels[n] ?? null),
             getSubcommand: () => parsed.subcommand,
             getFocused: () => '',
         },
