@@ -41,6 +41,9 @@ module.exports = {
             )
             .setTimestamp();
 
+        if (user.partner_id) {
+            embed.addFields({ name: '💞 Người ấy', value: `<@${user.partner_id}>`, inline: false });
+        }
         if (user.buff_expires_at && new Date(user.buff_expires_at).getTime() > Date.now()) {
             const pct = Math.round((Number(user.buff_mult) - 1) * 100);
             embed.setFooter({ text: `🍗 Buff +${pct}% thu nhập đang chạy` });

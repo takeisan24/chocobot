@@ -481,6 +481,33 @@ async function unlockAchievements(userId, ids) {
 }
 
 // ============================================================
+//  MARRIAGE — kết đôi
+// ============================================================
+/** Kết hôn 2 người (atomic). Trả 'ok' | 'already' | 'self' | 'error'. */
+async function marryUsers(a, b) {
+    try {
+        const { data, error } = await supabase.rpc('marry_users', { p_a: a, p_b: b });
+        if (error) throw error;
+        return data;
+    } catch (error) {
+        console.error('[DATABASE ERROR] marryUsers():', error);
+        return 'error';
+    }
+}
+
+/** Ly hôn. Trả 'ok' | 'single' | 'error'. */
+async function divorceUser(userId) {
+    try {
+        const { data, error } = await supabase.rpc('divorce_user', { p_user: userId });
+        if (error) throw error;
+        return data;
+    } catch (error) {
+        console.error('[DATABASE ERROR] divorceUser():', error);
+        return 'error';
+    }
+}
+
+// ============================================================
 //  ADMIN — chỉ owner dùng (qua /eco-admin)
 // ============================================================
 /** Đặt cứng số dư ví/bank. */
@@ -587,6 +614,9 @@ module.exports = {
     // achievements
     getAchievements,
     unlockAchievements,
+    // marriage
+    marryUsers,
+    divorceUser,
     // admin
     setBalance,
     setExp,

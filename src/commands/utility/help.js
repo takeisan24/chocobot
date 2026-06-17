@@ -38,6 +38,8 @@ const CATEGORIES = [
         ['ship', 'đo độ hợp giữa hai người'],
         ['boi', 'Waguri xem bói cho cậu hôm nay'],
         ['lixi', 'phát lì xì cho cả kênh 🧧'],
+        ['marry', 'cầu hôn kết đôi 💍'],
+        ['divorce', 'chia tay người ấy 💔'],
     ] },
     { name: '🏆 Khác', cmds: [
         ['leaderboard', 'bảng xếp hạng'],
