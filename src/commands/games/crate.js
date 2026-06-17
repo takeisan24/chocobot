@@ -31,8 +31,9 @@ module.exports = {
         else if (r < 0.99) { const a = money(5 + Math.random() * 5); desc = `🤑 ĐẠI TRÚNG: **+${fmt(a)}** ${config.CURRENCY}!!!`; color = config.COLORS.JACKPOT; }
         else { desc = `💎 CỰC HIẾM! Cậu nhận được **${await giveItem(RARE)}**!`; color = config.COLORS.JACKPOT; }
 
+        const u = await db.getUser(userId);
         await interaction.editReply({ embeds: [new EmbedBuilder()
             .setColor(color).setTitle('🎁 Mở Rương Bí Ẩn')
-            .setDescription(`Cậu chi **${fmt(cost)}** ${config.CURRENCY} mở rương...\n\n${desc}`)] });
+            .setDescription(`Cậu chi **${fmt(cost)}** ${config.CURRENCY} mở rương...\n\n${desc}\n\n💵 Số dư ví: **${fmt(u?.wallet || 0)}** ${config.CURRENCY}`)] });
     },
 };

@@ -18,16 +18,13 @@ module.exports = {
         const rows = await db.getLeaderboard(sort, 25);
         if (!rows.length) return interaction.editReply('Chưa có ai trên bảng xếp hạng cả~ 🌸');
 
-        const lines = await Promise.all(rows.map(async (row, i) => {
+        const lines = rows.map((row, i) => {
             const rank = MEDALS[i] || `**${i + 1}.**`;
-            let name;
-            try { name = (await interaction.client.users.fetch(row.user_id)).username; }
-            catch { name = 'Người chơi ẩn danh'; }
             const value = sort === 'level'
                 ? `Lv.${getLevelFromExp(Number(row.exp))}`
                 : `${Number(row.networth).toLocaleString('vi-VN')} ${config.CURRENCY}`;
-            return `${rank} ${name} — ${value}`;
-        }));
+            return `${rank} <@${row.user_id}> — ${value}`;
+        });
 
         await sendPaginated(interaction, {
             title: sort === 'level' ? '🏆 BXH Cấp độ' : '🏆 BXH Đại gia',

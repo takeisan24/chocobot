@@ -21,9 +21,10 @@ module.exports = {
         const ok = await db.transferBank(interaction.user.id, amount, true);
         if (!ok) return interaction.editReply('Ví của cậu không đủ để gửi rồi 😟');
 
+        const u = await db.getUser(interaction.user.id);
         const embed = new EmbedBuilder()
             .setColor(config.COLORS.SUCCESS)
-            .setDescription(`🏦 Đã gửi **${amount.toLocaleString('vi-VN')}** ${config.CURRENCY} vào ngân hàng. An toàn rồi nhé~ 🌸`);
+            .setDescription(`🏦 Đã gửi **${amount.toLocaleString('vi-VN')}** ${config.CURRENCY} vào ngân hàng. An toàn rồi nhé~ 🌸\n💵 Ví: **${Number(u?.wallet || 0).toLocaleString('vi-VN')}** · 🏦 Ngân hàng: **${Number(u?.bank || 0).toLocaleString('vi-VN')}** ${config.CURRENCY}`);
         await interaction.editReply({ embeds: [embed] });
     },
 };

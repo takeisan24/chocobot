@@ -31,9 +31,10 @@ module.exports = {
         const total = (Number(item.price) * qty).toLocaleString('vi-VN');
 
         if (result === 'ok') {
+            const u = await db.getUser(interaction.user.id);
             const embed = new EmbedBuilder()
                 .setColor(config.COLORS.SUCCESS)
-                .setDescription(`✅ Đã mua **${qty}× ${item.name}** với giá **${total}** ${config.CURRENCY}.`);
+                .setDescription(`✅ Đã mua **${qty}× ${item.name}** với giá **${total}** ${config.CURRENCY}.\n💵 Số dư ví: **${Number(u?.wallet || 0).toLocaleString('vi-VN')}** ${config.CURRENCY}`);
             return interaction.editReply({ embeds: [embed] });
         }
 

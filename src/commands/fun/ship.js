@@ -36,7 +36,7 @@ module.exports = {
         const embed = new EmbedBuilder()
             .setColor(config.COLORS.INFO)
             .setTitle('💘 Đo độ hợp')
-            .setDescription(`**${a.username}** 💞 **${b.username}**\n\n${bar(p)}\n**${p}%** — ${comment(p)}`);
+            .setDescription(`<@${a.id}> 💞 <@${b.id}>\n\n${bar(p)}\n**${p}%** — ${comment(p)}`);
         await interaction.editReply({ embeds: [embed] });
     },
 };

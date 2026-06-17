@@ -39,8 +39,9 @@ module.exports = {
             return interaction.editReply(`🌸 ${msg}`);
         }
 
+        const u = await db.getUser(interaction.user.id);
         await interaction.editReply({ embeds: [new EmbedBuilder()
             .setColor(config.COLORS.SUCCESS)
-            .setDescription(`💰 Cậu đã bán **${qty}× ${item.name}** và thu về **${fmt(r.gain)}** ${config.CURRENCY}.`)] });
+            .setDescription(`💰 Cậu đã bán **${qty}× ${item.name}** và thu về **${fmt(r.gain)}** ${config.CURRENCY}.\n💵 Số dư ví: **${fmt(u?.wallet || 0)}** ${config.CURRENCY}`)] });
     },
 };

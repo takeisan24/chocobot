@@ -17,12 +17,16 @@ module.exports = {
         }
 
         db.questIncr(interaction.user.id, 'daily', 1); // nhiệm vụ điểm danh
+        const u = await db.getUser(interaction.user.id);
 
         const embed = new EmbedBuilder()
             .setColor(config.COLORS.SUCCESS)
             .setTitle('🎁 Điểm danh thành công!')
             .setDescription(`Cậu nhận được **${Number(r.reward).toLocaleString('vi-VN')}** ${config.CURRENCY}!`)
-            .addFields({ name: '🔥 Chuỗi ngày', value: `${r.streak} ngày liên tiếp`, inline: true })
+            .addFields(
+                { name: '🔥 Chuỗi ngày', value: `${r.streak} ngày liên tiếp`, inline: true },
+                { name: '💵 Số dư ví', value: `${Number(u?.wallet || 0).toLocaleString('vi-VN')} ${config.CURRENCY}`, inline: true },
+            )
             .setFooter({ text: 'Điểm danh mỗi ngày để giữ chuỗi & thưởng cao hơn nhé~' });
         await interaction.editReply({ embeds: [embed] });
     },
