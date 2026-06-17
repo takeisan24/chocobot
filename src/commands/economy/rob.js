@@ -35,10 +35,11 @@ module.exports = {
             const amount = Math.max(1, Math.floor(Number(tgt.wallet) * pct));
             const ok = await db.transferMoney(target.id, robberId, amount);
             if (!ok) return interaction.editReply('Hụt rồi, con mồi nhanh tay cất tiền mất tiêu~');
+            const me = await db.getUser(robberId);
             return interaction.editReply({ embeds: [new EmbedBuilder()
                 .setColor(config.COLORS.SUCCESS)
                 .setTitle('🦹 Trộm thành công!')
-                .setDescription(`Cậu lén lấy được **${fmt(amount)}** ${config.CURRENCY} từ ví <@${target.id}>.\n*(Waguri giả vờ không thấy gì~ 🙈)*`)] });
+                .setDescription(`Cậu lén lấy được **${fmt(amount)}** ${config.CURRENCY} từ ví <@${target.id}>.\n💵 Số dư của cậu: **${fmt(me?.wallet || 0)}** ${config.CURRENCY}\n*(Waguri giả vờ không thấy gì~ 🙈)*`)] });
         } else {
             const robber = await db.getUser(robberId);
             const fine = Math.floor(Number(robber.wallet) * config.ROB.FINE_PCT);
@@ -46,7 +47,7 @@ module.exports = {
             return interaction.editReply({ embeds: [new EmbedBuilder()
                 .setColor(config.COLORS.ERROR)
                 .setTitle('🚨 Bị tóm rồi!')
-                .setDescription(`Cậu bị bắt quả tang và phải nộp phạt **${fmt(fine)}** ${config.CURRENCY}.\nLần sau đừng làm vậy nữa nhé~ 😟`)] });
+                .setDescription(`Cậu bị bắt quả tang và phải nộp phạt **${fmt(fine)}** ${config.CURRENCY}.\n💵 Số dư của cậu: **${fmt(Number(robber.wallet) - fine)}** ${config.CURRENCY}\nLần sau đừng làm vậy nữa nhé~ 😟`)] });
         }
     },
 };

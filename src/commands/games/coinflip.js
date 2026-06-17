@@ -45,6 +45,9 @@ module.exports = {
                 + (jailed ? ` và **tạm giam ${Math.round(config.POLICE.JAIL_MS / 60000)} phút**! 🚓` : '! 😱');
         }
 
+        const afterBal = await db.getUser(userId);
+        desc += `\n💵 Số dư ví: **${fmt(afterBal?.wallet || 0)}** ${config.CURRENCY}`;
+
         await interaction.editReply({ embeds: [new EmbedBuilder()
             .setColor(win ? config.COLORS.SUCCESS : config.COLORS.ERROR)
             .setTitle('🪙 Tung Đồng Xu').setDescription(desc)] });
