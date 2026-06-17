@@ -44,6 +44,12 @@ const CATEGORIES = [
         ['confession', 'gửi confession ẩn danh 🤫'],
         ['noitu', 'chơi nối từ tiếng Việt 🔤'],
     ] },
+    { name: '🖼️ Ảnh & Tiện ích', cmds: [
+        ['cat', 'ảnh mèo ngẫu nhiên 🐱'],
+        ['dog', 'ảnh cún ngẫu nhiên 🐶'],
+        ['waifu', 'ảnh waifu anime (SFW) 🌸'],
+        ['thoitiet', 'xem thời tiết một thành phố'],
+    ] },
     { name: '⚙️ Quản trị (cần quyền)', cmds: [
         ['config', 'cấu hình bot cho server (Quản lý Server)'],
     ] },
