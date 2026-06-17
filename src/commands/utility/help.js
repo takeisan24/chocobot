@@ -34,6 +34,10 @@ const CATEGORIES = [
     { name: '💬 Trò chuyện', cmds: [
         ['ask', 'trò chuyện với Waguri (hoặc @tag Waguri để nói chuyện)'],
     ] },
+    { name: '🎀 Vui & Cộng đồng', cmds: [
+        ['ship', 'đo độ hợp giữa hai người'],
+        ['boi', 'Waguri xem bói cho cậu hôm nay'],
+    ] },
     { name: '🏆 Khác', cmds: [
         ['leaderboard', 'bảng xếp hạng'],
         ['ping', 'độ trễ & trạng thái bot'],
