@@ -13,8 +13,8 @@ module.exports = {
 
     COLORS: {
         SUCCESS: 0x57F287,
-        ERROR:   0xED4245,
-        INFO:    0x5865F2,
+        ERROR: 0xED4245,
+        INFO: 0x5865F2,
         WARNING: 0xFEE75C,
         JACKPOT: 0xF1C40F,
     },
@@ -69,7 +69,7 @@ module.exports = {
     // AI persona Waguri (đổi provider chỉ bằng AI_PROVIDER trong .env)
     AI: {
         PROVIDER: process.env.AI_PROVIDER || 'gemini', // 'gemini' | 'claude'
-        GEMINI_MODEL: process.env.GEMINI_MODEL || 'gemini-1.5-flash',
+        GEMINI_MODEL: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
         CLAUDE_MODEL: process.env.CLAUDE_MODEL || 'claude-haiku-4-5',
         MAX_CONTEXT_TURNS: 6,    // số lượt hội thoại gần nhất giữ lại theo kênh
         MAX_OUTPUT_TOKENS: 400,  // câu trả lời ngắn gọn cho Discord
