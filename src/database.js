@@ -351,6 +351,47 @@ async function consumeItem(userId, itemId) {
     }
 }
 
+// ============================================================
+//  DAILY / BANK / LEADERBOARD (Sprint 2)
+// ============================================================
+/** Điểm danh hằng ngày. Trả object {status:'ok',reward,streak} | {status:'claimed',next} | null. */
+async function claimDaily(userId) {
+    try {
+        const { data, error } = await supabase.rpc('claim_daily', { p_user_id: userId });
+        if (error) throw error;
+        return data;
+    } catch (error) {
+        console.error('[DATABASE ERROR] claimDaily():', error);
+        return null;
+    }
+}
+
+/** Chuyển ví <-> ngân hàng nguyên tử. toBank=true: gửi vào bank. */
+async function transferBank(userId, amount, toBank) {
+    try {
+        const { data, error } = await supabase.rpc('transfer_bank', {
+            p_user_id: userId, p_amount: amount, p_to_bank: toBank,
+        });
+        if (error) throw error;
+        return data === true;
+    } catch (error) {
+        console.error('[DATABASE ERROR] transferBank():', error);
+        return false;
+    }
+}
+
+/** Lấy bảng xếp hạng. sort='level' theo cấp, ngược lại theo tài sản. */
+async function getLeaderboard(sort, limit = 10) {
+    try {
+        const { data, error } = await supabase.rpc('leaderboard_rows', { p_sort: sort, p_limit: limit });
+        if (error) throw error;
+        return data || [];
+    } catch (error) {
+        console.error('[DATABASE ERROR] getLeaderboard():', error);
+        return [];
+    }
+}
+
 module.exports = {
     supabase,
     getUser,
@@ -375,4 +416,8 @@ module.exports = {
     spendEnergy,
     getEnergy,
     consumeItem,
+    // sprint 2
+    claimDaily,
+    transferBank,
+    getLeaderboard,
 };

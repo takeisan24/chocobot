@@ -1,0 +1,29 @@
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const db = require('../../database.js');
+const config = require('../../config');
+
+module.exports = {
+    data: new SlashCommandBuilder()
+        .setName('deposit')
+        .setDescription('Gửi tiền từ ví vào ngân hàng')
+        .addStringOption(o => o.setName('amount').setDescription('Số tiền hoặc "all"').setRequired(true)),
+    async execute(interaction) {
+        await interaction.deferReply();
+        const raw = interaction.options.getString('amount');
+        const user = await db.getUser(interaction.user.id);
+        if (!user) return interaction.editReply('Hơ, mình chưa lấy được dữ liệu của cậu~ 🌸');
+
+        let amount = /^(all|hết|max)$/i.test(raw) ? Number(user.wallet) : parseInt(raw, 10);
+        if (!Number.isFinite(amount) || amount <= 0) {
+            return interaction.editReply('Số tiền không hợp lệ~ (nhập số hoặc `all`)');
+        }
+
+        const ok = await db.transferBank(interaction.user.id, amount, true);
+        if (!ok) return interaction.editReply('Ví của cậu không đủ để gửi rồi 😟');
+
+        const embed = new EmbedBuilder()
+            .setColor(config.COLORS.SUCCESS)
+            .setDescription(`🏦 Đã gửi **${amount.toLocaleString('vi-VN')}** ${config.CURRENCY} vào ngân hàng. An toàn rồi nhé~ 🌸`);
+        await interaction.editReply({ embeds: [embed] });
+    },
+};

@@ -4,10 +4,14 @@ const path = require('node:path');
 const { Client, Collection, GatewayIntentBits, REST, Routes } = require('discord.js');
 
 const client = new Client({
-    // Bot dùng Slash Command nên chỉ cần intent Guilds.
-    // (Khi nào cần đọc nội dung tin nhắn — vd leveling theo chat — mới thêm
-    //  GuildMessages + MessageContent và bật privileged intent ở Developer Portal.)
-    intents: [GatewayIntentBits.Guilds],
+    // Slash command + prefix command (đọc nội dung tin nhắn).
+    // ⚠️ MessageContent là privileged intent -> phải BẬT trong Developer Portal
+    //    (Bot -> Privileged Gateway Intents -> MESSAGE CONTENT INTENT).
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+    ],
 });
 
 // ---------------------------------------------------------

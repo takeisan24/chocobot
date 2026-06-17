@@ -3,6 +3,9 @@
 // ============================================================
 
 module.exports = {
+    // Tiền tố cho lệnh prefix (vd: w!work). Slash command vẫn dùng song song.
+    PREFIX: 'w!',
+
     CURRENCY: 'VNĐ',
 
     COLORS: {
