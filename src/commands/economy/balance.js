@@ -19,7 +19,7 @@ module.exports = {
         const target = interaction.options.getUser('target') || interaction.user;
 
         const user = await db.getUser(target.id);
-        if (!user) return interaction.editReply('Lỗi kết nối dữ liệu, thử lại sau nhé! 💢');
+        if (!user) return interaction.editReply('Hơ, mình chưa lấy được dữ liệu của cậu, thử lại sau chút nhé~ 🌸');
 
         const p = getProgress(Number(user.exp));
         const wallet = Number(user.wallet).toLocaleString('vi-VN');

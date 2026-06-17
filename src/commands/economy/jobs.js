@@ -76,29 +76,29 @@ async function applyJob(interaction) {
     const jobId = interaction.options.getString('job');
     const [job, user] = await Promise.all([db.getJob(jobId), db.getUser(interaction.user.id)]);
 
-    if (!job) return interaction.editReply('Không tìm thấy nghề này 🤔');
-    if (!user) return interaction.editReply('Lỗi dữ liệu, thử lại sau 💢');
-    if (user.job_id === jobId) return interaction.editReply(`Bạn đang làm **${job.name}** rồi mà 🤨`);
+    if (!job) return interaction.editReply('Mình không tìm thấy nghề này, cậu xem lại giúp nhé~ 🌸');
+    if (!user) return interaction.editReply('Hơ, mình chưa lấy được dữ liệu, thử lại sau chút nhé~');
+    if (user.job_id === jobId) return interaction.editReply(`Cậu đang làm **${job.name}** rồi mà~ 😄`);
 
     const level = getLevelFromExp(Number(user.exp));
     if (level < job.required_level) {
-        return interaction.editReply(`💢 Chưa đủ trình! **${job.name}** cần Lv.${job.required_level}, bạn mới Lv.${level}. Đi /work cày thêm đi.`);
+        return interaction.editReply(`Cậu cần đạt **Lv.${job.required_level}** mới làm **${job.name}** được, giờ cậu mới Lv.${level} thôi. Cố thêm chút nữa nha, cậu làm được mà! 🌸`);
     }
 
     if (job.required_item_id) {
         const has = await db.hasItem(interaction.user.id, job.required_item_id);
         if (!has) {
             const reqItem = await db.getItem(job.required_item_id);
-            return interaction.editReply(`💢 Thiếu đồ nghề! Cần **${reqItem ? reqItem.name : job.required_item_id}** trong kho. Ra /shop mà sắm.`);
+            return interaction.editReply(`À, để làm nghề này cậu cần có **${reqItem ? reqItem.name : job.required_item_id}** trước đã. Ghé \`/shop\` sắm một cái rồi quay lại nhé~ 🌸`);
         }
     }
 
     const ok = await db.setUserJob(interaction.user.id, jobId);
-    if (!ok) return interaction.editReply('Có lỗi khi nhận việc, thử lại sau 💢');
+    if (!ok) return interaction.editReply('Ơ, có lỗi khi nhận việc rồi, cậu thử lại sau nhé~');
 
     const embed = new EmbedBuilder()
         .setColor(config.COLORS.SUCCESS)
         .setTitle('🎉 Nhận việc thành công!')
-        .setDescription(`Từ giờ bạn là **${job.name}**. Gõ /work để bắt đầu cày 💪`);
+        .setDescription(`Từ giờ cậu là **${job.name}** rồi đó. Cùng cố gắng nhé, gõ \`/work\` để bắt đầu làm việc thôi! 💪`);
     await interaction.editReply({ embeds: [embed] });
 }

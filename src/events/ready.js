@@ -1,13 +1,13 @@
 const { Events, ActivityType } = require('discord.js');
 
-// Danh sách status xoay vòng — persona Waguri (đanh đá, hối đi cày 💢)
+// Persona Waguri: tiểu thư tiệm bánh hiền lành, dịu dàng, hay động viên ✨
 const STATUSES = [
-    { name: 'Có làm mới có ăn 💢', type: ActivityType.Watching },
-    { name: 'mấy con sen đi cày 🐂', type: ActivityType.Watching },
-    { name: '/work để kiếm cơm', type: ActivityType.Playing },
-    { name: 'ai giàu nhất server 👀', type: ActivityType.Competing },
-    { name: 'tiếng gõ bàn phím cơ ⌨️', type: ActivityType.Listening },
-    { name: 'giá trà đá vỉa hè 📈', type: ActivityType.Watching },
+    { name: 'mọi người chăm chỉ làm việc ✨', type: ActivityType.Watching },
+    { name: 'cùng mọi người làm giàu 🍡', type: ActivityType.Playing },
+    { name: 'tiếng leng keng của tiền xu 🪙', type: ActivityType.Listening },
+    { name: 'tiệm bánh nhà Waguri 🍰', type: ActivityType.Watching },
+    { name: 'ai chăm chỉ nhất nào~ 🌸', type: ActivityType.Competing },
+    { name: 'cố lên nhé mọi người 💪', type: ActivityType.Watching },
 ];
 
 const ROTATE_MS = 30_000; // đổi status mỗi 30 giây (an toàn rate-limit)

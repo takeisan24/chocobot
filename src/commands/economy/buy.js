@@ -38,10 +38,10 @@ module.exports = {
         }
 
         const msg = {
-            insufficient_funds: `Không đủ tiền 💸 — cần **${total}** ${config.CURRENCY} trong ví. Đi /work cày thêm đi!`,
-            no_item: 'Vật phẩm không tồn tại.',
-            bad_quantity: 'Số lượng không hợp lệ.',
-        }[result] || 'Có lỗi xảy ra khi mua, thử lại sau.';
-        return interaction.editReply(`💢 ${msg}`);
+            insufficient_funds: `Ví cậu chưa đủ tiền rồi 😟 — cần **${total}** ${config.CURRENCY}. Làm thêm vài việc với \`/work\` là mua được thôi mà!`,
+            no_item: 'Mình không tìm thấy vật phẩm này trong cửa hàng~',
+            bad_quantity: 'Số lượng chưa hợp lệ nè, cậu nhập lại giúp mình nhé~',
+        }[result] || 'Ơ, có lỗi khi mua rồi, cậu thử lại sau nhé~';
+        return interaction.editReply(`🌸 ${msg}`);
     },
 };

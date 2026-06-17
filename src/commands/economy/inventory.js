@@ -20,7 +20,7 @@ module.exports = {
             .setAuthor({ name: `Kho đồ của ${target.username}`, iconURL: target.displayAvatarURL() });
 
         if (!inv.length) {
-            embed.setDescription('Trống trơn... đi /work kiếm tiền rồi /shop mua đồ đi! 💢');
+            embed.setDescription('Kho của cậu đang trống nè~ Đi `/work` kiếm tiền rồi ghé `/shop` sắm đồ nhé! 🌸');
         } else {
             embed.setDescription(inv
                 .map(r => `${TYPE_ICON[r.items?.type] || '📦'} **${r.items?.name || r.item_id}** ×${r.quantity}`)
