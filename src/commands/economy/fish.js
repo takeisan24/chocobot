@@ -2,6 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const db = require('../../database.js');
 const config = require('../../config');
 const FISH = require('../../data/fish');
+const { onCooldown } = require('../../lib/cooldown');
 
 const fmt = n => Number(n).toLocaleString('vi-VN');
 
@@ -22,6 +23,9 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply();
         const userId = interaction.user.id;
+
+        const cd = onCooldown('fish', userId, config.ACTION_COOLDOWN_MS);
+        if (cd) return interaction.editReply(`Từ từ thôi nào~ nghỉ ${cd}s rồi câu tiếp nhé! 🌸`);
 
         const energyLeft = await db.spendEnergy(userId, config.FISH.ENERGY_COST);
         if (energyLeft < 0) {
@@ -44,11 +48,15 @@ module.exports = {
             desc = `Cậu chỉ câu phải ${c.emoji} **${c.name}**... chẳng được gì cả 😅 Lần sau may hơn nhé~`;
         }
 
+        const u = await db.getUser(userId);
         const embed = new EmbedBuilder()
             .setColor(payout > 0 ? config.COLORS.SUCCESS : config.COLORS.WARNING)
             .setTitle('🎣 Đi câu cá')
             .setDescription(desc)
-            .addFields({ name: 'Năng lượng', value: `${energyLeft}/${config.ENERGY.MAX} ⚡`, inline: true })
+            .addFields(
+                { name: '💵 Số dư ví', value: `${payout > 0 ? '+' + fmt(payout) + ' → ' : ''}**${fmt(u?.wallet || 0)}** ${config.CURRENCY}`, inline: false },
+                { name: 'Năng lượng', value: `${energyLeft}/${config.ENERGY.MAX} ⚡`, inline: true },
+            )
             .setTimestamp();
         await interaction.editReply({ embeds: [embed] });
     },

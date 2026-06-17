@@ -1,6 +1,7 @@
 const { EmbedBuilder } = require('discord.js');
 const db = require('../database.js');
 const config = require('../config');
+const { onCooldown } = require('./cooldown');
 
 const fmt = n => Number(n).toLocaleString('vi-VN');
 
@@ -12,9 +13,12 @@ function pick(table) {
 }
 
 /** Logic chung cho /fish-like (mine/chop): tốn năng lượng → random theo bảng → tiền. */
-async function runGather(interaction, { title, table, energyCost = config.GATHER_ENERGY_COST }) {
+async function runGather(interaction, { title, table, energyCost = config.GATHER_ENERGY_COST, key = 'gather' }) {
     await interaction.deferReply();
     const userId = interaction.user.id;
+
+    const cd = onCooldown(key, userId, config.ACTION_COOLDOWN_MS);
+    if (cd) return interaction.editReply(`Từ từ thôi nào~ nghỉ ${cd}s rồi làm tiếp nhé! 🌸`);
 
     const e = await db.spendEnergy(userId, energyCost);
     if (e < 0) {
@@ -34,10 +38,14 @@ async function runGather(interaction, { title, table, energyCost = config.GATHER
         desc = `Cậu chỉ nhặt được ${c.emoji} **${c.name}**... chẳng đáng bao nhiêu 😅`;
     }
 
+    const u = await db.getUser(userId);
     await interaction.editReply({ embeds: [new EmbedBuilder()
         .setColor(payout > 0 ? config.COLORS.SUCCESS : config.COLORS.WARNING)
         .setTitle(title).setDescription(desc)
-        .addFields({ name: 'Năng lượng', value: `${e}/${config.ENERGY.MAX} ⚡`, inline: true })] });
+        .addFields(
+            { name: '💵 Số dư ví', value: `${payout > 0 ? '+' + fmt(payout) + ' → ' : ''}**${fmt(u?.wallet || 0)}** ${config.CURRENCY}`, inline: false },
+            { name: 'Năng lượng', value: `${e}/${config.ENERGY.MAX} ⚡`, inline: true },
+        )] });
 }
 
 module.exports = { runGather };

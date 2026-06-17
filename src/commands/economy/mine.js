@@ -13,5 +13,5 @@ const TABLE = [
 
 module.exports = {
     data: new SlashCommandBuilder().setName('mine').setDescription('Đi đào mỏ kiếm tiền (tốn năng lượng) ⛏️'),
-    execute: (interaction) => runGather(interaction, { title: '⛏️ Đi đào mỏ', table: TABLE }),
+    execute: (interaction) => runGather(interaction, { title: '⛏️ Đi đào mỏ', table: TABLE, key: 'mine' }),
 };

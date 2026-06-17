@@ -81,6 +81,7 @@ module.exports = {
         ENERGY_COST: 8,
     },
     GATHER_ENERGY_COST: 8, // /mine, /chop
+    ACTION_COOLDOWN_MS: 3000, // chống spam /work /fish /mine /chop
 
     // Thú cưng
     PET: { FEED_COST: 200, FEED_EXP_MIN: 20, FEED_EXP_MAX: 40 },

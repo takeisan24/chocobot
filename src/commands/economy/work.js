@@ -3,6 +3,7 @@ const db = require('../../database.js');
 const config = require('../../config');
 const scripts = require('../../data/workScripts');
 const { getLevelFromExp } = require('../../lib/leveling');
+const { onCooldown } = require('../../lib/cooldown');
 
 const fmt = n => Number(n).toLocaleString('vi-VN');
 
@@ -18,6 +19,10 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply();
         const userId = interaction.user.id;
+
+        // 0. Cooldown nhẹ chống spam
+        const cd = onCooldown('work', userId, config.ACTION_COOLDOWN_MS);
+        if (cd) return interaction.editReply(`Từ từ thôi nào~ nghỉ ${cd}s rồi làm tiếp nhé! 🌸`);
 
         // 1. Tiêu năng lượng (gate chính)
         const energyLeft = await db.spendEnergy(userId, config.ENERGY.COST_PER_WORK);
@@ -65,6 +70,7 @@ module.exports = {
                 color = config.COLORS.SUCCESS;
             }
             await db.addMoney(userId, earnedMoney, 'wallet');
+            const newWallet = Number(user.wallet) + earnedMoney;
 
             // Nhiệm vụ: đếm số lần làm + tổng tiền kiếm (chỉ khi dương)
             db.questIncr(userId, 'work', 1);
@@ -89,6 +95,7 @@ module.exports = {
                 .setTitle('💼 Kết quả làm việc')
                 .setDescription(resultMessage)
                 .addFields(
+                    { name: '💵 Số dư ví', value: `${earnedMoney >= 0 ? '+' : '-'}${fmt(Math.abs(earnedMoney))} → **${fmt(newWallet)}** ${config.CURRENCY}`, inline: false },
                     { name: 'Kinh nghiệm', value: `+${gainedExp} EXP`, inline: true },
                     { name: 'Cấp độ', value: `Lv.${newLevel}`, inline: true },
                     { name: 'Năng lượng', value: `${energyLeft}/${config.ENERGY.MAX} ⚡`, inline: true },

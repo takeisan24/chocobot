@@ -24,7 +24,12 @@ async function chat(systemPrompt, history, userText) {
     const model = ai.getGenerativeModel({
         model: config.AI.GEMINI_MODEL,
         systemInstruction: systemPrompt,
-        generationConfig: { maxOutputTokens: config.AI.MAX_OUTPUT_TOKENS, temperature: 0.9 },
+        generationConfig: {
+            maxOutputTokens: config.AI.MAX_OUTPUT_TOKENS,
+            temperature: 0.9,
+            // Tắt "thinking" của Gemini 2.5 (nếu không, thinking ăn hết token -> câu trả lời bị cụt)
+            thinkingConfig: { thinkingBudget: 0 },
+        },
     });
 
     const geminiHistory = history.map(m => ({

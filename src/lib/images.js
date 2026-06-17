@@ -1,6 +1,9 @@
-// Lấy URL ảnh ngẫu nhiên từ các API free (không cần key). Node 18+ có global fetch.
+// Lấy URL ảnh ngẫu nhiên từ API free (không cần key).
+// QUAN TRỌNG: nhiều API chặn request thiếu User-Agent (trả 403) -> luôn gửi UA.
+const HEADERS = { 'User-Agent': 'WaguriBot/1.0 (Discord)', accept: 'application/json' };
+
 async function fetchJson(url) {
-    const r = await fetch(url, { headers: { accept: 'application/json' } });
+    const r = await fetch(url, { headers: HEADERS });
     if (!r.ok) throw new Error('HTTP ' + r.status);
     return r.json();
 }
@@ -14,8 +17,9 @@ async function dog() {
     return d.message;
 }
 async function waifu() {
-    const d = await fetchJson('https://api.waifu.pics/sfw/waifu'); // SFW
-    return d.url;
+    // nekos.best (SFW, free, không key) — cần User-Agent
+    const d = await fetchJson('https://nekos.best/api/v2/waifu');
+    return d.results?.[0]?.url;
 }
 
 module.exports = { cat, dog, waifu };
