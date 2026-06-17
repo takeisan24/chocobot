@@ -4,6 +4,7 @@ const config = require('../../config');
 const scripts = require('../../data/workScripts');
 const { getLevelFromExp } = require('../../lib/leveling');
 const { onCooldown } = require('../../lib/cooldown');
+const { fatigueMultiplier } = require('../../lib/fatigue');
 
 const fmt = n => Number(n).toLocaleString('vi-VN');
 
@@ -69,6 +70,10 @@ module.exports = {
                 earnedMoney = Math.round(base * buffMult);
                 color = config.COLORS.SUCCESS;
             }
+            // Mệt mỏi: làm liên tục thì thu nhập giảm dần
+            const fatigue = fatigueMultiplier(userId);
+            if (earnedMoney > 0) earnedMoney = Math.round(earnedMoney * fatigue);
+
             await db.addMoney(userId, earnedMoney, 'wallet');
             const newWallet = Number(user.wallet) + earnedMoney;
 
@@ -81,6 +86,7 @@ module.exports = {
                 .replace(/\{amount\}/g, amtStr)
                 .replace(/\{job\}/g, jobName);
             if (buffActive && earnedMoney > 0) resultMessage += ` *(buff +${Math.round((buffMult - 1) * 100)}%)*`;
+            if (fatigue < 1 && earnedMoney > 0) resultMessage += ` *(mệt -${Math.round((1 - fatigue) * 100)}%)*`;
 
             // 5. EXP theo cấp nghề
             const gainedExp = Math.round(config.WORK.EXP_BASE + config.WORK.EXP_PER_LEVEL * jobLevel)

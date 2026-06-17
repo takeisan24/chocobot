@@ -81,7 +81,17 @@ module.exports = {
         ENERGY_COST: 8,
     },
     GATHER_ENERGY_COST: 8, // /mine, /chop
-    ACTION_COOLDOWN_MS: 15000, // /work /fish /mine /chop (15s — đỡ spam, đỡ cày máy)
+    ACTION_COOLDOWN_MS: 5000, // /work /fish /mine /chop (đỡ spam, đỡ cày máy)
+
+    // Mệt mỏi: làm liên tục trong 1 khung giờ -> thu nhập giảm dần, nghỉ thì hồi
+    FATIGUE: {
+        STEP: 0.05,        // mỗi lần liên tiếp -5%
+        FLOOR: 0.5,        // giảm tối đa còn 50%
+        RESET_MS: 600_000, // nghỉ 10 phút thì hồi sức về 100%
+    },
+
+    // Thuế chuyển tiền /give (sink chống lạm phát)
+    GIVE_TAX_PCT: 0.05,
 
     // Thú cưng
     PET: { FEED_COST: 200, FEED_EXP_MIN: 20, FEED_EXP_MAX: 40 },

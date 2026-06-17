@@ -2,6 +2,7 @@ const { EmbedBuilder } = require('discord.js');
 const db = require('../database.js');
 const config = require('../config');
 const { onCooldown } = require('./cooldown');
+const { fatigueMultiplier } = require('./fatigue');
 
 const fmt = n => Number(n).toLocaleString('vi-VN');
 
@@ -27,13 +28,16 @@ async function runGather(interaction, { title, table, energyCost = config.GATHER
     }
 
     const c = pick(table);
-    const payout = c.max > 0 ? Math.floor(Math.random() * (c.max - c.min + 1)) + c.min : 0;
+    let payout = c.max > 0 ? Math.floor(Math.random() * (c.max - c.min + 1)) + c.min : 0;
+    const fatigue = fatigueMultiplier(userId);
+    if (payout > 0) payout = Math.round(payout * fatigue);
 
     let desc;
     if (payout > 0) {
         await db.addMoney(userId, payout, 'wallet');
         db.questIncr(userId, 'earn', payout);
-        desc = `Cậu thu được ${c.emoji} **${c.name}** và bán được **+${fmt(payout)}** ${config.CURRENCY}!`;
+        desc = `Cậu thu được ${c.emoji} **${c.name}** và bán được **+${fmt(payout)}** ${config.CURRENCY}!`
+            + (fatigue < 1 ? ` *(mệt -${Math.round((1 - fatigue) * 100)}%)*` : '');
     } else {
         desc = `Cậu chỉ nhặt được ${c.emoji} **${c.name}**... chẳng đáng bao nhiêu 😅`;
     }
