@@ -9,7 +9,7 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply();
         const text = interaction.options.getString('message');
-        const reply = await chatWithWaguri(interaction.channelId, interaction.user.username, text);
+        const reply = await chatWithWaguri(interaction.channelId, interaction.user.id, interaction.user.username, text);
         if (!reply) {
             return interaction.editReply('Hơ, Waguri chưa trò chuyện được lúc này (chưa cấu hình AI hoặc đang lỗi). Thử lại sau nhé~ 🌸');
         }

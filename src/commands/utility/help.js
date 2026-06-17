@@ -33,6 +33,7 @@ const CATEGORIES = [
     ] },
     { name: '💬 Trò chuyện', cmds: [
         ['ask', 'trò chuyện với Waguri (hoặc @tag Waguri)'],
+        ['relationship', 'xem mức thân thiết với Waguri 💞'],
     ] },
     { name: '🎀 Vui & Cộng đồng', cmds: [
         ['ship', 'đo độ hợp giữa hai người'],
@@ -41,6 +42,7 @@ const CATEGORIES = [
         ['marry', 'cầu hôn kết đôi 💍'],
         ['divorce', 'chia tay người ấy 💔'],
         ['confession', 'gửi confession ẩn danh 🤫'],
+        ['noitu', 'chơi nối từ tiếng Việt 🔤'],
     ] },
     { name: '⚙️ Quản trị (cần quyền)', cmds: [
         ['config', 'cấu hình bot cho server (Quản lý Server)'],

@@ -495,6 +495,18 @@ async function marryUsers(a, b) {
     }
 }
 
+/** Tăng điểm thiện cảm với Waguri, trả điểm mới (hoặc null). */
+async function incrAffection(userId, amount) {
+    try {
+        const { data, error } = await supabase.rpc('add_affection', { p_user_id: userId, p_amount: amount });
+        if (error) throw error;
+        return Number(data);
+    } catch (error) {
+        console.error('[DATABASE ERROR] incrAffection():', error);
+        return null;
+    }
+}
+
 /** Ly hôn. Trả 'ok' | 'single' | 'error'. */
 async function divorceUser(userId) {
     try {
@@ -652,6 +664,8 @@ module.exports = {
     // marriage
     marryUsers,
     divorceUser,
+    // affection
+    incrAffection,
     // guild settings
     getGuildSettings,
     setGuildSetting,

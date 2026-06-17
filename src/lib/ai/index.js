@@ -1,6 +1,7 @@
 // Lớp điều phối AI: chọn provider theo config, giữ ngữ cảnh theo kênh, chống spam.
 const config = require('../../config');
-const { WAGURI_SYSTEM_PROMPT } = require('./persona');
+const db = require('../../database.js');
+const { WAGURI_SYSTEM_PROMPT, tierOf } = require('./persona');
 
 const providers = {
     gemini: require('./gemini'),
@@ -26,19 +27,27 @@ function onCooldown(userId) {
 /**
  * Trò chuyện với Waguri. Trả về câu trả lời, hoặc null nếu lỗi/chưa cấu hình.
  */
-async function chatWithWaguri(channelId, userName, userText) {
+async function chatWithWaguri(channelId, userId, userName, userText) {
     const provider = getProvider();
     let history = contexts.get(channelId) || [];
     const framed = `${userName}: ${userText}`;
 
+    // Mức thiện cảm -> điều chỉnh độ thân mật của persona
+    let aff = 0;
+    try { const u = await db.getUser(userId); aff = Number(u?.affection || 0); } catch { /* bỏ qua */ }
+    const t = tierOf(aff);
+    const systemPrompt = `${WAGURI_SYSTEM_PROMPT}\n\n[Mức thân thiết với ${userName}: ${t.name} (${aff} điểm). Hãy trò chuyện ${t.guide}.]`;
+
     let reply;
     try {
-        reply = await provider.chat(WAGURI_SYSTEM_PROMPT, history, framed);
+        reply = await provider.chat(systemPrompt, history, framed);
     } catch (error) {
         console.error('[AI ERROR]', error.message);
         return null;
     }
     if (!reply) return null;
+
+    db.incrAffection(userId, 1); // trò chuyện làm Waguri thân thiết hơn
 
     // Cập nhật ngữ cảnh, cắt bớt và đảm bảo bắt đầu bằng 'user' (Gemini yêu cầu)
     history = [...history, { role: 'user', content: framed }, { role: 'assistant', content: reply }];
