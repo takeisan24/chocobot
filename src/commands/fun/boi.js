@@ -31,7 +31,7 @@ function seed(userId) {
     for (const c of s) h = (h * 31 + c.charCodeAt(0)) >>> 0;
     return h;
 }
-const pick = (arr, n) => arr[n % arr.length];
+const pick = (arr, n) => arr[Math.abs(n) % arr.length];
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -46,9 +46,9 @@ module.exports = {
             .setTitle(`🔮 Vận mệnh hôm nay của ${interaction.user.username}`)
             .addFields(
                 { name: '💕 Tình duyên', value: pick(TINH_DUYEN, h), inline: false },
-                { name: '💰 Tài lộc', value: pick(TAI_LOC, h >> 3), inline: false },
-                { name: '🍀 May mắn', value: pick(MAY_MAN, h >> 6), inline: false },
-                { name: '🌸 Lời khuyên của Waguri', value: pick(LOI_KHUYEN, h >> 9), inline: false },
+                { name: '💰 Tài lộc', value: pick(TAI_LOC, h >>> 3), inline: false },
+                { name: '🍀 May mắn', value: pick(MAY_MAN, h >>> 6), inline: false },
+                { name: '🌸 Lời khuyên của Waguri', value: pick(LOI_KHUYEN, h >>> 9), inline: false },
             )
             .setFooter({ text: 'Bói cho vui thôi nha~ Quay lại mai để xem tiếp!' });
         await interaction.editReply({ embeds: [embed] });
