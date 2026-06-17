@@ -5,6 +5,7 @@ const CATEGORIES = [
     { name: '💼 Kinh tế & Nghề', cmds: [
         ['work', 'làm việc kiếm tiền (tốn năng lượng)'],
         ['daily', 'điểm danh nhận thưởng + streak'],
+        ['quest', 'nhiệm vụ hằng ngày (thưởng tiền)'],
         ['balance', 'xem ví / ngân hàng / cấp độ / năng lượng'],
         ['profile', 'hồ sơ tổng quan'],
         ['jobs', 'xem & xin nghề (list / info / apply)'],

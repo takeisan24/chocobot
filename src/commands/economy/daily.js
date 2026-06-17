@@ -16,6 +16,8 @@ module.exports = {
             return interaction.editReply(`Hôm nay cậu điểm danh rồi mà~ Quay lại sau <t:${ts}:R> nhé! 🌸`);
         }
 
+        db.questIncr(interaction.user.id, 'daily', 1); // nhiệm vụ điểm danh
+
         const embed = new EmbedBuilder()
             .setColor(config.COLORS.SUCCESS)
             .setTitle('🎁 Điểm danh thành công!')

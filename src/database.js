@@ -407,6 +407,51 @@ async function sellItem(userId, itemId, quantity = 1) {
 }
 
 // ============================================================
+//  QUESTS — nhiệm vụ hằng ngày
+// ============================================================
+/** Cộng tiến độ nhiệm vụ (fire-and-forget, tự nuốt lỗi). */
+async function questIncr(userId, key, amount) {
+    try {
+        const { error } = await supabase.rpc('quest_incr', { p_user_id: userId, p_key: key, p_amount: amount });
+        if (error) throw error;
+        return true;
+    } catch (error) {
+        console.error('[DATABASE ERROR] questIncr():', error);
+        return false;
+    }
+}
+
+/** Lấy tiến độ + đã-nhận của HÔM NAY. */
+async function getQuestRow(userId) {
+    try {
+        const today = new Date().toISOString().slice(0, 10);
+        const { data, error } = await supabase
+            .from('quest_progress').select('counters, claimed')
+            .eq('user_id', userId).eq('quest_date', today).single();
+        if (error && error.code !== 'PGRST116') throw error;
+        return { counters: data?.counters || {}, claimed: data?.claimed || {} };
+    } catch (error) {
+        console.error('[DATABASE ERROR] getQuestRow():', error);
+        return { counters: {}, claimed: {} };
+    }
+}
+
+/** Nhận thưởng 1 nhiệm vụ. Trả 'ok' | 'claimed' | 'not_done' | 'error'. */
+async function questClaim(userId, quest) {
+    try {
+        const { data, error } = await supabase.rpc('quest_claim', {
+            p_user_id: userId, p_quest_id: quest.id, p_key: quest.key,
+            p_required: quest.required, p_reward: quest.reward,
+        });
+        if (error) throw error;
+        return data;
+    } catch (error) {
+        console.error('[DATABASE ERROR] questClaim():', error);
+        return 'error';
+    }
+}
+
+// ============================================================
 //  ADMIN — chỉ owner dùng (qua /eco-admin)
 // ============================================================
 /** Đặt cứng số dư ví/bank. */
@@ -506,6 +551,10 @@ module.exports = {
     transferBank,
     getLeaderboard,
     sellItem,
+    // quests
+    questIncr,
+    getQuestRow,
+    questClaim,
     // admin
     setBalance,
     setExp,

@@ -64,6 +64,7 @@ module.exports = {
             settled = true;
             const payout = { win: bet * 2, blackjack: Math.floor(bet * 2.5), push: bet, lose: 0 }[outcome];
             if (payout > 0) await db.addMoney(userId, payout, 'wallet');
+            if (outcome === 'win' || outcome === 'blackjack') db.questIncr(userId, 'gamble_win', 1);
             const net = payout - bet;
             const note = {
                 blackjack: `🎉 XÌ DÁCH! Cậu thắng **+${fmt(net)}** ${config.CURRENCY}!`,

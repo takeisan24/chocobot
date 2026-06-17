@@ -66,6 +66,10 @@ module.exports = {
             }
             await db.addMoney(userId, earnedMoney, 'wallet');
 
+            // Nhiệm vụ: đếm số lần làm + tổng tiền kiếm (chỉ khi dương)
+            db.questIncr(userId, 'work', 1);
+            if (earnedMoney > 0) db.questIncr(userId, 'earn', earnedMoney);
+
             const amtStr = `${fmt(Math.abs(earnedMoney))} ${config.CURRENCY}`;
             let resultMessage = pickLine(jobKey, category)
                 .replace(/\{amount\}/g, amtStr)

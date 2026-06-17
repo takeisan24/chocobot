@@ -43,6 +43,7 @@ module.exports = {
         if (win) {
             const payout = bet * (1 + matches);
             await db.addMoney(userId, payout, 'wallet');
+            db.questIncr(userId, 'gamble_win', 1);
             desc += `🎉 Thắng **+${fmt(payout - bet)}** ${config.CURRENCY}!`;
         } else {
             desc += `😢 Thua **-${fmt(bet)}** ${config.CURRENCY}. Lần sau nhé~`;

@@ -31,6 +31,7 @@ module.exports = {
         if (win) {
             const payout = Math.round(bet * config.GAMBLE.COINFLIP_MULT);
             await db.addMoney(userId, payout, 'wallet');
+            db.questIncr(userId, 'gamble_win', 1);
             desc += `🎉 Cậu thắng **+${fmt(payout - bet)}** ${config.CURRENCY}!`;
         } else {
             desc += `😢 Cậu thua **-${fmt(bet)}** ${config.CURRENCY}. Lần sau may hơn nhé~`;
