@@ -27,16 +27,28 @@ module.exports = {
             .addUserOption(o => o.setName('user').setDescription('Người nhận').setRequired(true))
             .addStringOption(o => o.setName('item').setDescription('Vật phẩm').setRequired(true).setAutocomplete(true))
             .addIntegerOption(o => o.setName('qty').setDescription('Số lượng (mặc định 1)').setMinValue(1)))
+        .addSubcommand(s => s.setName('setjob').setDescription('Bổ nhiệm công việc')
+            .addUserOption(o => o.setName('user').setDescription('Người chơi').setRequired(true))
+            .addStringOption(o => o.setName('job').setDescription('Nghề nghiệp').setRequired(true).setAutocomplete(true)))
         .addSubcommand(s => s.setName('resetuser').setDescription('Xóa sạch dữ liệu một người chơi')
             .addUserOption(o => o.setName('user').setDescription('Người chơi').setRequired(true))),
 
     async autocomplete(interaction) {
         const focused = interaction.options.getFocused().toLowerCase();
-        const items = await db.getItems();
-        await interaction.respond(items
-            .filter(i => i.name.toLowerCase().includes(focused) || i.id.includes(focused))
-            .slice(0, 25)
-            .map(i => ({ name: i.name, value: i.id })));
+        const sub = interaction.options.getSubcommand();
+        if (sub === 'giveitem') {
+            const items = await db.getItems();
+            await interaction.respond(items
+                .filter(i => i.name.toLowerCase().includes(focused) || i.id.includes(focused))
+                .slice(0, 25)
+                .map(i => ({ name: i.name, value: i.id })));
+        } else if (sub === 'setjob') {
+            const jobs = await db.getJobs();
+            await interaction.respond(jobs
+                .filter(j => j.name.toLowerCase().includes(focused) || j.id.includes(focused))
+                .slice(0, 25)
+                .map(j => ({ name: j.name, value: j.id })));
+        }
     },
 
     async execute(interaction) {
@@ -81,6 +93,13 @@ module.exports = {
             const item = await db.getItem(itemId);
             const ok = await db.giveItemAdmin(target.id, itemId, qty);
             return interaction.editReply(ok ? `✅ Đã cấp **${qty}× ${item ? item.name : itemId}** cho <@${target.id}>.` : '❌ Thất bại (item không tồn tại?).');
+        }
+        if (sub === 'setjob') {
+            const jobId = interaction.options.getString('job');
+            const job = await db.getJob(jobId);
+            if (!job) return interaction.editReply('❌ Không tìm thấy công việc này.');
+            const ok = await db.setUserJob(target.id, jobId);
+            return interaction.editReply(ok ? `✅ Đã bổ nhiệm <@${target.id}> làm **${job.name}**.` : '❌ Thất bại.');
         }
         if (sub === 'resetuser') {
             const ok = await db.resetUser(target.id);

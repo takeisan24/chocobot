@@ -95,6 +95,27 @@ async function transferMoney(fromUserId, toUserId, amount) {
 }
 
 /**
+ * Chuyển tiền nguyên tử kèm thuế.
+ */
+async function transferMoneyWithTax(fromUserId, toUserId, amount, taxPct) {
+    try {
+        const { data, error } = await supabase.rpc('transfer_money_with_tax', {
+            p_from: fromUserId,
+            p_to: toUserId,
+            p_amount: amount,
+            p_tax_pct: taxPct,
+        });
+
+        if (error) throw error;
+        return data === true;
+
+    } catch (error) {
+        console.error(`[DATABASE ERROR] Lỗi transferMoneyWithTax(${fromUserId} -> ${toUserId}):`, error);
+        return false;
+    }
+}
+
+/**
  * Cộng EXP nguyên tử qua RPC add_exp.
  * @returns {number|null} - Tổng EXP MỚI (để tính level), hoặc null nếu lỗi.
  */
@@ -309,6 +330,117 @@ async function hasItem(userId, itemId) {
     } catch (error) {
         console.error('[DATABASE ERROR] hasItem():', error);
         return false;
+    }
+}
+
+/**
+ * Sử dụng bảo hiểm: Trừ 1 số lượng bảo hiểm nếu có.
+ */
+async function useInsurance(userId, itemId) {
+    try {
+        const { data, error } = await supabase.rpc('use_insurance', {
+            p_user_id: userId,
+            p_item_id: itemId,
+        });
+        if (error) throw error;
+        return data === true;
+    } catch (error) {
+        console.error(`[DATABASE ERROR] Lỗi useInsurance(${userId}, ${itemId}):`, error);
+        return false;
+    }
+}
+
+/**
+ * Sử dụng công cụ (Giảm độ bền đi 2). Trả { status, durability, broken } hoặc null.
+ */
+async function useTool(userId, itemId) {
+    try {
+        const { data, error } = await supabase.rpc('use_tool', {
+            p_user_id: userId,
+            p_item_id: itemId,
+        });
+        if (error) throw error;
+        return data;
+    } catch (error) {
+        console.error(`[DATABASE ERROR] Lỗi useTool(${userId}, ${itemId}):`, error);
+        return null;
+    }
+}
+
+/**
+ * Sửa công cụ (Đặt độ bền về 100 và trừ tiền). Trả 'ok' | 'no_tool' | 'already_repaired' | 'insufficient_funds' | 'error'.
+ */
+async function repairTool(userId, itemId, cost) {
+    try {
+        const { data, error } = await supabase.rpc('repair_tool', {
+            p_user_id: userId,
+            p_item_id: itemId,
+            p_cost: cost,
+        });
+        if (error) throw error;
+        return data;
+    } catch (error) {
+        console.error(`[DATABASE ERROR] Lỗi repairTool(${userId}, ${itemId}):`, error);
+        return 'error';
+    }
+}
+
+/**
+ * Nhập viện hồi máu (Trừ viện phí và đặt health = 100).
+ * Trả { status, fee } hoặc null nếu lỗi.
+ */
+async function hospitalHeal(userId) {
+    try {
+        const { data, error } = await supabase.rpc('hospital_heal', {
+            p_user_id: userId,
+        });
+        if (error) throw error;
+        return data;
+    } catch (error) {
+        console.error(`[DATABASE ERROR] Lỗi hospitalHeal(${userId}):`, error);
+        return null;
+    }
+}
+
+/**
+ * Sử dụng xe cộ tốt nhất có sẵn trong kho đồ.
+ * Trả { status, vehicle_id, durability, broken } hoặc null.
+ */
+async function useVehicle(userId) {
+    try {
+        const { data, error } = await supabase.rpc('use_vehicle', {
+            p_user_id: userId,
+        });
+        if (error) throw error;
+        return data;
+    } catch (error) {
+        console.error(`[DATABASE ERROR] Lỗi useVehicle(${userId}):`, error);
+        return null;
+    }
+}
+
+/**
+ * Cộng / trừ sức khỏe của người dùng (giới hạn 0 - 100).
+ * @param {string} userId
+ * @param {number} amount
+ * @returns {object|null}
+ */
+async function addHealth(userId, amount) {
+    try {
+        const user = await getUser(userId);
+        if (!user) return null;
+        const newHealth = Math.max(0, Math.min(100, (user.health || 100) + amount));
+        const { data, error } = await supabase
+            .from('users')
+            .update({ health: newHealth })
+            .eq('user_id', userId)
+            .select()
+            .single();
+        if (error) throw error;
+        return data;
+    } catch (error) {
+        console.error(`[DATABASE ERROR] Lỗi addHealth(${userId}):`, error);
+        return null;
     }
 }
 
@@ -680,6 +812,7 @@ module.exports = {
     getUser,
     addMoney,
     transferMoney,
+    transferMoneyWithTax,
     updateExp,
     checkCooldown,
     claimCooldown,
@@ -695,6 +828,12 @@ module.exports = {
     // inventory
     getInventory,
     hasItem,
+    useInsurance,
+    useTool,
+    repairTool,
+    hospitalHeal,
+    useVehicle,
+    addHealth,
     // energy / buff
     spendEnergy,
     getEnergy,

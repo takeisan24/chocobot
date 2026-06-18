@@ -20,13 +20,12 @@ module.exports = {
         if (target.id === interaction.user.id) return interaction.editReply('Cậu không thể tự chuyển cho chính mình đâu~ 😄');
         if (!amount || amount <= 0) return interaction.editReply('Số tiền phải lớn hơn 0 nhé~');
 
-        const ok = await db.transferMoney(interaction.user.id, target.id, amount);
+        const tax = Math.floor(amount * config.GIVE_TAX_PCT);
+        const received = amount - tax;
+
+        const ok = await db.transferMoneyWithTax(interaction.user.id, target.id, amount, config.GIVE_TAX_PCT);
         if (!ok) return interaction.editReply('Ví của cậu không đủ tiền rồi 😟. Làm thêm với `/work` nhé!');
 
-        // Thuế chuyển tiền (sink): trừ vào phần người nhận
-        const tax = Math.floor(amount * config.GIVE_TAX_PCT);
-        if (tax > 0) await db.addMoney(target.id, -tax, 'wallet');
-        const received = amount - tax;
         const me = await db.getUser(interaction.user.id);
 
         const embed = new EmbedBuilder()

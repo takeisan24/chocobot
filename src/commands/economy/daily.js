@@ -2,6 +2,8 @@ const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const db = require('../../database.js');
 const config = require('../../config');
 
+const fmt = n => Number(n).toLocaleString('vi-VN');
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('daily')
@@ -19,10 +21,15 @@ module.exports = {
         db.questIncr(interaction.user.id, 'daily', 1); // nhiệm vụ điểm danh
         const u = await db.getUser(interaction.user.id);
 
+        let desc = `Cậu nhận được **${fmt(r.reward)}** ${config.CURRENCY}!`;
+        if (r.interest && Number(r.interest) > 0) {
+            desc += `\n📈 Lãi tiết kiệm ngân hàng (0.5%): **+${fmt(r.interest)}** ${config.CURRENCY} *(đã cộng vào bank)*.`;
+        }
+
         const embed = new EmbedBuilder()
             .setColor(config.COLORS.SUCCESS)
             .setTitle('🎁 Điểm danh thành công!')
-            .setDescription(`Cậu nhận được **${Number(r.reward).toLocaleString('vi-VN')}** ${config.CURRENCY}!`)
+            .setDescription(desc)
             .addFields(
                 { name: '🔥 Chuỗi ngày', value: `${r.streak} ngày liên tiếp`, inline: true },
                 { name: '💵 Số dư ví', value: `${Number(u?.wallet || 0).toLocaleString('vi-VN')} ${config.CURRENCY}`, inline: true },

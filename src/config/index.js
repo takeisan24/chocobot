@@ -26,14 +26,14 @@ module.exports = {
     // Năng lượng: gate chính thay cho cooldown phẳng (bản cân bằng hardcore)
     ENERGY: {
         MAX: 100,
-        REGEN_SECONDS: 180,   // hồi +1 mỗi 3 phút (phải khớp RPC regen_energy)
+        REGEN_SECONDS: 60,    // hồi +1 mỗi 1 phút (phải khớp RPC regen_energy)
         COST_PER_WORK: 10,    // /work tốn 10 năng lượng
     },
 
     WORK: {
         // Nghề mặc định khi user chưa apply job nào (job_id = null)
         DEFAULT_JOB: {
-            name: 'Làm thuê tự do ngoài đường',
+            name: 'Đứng đường',
             min_wage: 30,
             max_wage: 100,
             risk_rate: 0.05,
@@ -88,6 +88,14 @@ module.exports = {
         STEP: 0.05,        // mỗi lần liên tiếp -5%
         FLOOR: 0.5,        // giảm tối đa còn 50%
         RESET_MS: 600_000, // nghỉ 10 phút thì hồi sức về 100%
+        DECAY_MS: 120_000, // nghỉ mỗi 2 phút thì hồi sức dần 1 bậc
+    },
+
+    // Phương tiện: đi làm bằng xe giúp tiết kiệm năng lượng
+    VEHICLES: {
+        xe_wave: { energy_cost: 8, name: 'Xe Wave' },
+        xe_sh: { energy_cost: 6, name: 'Xe SH' },
+        o_to_vinfast: { energy_cost: 4, name: 'Ô tô VinFast' },
     },
 
     // Thuế chuyển tiền /give (sink chống lạm phát)

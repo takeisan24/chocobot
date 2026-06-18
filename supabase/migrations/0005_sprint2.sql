@@ -9,10 +9,11 @@ alter table users add column if not exists daily_streak int not null default 0;
 -- Trả jsonb: {status:'ok',reward,streak} | {status:'claimed',next}
 create or replace function claim_daily(p_user_id text)
 returns jsonb language plpgsql as $$
-declare v_last timestamptz; v_streak int; v_reward bigint;
+declare v_last timestamptz; v_streak int; v_reward bigint; v_bank bigint; v_interest bigint;
 begin
     insert into users(user_id) values(p_user_id) on conflict(user_id) do nothing;
-    select last_daily, daily_streak into v_last, v_streak from users where user_id=p_user_id;
+    select last_daily, daily_streak, bank into v_last, v_streak, v_bank from users where user_id=p_user_id;
+    if v_bank is null then v_bank := 0; end if;
 
     if v_last is not null and now() < v_last + interval '24 hours' then
         return jsonb_build_object('status','claimed','next', v_last + interval '24 hours');
@@ -25,9 +26,16 @@ begin
     end if;
 
     v_reward := 1000 + least(v_streak - 1, 29) * 200;  -- thưởng tăng theo streak (cap ngày 30)
-    update users set wallet = wallet + v_reward, last_daily = now(), daily_streak = v_streak
+    v_interest := floor(v_bank * 0.005); -- lãi suất 0.5%
+    
+    update users set 
+        wallet = wallet + v_reward, 
+        bank = bank + v_interest,
+        last_daily = now(), 
+        daily_streak = v_streak
         where user_id=p_user_id;
-    return jsonb_build_object('status','ok','reward', v_reward, 'streak', v_streak);
+        
+    return jsonb_build_object('status','ok','reward', v_reward, 'streak', v_streak, 'interest', v_interest);
 end; $$;
 
 -- Chuyển tiền ví <-> ngân hàng nguyên tử. p_to_bank=true: gửi (ví->bank).

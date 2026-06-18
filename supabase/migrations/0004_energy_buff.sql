@@ -29,12 +29,12 @@ begin
         return v_e;
     end if;
 
-    v_ticks := floor(extract(epoch from (now() - v_t)) / 180);
+    v_ticks := floor(extract(epoch from (now() - v_t)) / 60);
     if v_ticks <= 0 then return v_e; end if;
 
     v_new := least(100, v_e + v_ticks);
     update users set energy = v_new,
-        energy_updated_at = case when v_new >= 100 then now() else v_t + (v_ticks * interval '180 seconds') end
+        energy_updated_at = case when v_new >= 100 then now() else v_t + (v_ticks * interval '60 seconds') end
         where user_id = p_user_id;
     return v_new;
 end; $$;
