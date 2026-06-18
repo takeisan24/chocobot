@@ -18,6 +18,25 @@ async function runGather(interaction, { title, table, energyCost = config.GATHER
     await interaction.deferReply();
     const userId = interaction.user.id;
 
+    const toolMap = {
+        mine: { id: 'cuoc_sat', name: 'Cuốc sắt', emoji: '⛏️' },
+        chop: { id: 'riu_sat', name: 'Rìu sắt', emoji: '🪓' }
+    };
+    const tool = toolMap[key] || { id: 'riu_sat', name: 'Rìu sắt', emoji: '🪓' };
+
+    const user = await db.getUser(userId);
+    const userHealth = user && user.health !== undefined ? user.health : 100;
+    if (userHealth < 30) {
+        const typeStr = key === 'mine' ? 'đào mỏ' : 'chặt gỗ';
+        return interaction.editReply(`🏥 Sức khỏe của cậu quá yếu (**${userHealth}/100** ❤️). Cậu cần ít nhất **30** sức khỏe để ${typeStr}. Hãy dùng thuốc/hộp y tế (\`/eat\`) hoặc chạy lệnh \`/hospital\` để nhập viện nhé!`);
+    }
+
+    // Kiểm tra và sử dụng công cụ
+    const toolResult = await db.useTool(userId, tool.id);
+    if (!toolResult || toolResult.status === 'no_tool') {
+        return interaction.editReply(`Cậu cần mua **${tool.name}** ${tool.emoji} ở \`/shop\` mới thực hiện được nhé~ 🌸`);
+    }
+
     const cd = onCooldown(key, userId, config.ACTION_COOLDOWN_MS);
     if (cd) return interaction.editReply(`Từ từ thôi nào~ nghỉ ${cd}s rồi làm tiếp nhé! 🌸`);
 
@@ -30,7 +49,6 @@ async function runGather(interaction, { title, table, energyCost = config.GATHER
     const c = pick(table);
     let payout = c.max > 0 ? Math.floor(Math.random() * (c.max - c.min + 1)) + c.min : 0;
     const fatigue = fatigueMultiplier(userId);
-    const gross = payout;
     if (payout > 0) payout = Math.round(payout * fatigue);
 
     let desc;
@@ -38,10 +56,12 @@ async function runGather(interaction, { title, table, energyCost = config.GATHER
         await db.addMoney(userId, payout, 'wallet');
         db.questIncr(userId, 'earn', payout);
         desc = `Cậu thu được ${c.emoji} **${c.name}** và bán được **+${fmt(payout)}** ${config.CURRENCY}!`
-            + (fatigue < 1 && gross > 0 ? ` *(gốc ${fmt(gross)}, mệt -${Math.round((1 - fatigue) * 100)}%)*` : '');
+            + (fatigue < 1 ? ` *(mệt -${Math.round((1 - fatigue) * 100)}%)*` : '');
     } else {
         desc = `Cậu chỉ nhặt được ${c.emoji} **${c.name}**... chẳng đáng bao nhiêu 😅`;
     }
+
+    desc += `\nĐộ bền ${tool.name}: **${toolResult.durability}/100** ${tool.emoji}` + (toolResult.broken ? ' *(đã hỏng! Cần mua mới hoặc sửa)*' : '');
 
     const u = await db.getUser(userId);
     await interaction.editReply({ embeds: [new EmbedBuilder()
@@ -50,6 +70,7 @@ async function runGather(interaction, { title, table, energyCost = config.GATHER
         .addFields(
             { name: '💵 Số dư ví', value: `${payout > 0 ? '+' + fmt(payout) + ' → ' : ''}**${fmt(u?.wallet || 0)}** ${config.CURRENCY}`, inline: false },
             { name: 'Năng lượng', value: `${e}/${config.ENERGY.MAX} ⚡`, inline: true },
+            { name: '❤️ Sức khỏe', value: `${u && u.health !== undefined ? u.health : 100}/100`, inline: true },
         )] });
 }
 

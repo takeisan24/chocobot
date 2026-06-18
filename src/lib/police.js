@@ -18,7 +18,7 @@ function bumpCount(userId) {
 }
 
 /**
- * Gọi sau mỗi ván cờ bạc. Trả về số tiền bị phạt nếu bị "công an bắt", hoặc null.
+ * Gọi sau mỗi ván cờ bạc. Trả về object { fine, usedIns } nếu bị "công an bắt", hoặc null.
  */
 async function applyPolice(userId) {
     const count = bumpCount(userId);
@@ -26,10 +26,14 @@ async function applyPolice(userId) {
     if (Math.random() >= chance) return null;
 
     const u = await db.getUser(userId);
-    const fine = Math.floor(Number(u?.wallet || 0) * config.POLICE.FINE_PCT);
+    let fine = Math.floor(Number(u?.wallet || 0) * config.POLICE.FINE_PCT);
+    const usedIns = await db.useInsurance(userId, 'bh_duong_pho');
+    if (usedIns) {
+        fine = Math.round(fine * 0.5); // Giảm 50% tiền phạt
+    }
     recent.set(userId, { count: 0, ts: Date.now() }); // bị bắt rồi thì reset
     if (fine > 0) await db.addMoney(userId, -fine, 'wallet');
-    return fine;
+    return { fine, usedIns };
 }
 
 module.exports = { applyPolice };

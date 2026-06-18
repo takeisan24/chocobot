@@ -25,19 +25,46 @@ module.exports = {
         const cd = onCooldown('work', userId, config.ACTION_COOLDOWN_MS);
         if (cd) return interaction.editReply(`Từ từ thôi nào~ nghỉ ${cd}s rồi làm tiếp nhé! 🌸`);
 
-        // 1. Tiêu năng lượng (gate chính)
-        const energyLeft = await db.spendEnergy(userId, config.ENERGY.COST_PER_WORK);
-        if (energyLeft < 0) {
-            const cur = await db.getEnergy(userId);
-            return interaction.editReply(
-                `Cậu hết năng lượng rồi (${cur}/${config.ENERGY.MAX} ⚡, cần ${config.ENERGY.COST_PER_WORK}). ` +
-                `Nghỉ ngơi chút hoặc ăn gì đó bằng \`/eat\` nhé~ 🌸`
-            );
-        }
-
         try {
             const user = await db.getUser(userId);
             if (!user) return interaction.editReply('Hơ, mình chưa lấy được dữ liệu của cậu, thử lại sau nhé~ 🌸');
+
+            // 1. Kiểm tra sức khỏe (Health)
+            const userHealth = user.health !== undefined ? user.health : 100;
+            if (userHealth < 30) {
+                return interaction.editReply(`🏥 Sức khỏe của cậu quá yếu (**${userHealth}/100** ❤️). Cậu cần ít nhất **30** sức khỏe để làm việc. Hãy dùng thuốc/hộp y tế (\`/eat\`) hoặc chạy lệnh \`/hospital\` để nhập viện nhé!`);
+            }
+
+            // 2. Kiểm tra phương tiện di chuyển trong kho đồ để tính chi phí năng lượng
+            const inv = await db.getInventory(userId);
+            const vehicles = inv.filter(i => ['o_to_vinfast', 'xe_sh', 'xe_wave'].includes(i.item_id));
+            let bestVehicleId = null;
+            if (vehicles.length > 0) {
+                if (vehicles.some(v => v.item_id === 'o_to_vinfast')) bestVehicleId = 'o_to_vinfast';
+                else if (vehicles.some(v => v.item_id === 'xe_sh')) bestVehicleId = 'xe_sh';
+                else if (vehicles.some(v => v.item_id === 'xe_wave')) bestVehicleId = 'xe_wave';
+            }
+
+            let energyCost = config.ENERGY.COST_PER_WORK; // 10
+            if (bestVehicleId) {
+                energyCost = config.VEHICLES[bestVehicleId].energy_cost;
+            }
+
+            // 3. Tiêu năng lượng (gate chính)
+            const energyLeft = await db.spendEnergy(userId, energyCost);
+            if (energyLeft < 0) {
+                const cur = await db.getEnergy(userId);
+                return interaction.editReply(
+                    `Cậu hết năng lượng rồi (${cur}/${config.ENERGY.MAX} ⚡, cần ${energyCost}). ` +
+                    `Nghỉ ngơi chút hoặc ăn gì đó bằng \`/eat\` nhé~ 🌸`
+                );
+            }
+
+            // 4. Sử dụng xe (trừ độ bền)
+            let usedVehicle = null;
+            if (bestVehicleId) {
+                usedVehicle = await db.useVehicle(userId);
+            }
 
             // 2. Thông số nghề
             let { name: jobName, min_wage: minWage, max_wage: maxWage, risk_rate: riskRate, required_level: jobLevel } = config.WORK.DEFAULT_JOB;
@@ -54,13 +81,35 @@ module.exports = {
             const buffActive = user.buff_expires_at && new Date(user.buff_expires_at).getTime() > Date.now();
             const buffMult = buffActive ? Number(user.buff_mult) : 1;
 
+            // Kiểm tra xem user có nuôi Mèo tài lộc không (Level >= 5)
+            let catBuff = false;
+            let userPetName = '';
+            const userPet = await db.getPet(userId);
+            if (userPet && userPet.species === 'meo') {
+                const { petLevel } = require('../../data/pets');
+                const catLvl = petLevel(userPet.exp);
+                if (catLvl >= 5) {
+                    catBuff = true;
+                    userPetName = userPet.name || 'Mèo con';
+                }
+            }
+
             // 4. Kết quả: 20% (risk) xui · còn lại có 8% jackpot · 70%+ thành công
-            let category, earnedMoney, color;
+            let category, earnedMoney, color, usedInsurance = false;
             if (Math.random() < riskRate) {
                 category = 'fail';
-                earnedMoney = -(Math.floor(Math.random() * (minWage / 2)) + 1);
+                let loss = Math.floor(Math.random() * (minWage / 2)) + 1;
+                usedInsurance = await db.useInsurance(userId, 'bh_lao_dong');
+                if (usedInsurance) {
+                    loss = Math.round(loss * 0.2); // Giảm 80% thiệt hại
+                }
+                earnedMoney = -loss;
                 color = config.COLORS.WARNING;
-            } else if (Math.random() < config.WORK.JACKPOT_CHANCE) {
+
+                // Giảm sức khỏe ngẫu nhiên từ 10 đến 20 điểm
+                const healthLoss = Math.floor(Math.random() * 11) + 10;
+                await db.addHealth(userId, -healthLoss);
+            } else if (Math.random() < (catBuff ? (config.WORK.JACKPOT_CHANCE + 0.05) : config.WORK.JACKPOT_CHANCE)) {
                 category = 'jackpot';
                 earnedMoney = Math.round(maxWage * config.WORK.JACKPOT_MULT * buffMult);
                 color = config.COLORS.JACKPOT;
@@ -76,7 +125,9 @@ module.exports = {
             if (earnedMoney > 0) earnedMoney = Math.round(earnedMoney * fatigue);
 
             await db.addMoney(userId, earnedMoney, 'wallet');
-            const newWallet = Number(user.wallet) + earnedMoney;
+            const userAfter = await db.getUser(userId);
+            const newWallet = userAfter ? Number(userAfter.wallet) : (Number(user.wallet) + earnedMoney);
+            const currentHealth = userAfter && userAfter.health !== undefined ? userAfter.health : 100;
 
             // Nhiệm vụ: đếm số lần làm + tổng tiền kiếm (chỉ khi dương)
             db.questIncr(userId, 'work', 1);
@@ -87,6 +138,14 @@ module.exports = {
                 .replace(/\{amount\}/g, amtStr)
                 .replace(/\{job\}/g, jobName);
             if (buffActive && earnedMoney > 0) resultMessage += ` *(buff +${Math.round((buffMult - 1) * 100)}%)*`;
+            if (fatigue < 1 && earnedMoney > 0) resultMessage += ` *(mệt -${Math.round((1 - fatigue) * 100)}%)*`;
+            if (usedInsurance) resultMessage += `\n🛡️ **Bảo hiểm Lao động** đã kích hoạt giúp gánh 80% thiệt hại!`;
+            if (category === 'jackpot' && catBuff) resultMessage += `\n🐱 Bé mèo **${userPetName}** dụi dụi mang lại tài lộc đầy túi!`;
+
+            if (usedVehicle) {
+                const vehicleName = config.VEHICLES[usedVehicle.vehicle_id]?.name || usedVehicle.vehicle_id;
+                resultMessage += `\n🚗 Cậu đã lái **${vehicleName}** đi làm (Độ bền xe: ${usedVehicle.durability}/100)${usedVehicle.broken ? ' ⚠️ *Xe đã bị hỏng sau chuyến đi này!*' : ''}`;
+            }
 
             // 5. EXP theo cấp nghề
             const gainedExp = Math.round(config.WORK.EXP_BASE + config.WORK.EXP_PER_LEVEL * jobLevel)
@@ -105,6 +164,7 @@ module.exports = {
                     { name: 'Kinh nghiệm', value: `+${gainedExp} EXP`, inline: true },
                     { name: 'Cấp độ', value: `Lv.${newLevel}`, inline: true },
                     { name: 'Năng lượng', value: `${energyLeft}/${config.ENERGY.MAX} ⚡`, inline: true },
+                    { name: '❤️ Sức khỏe', value: `${currentHealth}/100`, inline: true },
                 )
                 .setTimestamp();
             if (newLevel > oldLevel) {

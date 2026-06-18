@@ -3,6 +3,7 @@ const db = require('../../database.js');
 const config = require('../../config');
 const { parseAmount } = require('../../lib/amount');
 const { checkBet } = require('../../lib/bet');
+const { applyPolice } = require('../../lib/police');
 
 const fmt = n => Number(n).toLocaleString('vi-VN');
 const SUITS = ['♠', '♥', '♦', '♣'];
@@ -66,15 +67,28 @@ module.exports = {
             if (payout > 0) await db.addMoney(userId, payout, 'wallet');
             if (outcome === 'win' || outcome === 'blackjack') db.questIncr(userId, 'gamble_win', 1);
             const net = payout - bet;
-            const note = {
+            let note = {
                 blackjack: `🎉 XÌ DÁCH! Cậu thắng **+${fmt(net)}** ${config.CURRENCY}!`,
                 win: `🎉 Cậu thắng **+${fmt(net)}** ${config.CURRENCY}!`,
                 push: `🤝 Hòa! Hoàn lại tiền cược.`,
                 lose: `😢 Cậu thua **-${fmt(bet)}** ${config.CURRENCY}. Lần sau nhé~`,
             }[outcome];
+            
+            const policeRes = await applyPolice(userId);
+            if (policeRes !== null) {
+                const { fine, usedIns } = policeRes;
+                let jailTime = config.POLICE.JAIL_MS;
+                if (usedIns) jailTime = Math.round(jailTime * 0.5); // Giảm 50% thời gian giam giữ
+                let jailed = false;
+                try { await interaction.member?.timeout?.(jailTime, 'Cờ bạc bị công an bắt'); jailed = true; } catch { /* bot thiếu quyền timeout */ }
+                note += `\n\n🚨 **Công an ập tới!** Cậu bị phạt **${fmt(fine)}** ${config.CURRENCY}`
+                    + (usedIns ? ` (đã giảm 50% nhờ 🛡️ **Bảo hiểm Đường phố**)` : '')
+                    + (jailed ? ` và **tạm giam ${Math.round(jailTime / 60000)} phút**! 🚓` : '! 😱');
+            }
+
             const u = await db.getUser(userId);
             const noteFull = `${note}\n💵 Số dư ví: **${fmt(u?.wallet || 0)}** ${config.CURRENCY}`;
-            const color = net > 0 ? config.COLORS.SUCCESS : (net === 0 ? config.COLORS.WARNING : config.COLORS.ERROR);
+            const color = policeRes !== null ? config.COLORS.ERROR : (net > 0 ? config.COLORS.SUCCESS : (net === 0 ? config.COLORS.WARNING : config.COLORS.ERROR));
             return embed(true, noteFull, color);
         };
 

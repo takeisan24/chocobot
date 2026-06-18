@@ -49,12 +49,16 @@ module.exports = {
         } else {
             desc += `😢 Thua **-${fmt(bet)}** ${config.CURRENCY}. Lần sau nhé~`;
         }
-        const fine = await applyPolice(userId);
-        if (fine !== null) {
+        const policeRes = await applyPolice(userId);
+        if (policeRes !== null) {
+            const { fine, usedIns } = policeRes;
+            let jailTime = config.POLICE.JAIL_MS;
+            if (usedIns) jailTime = Math.round(jailTime * 0.5); // Giảm 50% thời gian giam giữ
             let jailed = false;
-            try { await interaction.member?.timeout?.(config.POLICE.JAIL_MS, 'Cờ bạc bị công an bắt'); jailed = true; } catch { /* bot thiếu quyền timeout */ }
+            try { await interaction.member?.timeout?.(jailTime, 'Cờ bạc bị công an bắt'); jailed = true; } catch { /* bot thiếu quyền timeout */ }
             desc += `\n\n🚨 **Công an ập tới!** Cậu bị phạt **${fmt(fine)}** ${config.CURRENCY}`
-                + (jailed ? ` và **tạm giam ${Math.round(config.POLICE.JAIL_MS / 60000)} phút**! 🚓` : '! 😱');
+                + (usedIns ? ` (đã giảm 50% nhờ 🛡️ **Bảo hiểm Đường phố**)` : '')
+                + (jailed ? ` và **tạm giam ${Math.round(jailTime / 60000)} phút**! 🚓` : '! 😱');
         }
 
         const afterBal = await db.getUser(userId);

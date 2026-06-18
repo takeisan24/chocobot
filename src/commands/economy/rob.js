@@ -23,6 +23,19 @@ module.exports = {
             return interaction.editReply(`Ví của <@${target.id}> trống trơn, chả có gì để lấy đâu~ 🌸`);
         }
 
+        // Kiểm tra xem mục tiêu có nuôi Cún bảo vệ không (Level >= 5)
+        let dogBuff = false;
+        let targetPetName = '';
+        const targetPet = await db.getPet(target.id);
+        if (targetPet && targetPet.species === 'cun') {
+            const { petLevel } = require('../../data/pets');
+            const dogLvl = petLevel(targetPet.exp);
+            if (dogLvl >= 5) {
+                dogBuff = true;
+                targetPetName = targetPet.name || 'Cún con';
+            }
+        }
+
         // Cooldown (atomic) — chỉ tính khi mục tiêu hợp lệ
         const cd = await db.claimCooldown(robberId, 'rob', config.ROB.COOLDOWN_SECONDS);
         if (cd) {
@@ -30,7 +43,8 @@ module.exports = {
         }
 
         // Waguri không khuyến khích đâu nha 😟 nhưng game là game~
-        if (Math.random() < config.ROB.SUCCESS_RATE) {
+        const successRate = dogBuff ? (config.ROB.SUCCESS_RATE - 0.2) : config.ROB.SUCCESS_RATE;
+        if (Math.random() < successRate) {
             const pct = config.ROB.STEAL_MIN_PCT + Math.random() * (config.ROB.STEAL_MAX_PCT - config.ROB.STEAL_MIN_PCT);
             const amount = Math.max(1, Math.floor(Number(tgt.wallet) * pct));
             const ok = await db.transferMoney(target.id, robberId, amount);
@@ -42,12 +56,28 @@ module.exports = {
                 .setDescription(`Cậu lén lấy được **${fmt(amount)}** ${config.CURRENCY} từ ví <@${target.id}>.\n💵 Số dư của cậu: **${fmt(me?.wallet || 0)}** ${config.CURRENCY}\n*(Waguri giả vờ không thấy gì~ 🙈)*`)] });
         } else {
             const robber = await db.getUser(robberId);
-            const fine = Math.floor(Number(robber.wallet) * config.ROB.FINE_PCT);
+            let fine = Math.floor(Number(robber.wallet) * config.ROB.FINE_PCT);
+            const usedIns = await db.useInsurance(robberId, 'bh_duong_pho');
+            if (usedIns) {
+                fine = Math.round(fine * 0.5); // Giảm 50% tiền phạt
+            }
             if (fine > 0) await db.addMoney(robberId, -fine, 'wallet');
+            const robberAfter = await db.getUser(robberId);
+            const displayBal = robberAfter ? Number(robberAfter.wallet) : (Number(robber.wallet) - fine);
+            
+            let desc = `Cậu bị bắt quả tang và phải nộp phạt **${fmt(fine)}** ${config.CURRENCY}.`;
+            if (usedIns) {
+                desc += `\n🛡️ **Bảo hiểm Đường phố** đã kích hoạt giúp giảm 50% tiền phạt!`;
+            }
+            if (dogBuff) {
+                desc += `\n🐕 Bé cún **${targetPetName}** của <@${target.id}> sủa vang làm cậu giật mình bị phát hiện!`;
+            }
+            desc += `\n💵 Số dư của cậu: **${fmt(displayBal)}** ${config.CURRENCY}\nLần sau đừng làm vậy nữa nhé~ 😟`;
+
             return interaction.editReply({ embeds: [new EmbedBuilder()
                 .setColor(config.COLORS.ERROR)
                 .setTitle('🚨 Bị tóm rồi!')
-                .setDescription(`Cậu bị bắt quả tang và phải nộp phạt **${fmt(fine)}** ${config.CURRENCY}.\n💵 Số dư của cậu: **${fmt(Number(robber.wallet) - fine)}** ${config.CURRENCY}\nLần sau đừng làm vậy nữa nhé~ 😟`)] });
+                .setDescription(desc)] });
         }
     },
 };
