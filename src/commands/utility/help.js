@@ -35,6 +35,7 @@ const CATEGORIES = [
         ['baucua', 'bầu cua tôm cá'],
         ['blackjack', 'xì dách'],
         ['crate', 'mở rương bí ẩn 🎁'],
+        ['lottery', 'xổ số cộng đồng 🎟️ (gom vé, ai trúng ôm cả hũ)'],
     ] },
     { name: '💬 Trò chuyện', cmds: [
         ['ask', 'trò chuyện với Waguri (hoặc @tag Waguri)'],

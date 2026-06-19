@@ -1,4 +1,5 @@
 const { createClient } = require('@supabase/supabase-js');
+const config = require('./config');
 
 // 1. Tải các biến môi trường cấu hình Supabase
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -766,6 +767,40 @@ async function grantPremium(userId, days) {
 }
 
 // ============================================================
+//  XỔ SỐ (lottery)
+// ============================================================
+const { LOTTERY } = config;
+const lotterySecs = () => LOTTERY.ROUND_HOURS * 3600;
+
+/** Mua vé xổ số. Trả {status,'my_tickets',pool,round,draw,...} hoặc null. */
+async function lotteryBuy(userId, count) {
+    try {
+        const { data, error } = await supabase.rpc('lottery_buy', {
+            p_user_id: userId, p_count: count, p_price: LOTTERY.TICKET_PRICE, p_cut: LOTTERY.HOUSE_CUT, p_secs: lotterySecs(),
+        });
+        if (error) throw error;
+        return data;
+    } catch (error) {
+        console.error('[DATABASE ERROR] lotteryBuy():', error);
+        return null;
+    }
+}
+
+/** Xem trạng thái xổ số (tự quay nếu hết hạn). Trả jsonb hoặc null. */
+async function lotteryView(userId) {
+    try {
+        const { data, error } = await supabase.rpc('lottery_view', {
+            p_user_id: userId, p_cut: LOTTERY.HOUSE_CUT, p_secs: lotterySecs(),
+        });
+        if (error) throw error;
+        return data;
+    } catch (error) {
+        console.error('[DATABASE ERROR] lotteryView():', error);
+        return null;
+    }
+}
+
+// ============================================================
 //  ADMIN — chỉ owner dùng (qua /eco-admin)
 // ============================================================
 /** Đặt cứng số dư ví/bank. */
@@ -896,6 +931,9 @@ module.exports = {
     // ai quota & premium
     consumeAiQuota,
     grantPremium,
+    // lottery
+    lotteryBuy,
+    lotteryView,
     // admin
     setBalance,
     setExp,

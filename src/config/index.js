@@ -115,6 +115,9 @@ module.exports = {
     // Rương bí ẩn (money sink + cơ hội vật phẩm)
     CRATE: { COST: 1000 },
 
+    // Xổ số cộng đồng (sink qua % nhà cái; quay tự động mỗi vòng)
+    LOTTERY: { TICKET_PRICE: 500, HOUSE_CUT: 0.10, ROUND_HOURS: 24, MAX_PER_BUY: 100 },
+
     // Công an bắt cờ bạc — chơi càng nhiều, xác suất bị bắt càng cao
     POLICE: {
         BASE_CHANCE: 0.0,   // lần đầu không bị bắt
