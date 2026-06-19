@@ -817,6 +817,52 @@ async function setCosmetic(userId, field, value) {
 }
 
 // ============================================================
+//  VAY / ĐÒI NỢ (P2P loans)
+// ============================================================
+const { LOAN } = config;
+
+/** Tạo khoản vay (lender cho borrower vay). Trả {status,...} hoặc null. */
+async function loanCreate(lenderId, borrowerId, principal) {
+    try {
+        const { data, error } = await supabase.rpc('loan_create', {
+            p_lender: lenderId, p_borrower: borrowerId, p_principal: principal,
+            p_interest: LOAN.INTEREST_PCT, p_days: LOAN.DUE_DAYS,
+        });
+        if (error) throw error;
+        return data;
+    } catch (error) { console.error('[DATABASE ERROR] loanCreate():', error); return null; }
+}
+
+/** Borrower trả nợ cho lender (tối đa amount). Trả {status,...} hoặc null. */
+async function loanRepay(borrowerId, lenderId, amount) {
+    try {
+        const { data, error } = await supabase.rpc('loan_repay', { p_borrower: borrowerId, p_lender: lenderId, p_amount: amount });
+        if (error) throw error;
+        return data;
+    } catch (error) { console.error('[DATABASE ERROR] loanRepay():', error); return null; }
+}
+
+/** Lender đòi nợ borrower (chỉ khoản quá hạn -> cưỡng chế thu). Trả {status,...} hoặc null. */
+async function loanCollect(lenderId, borrowerId) {
+    try {
+        const { data, error } = await supabase.rpc('loan_collect', { p_lender: lenderId, p_borrower: borrowerId });
+        if (error) throw error;
+        return data;
+    } catch (error) { console.error('[DATABASE ERROR] loanCollect():', error); return null; }
+}
+
+/** Danh sách nợ của user: {owing:[...], owed:[...]} (khoản đang active). */
+async function loansOf(userId) {
+    try {
+        const [owing, owed] = await Promise.all([
+            supabase.from('loans').select('*').eq('borrower_id', userId).eq('status', 'active').order('created_at'),
+            supabase.from('loans').select('*').eq('lender_id', userId).eq('status', 'active').order('created_at'),
+        ]);
+        return { owing: owing.data || [], owed: owed.data || [] };
+    } catch (error) { console.error('[DATABASE ERROR] loansOf():', error); return { owing: [], owed: [] }; }
+}
+
+// ============================================================
 //  ADMIN — chỉ owner dùng (qua /eco-admin)
 // ============================================================
 /** Đặt cứng số dư ví/bank. */
@@ -952,6 +998,11 @@ module.exports = {
     lotteryView,
     // cosmetic
     setCosmetic,
+    // loans
+    loanCreate,
+    loanRepay,
+    loanCollect,
+    loansOf,
     // admin
     setBalance,
     setExp,

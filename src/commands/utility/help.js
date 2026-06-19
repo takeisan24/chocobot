@@ -29,6 +29,10 @@ const CATEGORIES = [
         ['deposit', 'gửi tiền vào ngân hàng'],
         ['withdraw', 'rút tiền từ ngân hàng'],
         ['rob', 'cướp tiền (rủi ro cao!)'],
+        ['vay', 'xin vay tiền người khác 🤝'],
+        ['trano', 'trả nợ cho chủ nợ 💵'],
+        ['donno', 'đòi nợ (quá hạn thì cưỡng chế thu) 🧾'],
+        ['no', 'xem sổ nợ của cậu'],
     ] },
     { name: '🎲 Minigame', cmds: [
         ['coinflip', 'tung đồng xu'],

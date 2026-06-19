@@ -124,6 +124,9 @@ module.exports = {
     // Game nhiều người (ba cây, bingo, ma sói...): nhà cái cắt % pot = sink
     PARTY: { HOUSE_CUT: 0.05, JOIN_SECONDS: 30 },
 
+    // Vay/đòi nợ giữa người chơi (P2P): lãi cố định, hạn trả, quá hạn bị cưỡng chế thu
+    LOAN: { INTEREST_PCT: 0.10, DUE_DAYS: 7, MIN: 100, MAX: 1_000_000 },
+
     // Công an bắt cờ bạc — chơi càng nhiều, xác suất bị bắt càng cao
     POLICE: {
         BASE_CHANCE: 0.0,   // lần đầu không bị bắt
