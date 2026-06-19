@@ -52,7 +52,7 @@ module.exports = {
             const energy = await db.getEnergy(interaction.user.id);
             effectText = `năng lượng giờ là **${energy}/${config.ENERGY.MAX}** ⚡`;
         } else if (item.effect_type === 'buff') {
-            effectText = `nhận buff **+${item.effect_value}% thu nhập** trong 1 giờ 🍗`;
+            effectText = `nhận buff **+${item.effect_value}% thu nhập** trong ${item.effect_duration_hours || 1} giờ 🍗`;
         } else {
             effectText = 'xong!';
         }
