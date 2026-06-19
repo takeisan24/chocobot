@@ -1,93 +1,114 @@
-# 🌸 Waguri — Discord Economy & RPG Bot (Vietnamese Theme)
+# 🌸 Waguri — Discord Economy / RPG / Community Bot (Vietnamese)
 
-[![discord.js](https://img.shields.io/badge/discord.js-v14.25.1-5865F2.svg)](https://discord.js.org)
+[![discord.js](https://img.shields.io/badge/discord.js-v14-5865F2.svg)](https://discord.js.org)
 [![Supabase](https://img.shields.io/badge/Database-Supabase%20%2F%20Postgres-3ECF8E.svg)](https://supabase.com)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Node](https://img.shields.io/badge/Node.js-%E2%89%A520-339933.svg)](https://nodejs.org)
 
-**Waguri** là Discord bot kinh tế & nhập vai (Economy/RPG) bản địa hóa đậm chất đời sống Việt Nam:
-khởi đầu từ những nghề vỉa hè (bán trà đá, chạy xe ôm công nghệ) rồi vươn lên thành đại gia,
-leo bảng xếp hạng server. Persona của bot: *"Có làm mới có ăn 💢"*.
+**Waguri** là một Discord bot **kinh tế · nhập vai · cộng đồng** bản địa hoá đậm chất Việt Nam, kèm
+**AI trò chuyện** mang persona dịu dàng, lễ phép, hay động viên (lấy cảm hứng từ nhân vật **Waguri Kaoruko**).
+Từ nghề vỉa hè (nhặt ve chai, bán trà đá) leo lên đại gia, lập bang hội, đánh đề theo XSMB thật,
+chơi minigame nhiều người, kết đôi, buôn bán… — tất cả bằng tiếng Việt.
 
-> Vòng lặp cốt lõi: **Làm việc → Kiếm VNĐ → Mua đồ nghề → Lên cấp → Mở nghề xịn → Bá chủ leaderboard.**
-
----
-
-## ✨ Tính năng hiện có
-
-- **💼 `/work`** — đi làm kiếm tiền theo nghề, có rủi ro & EXP, cooldown chống spam.
-- **📈 Hệ thống Level/EXP** — công thức thuần (`src/lib/leveling.js`), tự báo lên cấp.
-- **⚡ Chống dupe tiền & race condition** — mọi giao dịch tiền/EXP/cooldown chạy bằng **RPC nguyên tử (atomic)** trong PostgreSQL.
-- **⚙️ Config tập trung** — chỉnh cân bằng game ở `src/config/index.js`.
-- **🛠️ Tiện ích** — `/ping`, `/server`, `/user`.
+> **Vòng lặp lõi:** Làm việc → kiếm VNĐ → mua sắm / chế đồ / lên cấp → mở nghề xịn → flex trên bảng xếp hạng.
+> Cân bằng **hardcore** (năng lượng, mệt mỏi, sinh tử) nhưng **chống lạm phát** bằng nhiều tầng sink.
 
 ---
 
-## 🧱 Công nghệ
-- **discord.js** v14.25.1 (Slash Commands, intent `Guilds`)
-- **Supabase (PostgreSQL)** qua `@supabase/supabase-js`
-- **Node.js ≥ 20** (Supabase yêu cầu), test bằng native `node --test`
+## ✨ Tính năng (≈72 lệnh)
+
+| Nhóm | Lệnh tiêu biểu |
+|---|---|
+| 💼 **Kiếm tiền** | `/work` `/fish` `/mine` `/chop` `/daily` `/quest` `/jobs` — năng lượng + mệt mỏi + lên cấp + nghề |
+| 🏪 **Cửa hàng & Kho** | `/shop` `/buy` `/sell` `/inventory` `/eat` `/ngu` `/cosmetic` `/craft` — chế tạo từ gỗ/quặng |
+| 💸 **Tiền & Nợ** | `/balance` `/deposit` `/withdraw` `/give` `/rob` · vay nợ P2P `/vay` `/trano` `/donno` `/no` |
+| 🎲 **Minigame** | `/coinflip` `/taixiu` `/baucua` `/blackjack` `/crate` `/lottery` `/xoso` (đề XSMB thật) |
+| 👥 **Game nhiều người** | `/bacay` `/bingo` `/masoi` (Ma Sói) `/xocdia` `/duangua` (đua ngựa) `/dovui` (đố vui) |
+| 💞 **Cộng đồng** | `/marry` `/hug` `/kiss` `/date` `/divorce` `/relationship` `/lixi` `/confession` `/noitu` `/ship` `/boi` |
+| 🏰 **Bang hội** | `/clan create·join·info·list·deposit·withdraw·kick·disband·war` (chiến tranh bang PvP) |
+| 🛒 **Chợ** | `/market view·mine·sell·buy·cancel` — mua bán đồ giữa người chơi (ký gửi) |
+| 💬 **AI & Premium** | `/ask` + @tag Waguri trò chuyện · `/premium` (quota AI cao + 10% thu nhập) · `/status` |
+| 🏆 **Khác** | `/leaderboard` (tài sản / cấp / tình cảm) · `/achievements` · `/event` · `/invite` · `/help` |
+| ⚙️ **Quản trị** | `/setup` (tạo phòng + cấu hình) · `/config` (AI toggle/kênh) · `/eco-admin` (owner: tiền/ban/premium) |
+
+**Hệ thống nền:** năng lượng & hồi lười (lazy regen) · mệt mỏi giảm thu nhập · sức khỏe & nhập viện ·
+xe cộ tiết kiệm năng lượng · độ bền & sửa công cụ · bảo hiểm · thú cưng · **chống lạm phát**
+(thuế tài sản, lãi bank có cap, sink đa tầng) · **chống lạm dụng** (rate-limit, ban, công an cờ bạc) ·
+**sự kiện x2** toàn cục · **graceful shutdown**.
 
 ---
 
-## 📁 Cấu trúc
+## 🧠 Kiến trúc
+
+- **discord.js v14** — Slash **và** prefix (`w!`) song song qua `prefixShim`; tương tác bằng button/select/collector.
+- **Atomic-first**: mọi thao tác tiền/EXP/kho/quỹ chạy bằng **RPC PostgreSQL nguyên tử** (chống dupe & race).
+- **Config tập trung** ở `src/config/index.js` — tinh chỉnh toàn bộ cân bằng game tại 1 chỗ.
+- **AI provider abstraction** — đổi `gemini` ↔ `claude` chỉ bằng biến môi trường; quota theo ngày (free/premium).
+- **Embed chuẩn hoá** qua `src/lib/embed.js` (`buildWaguriEmbed`): màu theo trạng thái + ảnh/GIF Waguri + footer cá tính.
+- **Logic thuần tách riêng** (leveling, fatigue, ma sói engine…) → có **unit test** (`node --test`).
 
 ```text
 waguri/
-├── index.js                 # Khởi chạy: nạp lệnh + auto-deploy + nạp event
-├── package.json
-├── test/leveling.test.js     # Unit test hệ thống level
-├── supabase/migrations/
-│   ├── 0001_schema.sql       # 5 bảng: users, jobs, items, inventory, cooldowns
-│   └── 0002_functions.sql    # RPC nguyên tử (đã áp dụng vào project Supabase)
-└── src/
-    ├── database.js           # Helper Supabase (gọi RPC)
-    ├── config/index.js       # Thông số cân bằng game
-    ├── lib/leveling.js       # Hàm thuần EXP <-> Level
-    ├── commands/
-    │   ├── economy/work.js
-    │   └── utility/{ping,server,user}.js
-    └── events/{ready,interactionCreate}.js
+├── index.js                  # Nạp lệnh + đăng ký slash + nạp event + ban + scheduler
+├── src/
+│   ├── config/index.js       # ⚙️ Toàn bộ hằng số cân bằng + WAGURI_IMAGES
+│   ├── database.js           # Helper Supabase (gọi RPC)
+│   ├── lib/                  # embed, leveling, fatigue, lobby, couple, xoso, masoi/engine, ...
+│   ├── commands/{economy,games,fun,utility,admin}/*.js
+│   └── events/{ready,interactionCreate,messageCreate,guildCreate}.js
+├── supabase/migrations/      # 0001 → 0036 (schema + RPC; đã áp qua Supabase)
+└── test/*.test.js            # Unit test (leveling, fatigue, amount, masoi, sprint3)
 ```
 
 ---
 
 ## 🚀 Cài đặt & chạy
 
-### 1. Setup Discord Developer Portal
-1. [discord.com/developers/applications](https://discord.com/developers/applications) → **New Application**.
-2. **General Information** → copy **Application ID** (= `CLIENT_ID`).
-3. Tab **Bot** → **Reset Token** → copy (= `DISCORD_TOKEN`). Tắt **Public Bot** nếu để private.
-4. **Privileged Intents:** không cần bật (bot chỉ dùng intent `Guilds`).
-5. **OAuth2 → URL Generator:** scope `bot` + `applications.commands` → mời bot vào server.
+### 1) Discord Developer Portal
+1. [Tạo Application](https://discord.com/developers/applications) → tab **Bot** → **Reset Token** (= `DISCORD_TOKEN`).
+2. **Bật Privileged Intent: `MESSAGE CONTENT`** *(bắt buộc — dùng cho lệnh prefix `w!` & trò chuyện khi @tag)*.
+3. Mời bot bằng `/invite` (link tự sinh, kèm sẵn quyền). Quyền cần: gửi tin/embed, **Quản lý Kênh** + **Quản lý Vai trò** (cho `/setup`), **Moderate Members** (tạm giam khi bị công an bắt).
 
-### 2. Biến môi trường
-```bash
-cp .env.example .env   # rồi điền giá trị thật
-```
-| Biến | Ghi chú |
-|---|---|
-| `DISCORD_TOKEN`, `CLIENT_ID` | từ Developer Portal |
-| `GUILD_ID` | (tùy chọn, chỉ DEV) ID server test → đăng ký lệnh tức thì |
-| `SUPABASE_URL`, `SUPABASE_SERVICE_KEY` | từ Supabase Project Settings |
+### 2) Biến môi trường (`.env`)
+| Biến | Bắt buộc | Ghi chú |
+|---|---|---|
+| `DISCORD_TOKEN` | ✅ | Token bot |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_KEY` | ✅ | Từ Supabase Project Settings |
+| `GEMINI_API_KEY` *(hoặc key provider AI)* | ✅* | Cho `/ask` & @tag (quota free 15/ngày) |
+| `OWNER_IDS` | ❌ | **Tuỳ chọn** — chủ app **tự nhận** là owner; chỉ thêm khi muốn cấp quyền cho người khác |
+| `CLIENT_ID` | ❌ | Tự suy từ token nếu bỏ trống |
+| `GUILD_ID` | ❌ | **Chỉ DEV** — đăng ký lệnh tức thì 1 server |
+| `SKIP_DEPLOY` | ❌ | `=1` để bỏ qua đăng ký lệnh mỗi lần restart (đặt sau lần deploy đầu) |
+| `XOSO_API_URL` | ❌ | Nguồn KQ XSMB tuỳ chỉnh; bỏ trống = dùng nguồn mặc định (repo + crawl) |
 
-### 3. Database (chỉ làm 1 lần)
-Chạy `supabase/migrations/0001_schema.sql` rồi `0002_functions.sql` trong **Supabase SQL Editor**.
+### 3) Database (1 lần)
+Chạy lần lượt các file trong `supabase/migrations/` (`0001` → `0036`) trên **Supabase SQL Editor**
+(hoặc Supabase CLI). Đã được thiết kế idempotent (`create ... if not exists` / `or replace`).
 
-### 4. Chạy
+### 4) Chạy
 ```bash
 npm install
-npm run dev     # DEV: nodemon tự reload (đặt GUILD_ID để lệnh cập nhật tức thì)
+npm run dev     # DEV: nodemon + GUILD_ID để lệnh cập nhật tức thì
 npm start       # PROD
-npm test        # chạy unit test
+npm test        # unit test
 ```
 
 ---
 
-## ☁️ Deploy (Wispbyte)
-Bot deploy từ GitHub: trên panel bật `AUTO_UPDATE=1`, đặt startup `npm install && npm start`,
-khai báo env vars trên panel (KHÔNG commit `.env`). Cập nhật code: `git push` → bấm **Restart** (server tự `git pull`).
+## ☁️ Deploy (Wispbyte / panel Pterodactyl)
+- Node **≥ 20**. Startup: `npm install && npm start`. Khai báo env trên panel (KHÔNG commit `.env`).
+- Cập nhật: `git push` → **Restart** (panel `git pull`). Lệnh không đổi thì đặt `SKIP_DEPLOY=1`.
+- Lần đầu lên production: **bỏ `GUILD_ID`** để đăng ký lệnh global (mất ~1h Discord cache).
+
+---
+
+## 🎰 Xổ số đề (XSMB thật)
+`/xoso` dò **2 số cuối giải đặc biệt XSMB** lúc **18h30 giờ VN** (scheduler tự chạy). Lấy KQ qua nhiều nguồn
+auto (repo cộng đồng + crawl minhngoc/xskt/xoso, đều **verify ngày**), lỗi thì owner nhập tay `/xoso ketqua`.
+*(Mô phỏng cho game private.)*
 
 ---
 
 ## 📄 License
-MIT — xem [LICENSE](LICENSE).
+ISC — xem `package.json`.
+
+> 🌸 *“Cố lên nhé! Hôm nay cậu đã vất vả rồi, Waguri luôn ở sau cổ vũ cậu!”*
