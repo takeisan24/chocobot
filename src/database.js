@@ -851,6 +851,15 @@ async function loanCollect(lenderId, borrowerId) {
     } catch (error) { console.error('[DATABASE ERROR] loanCollect():', error); return null; }
 }
 
+/** Tăng điểm tình cảm cặp đôi (cả hai vợ chồng). Trả {status, love, partner} hoặc null. */
+async function coupleLove(userId, amount) {
+    try {
+        const { data, error } = await supabase.rpc('couple_love', { p_user: userId, p_amount: amount });
+        if (error) throw error;
+        return data;
+    } catch (error) { console.error('[DATABASE ERROR] coupleLove():', error); return null; }
+}
+
 /** Chế tạo: tiêu nguyên liệu + tiền -> tạo thành phẩm. Trả {status} hoặc null. */
 async function craftItem(userId, recipe) {
     try {
@@ -1016,6 +1025,8 @@ module.exports = {
     loansOf,
     // craft
     craftItem,
+    // couple
+    coupleLove,
     // admin
     setBalance,
     setExp,
