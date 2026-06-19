@@ -30,6 +30,9 @@ module.exports = {
         .addSubcommand(s => s.setName('setjob').setDescription('Bổ nhiệm công việc')
             .addUserOption(o => o.setName('user').setDescription('Người chơi').setRequired(true))
             .addStringOption(o => o.setName('job').setDescription('Nghề nghiệp').setRequired(true).setAutocomplete(true)))
+        .addSubcommand(s => s.setName('premium').setDescription('Cấp/gia hạn Premium cho người chơi')
+            .addUserOption(o => o.setName('user').setDescription('Người chơi').setRequired(true))
+            .addIntegerOption(o => o.setName('days').setDescription('Số ngày').setRequired(true).setMinValue(1)))
         .addSubcommand(s => s.setName('resetuser').setDescription('Xóa sạch dữ liệu một người chơi')
             .addUserOption(o => o.setName('user').setDescription('Người chơi').setRequired(true))),
 
@@ -100,6 +103,13 @@ module.exports = {
             if (!job) return interaction.editReply('❌ Không tìm thấy công việc này.');
             const ok = await db.setUserJob(target.id, jobId);
             return interaction.editReply(ok ? `✅ Đã bổ nhiệm <@${target.id}> làm **${job.name}**.` : '❌ Thất bại.');
+        }
+        if (sub === 'premium') {
+            const days = interaction.options.getInteger('days');
+            const until = await db.grantPremium(target.id, days);
+            return interaction.editReply(until
+                ? `✅ Đã cấp **Premium ${days} ngày** cho <@${target.id}> — hết hạn <t:${Math.floor(new Date(until).getTime() / 1000)}:R>.`
+                : '❌ Thất bại.');
         }
         if (sub === 'resetuser') {
             const ok = await db.resetUser(target.id);

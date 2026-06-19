@@ -74,6 +74,8 @@ module.exports = {
         MAX_CONTEXT_TURNS: 6,    // số lượt hội thoại gần nhất giữ lại theo kênh
         MAX_OUTPUT_TOKENS: 600,  // đủ dài cho câu trả lời tự nhiên (vẫn gọn cho Discord)
         USER_COOLDOWN_MS: 4000,  // chống spam mỗi người
+        FREE_DAILY: 15,          // số lượt chat AI/ngày cho user thường
+        PREMIUM_DAILY: 150,      // số lượt chat AI/ngày cho user Premium
     },
 
     // Câu cá / đào mỏ / chặt gỗ (nguồn thu PvE, tốn năng lượng)

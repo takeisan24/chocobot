@@ -737,6 +737,35 @@ async function nextConfessionNumber(guildId) {
 }
 
 // ============================================================
+//  AI QUOTA & PREMIUM
+// ============================================================
+/** Tiêu 1 lượt quota AI. Trả {allowed, used, cap, premium} hoặc null nếu lỗi. */
+async function consumeAiQuota(userId, freeCap, premiumCap) {
+    try {
+        const { data, error } = await supabase.rpc('consume_ai_quota', {
+            p_user_id: userId, p_free: freeCap, p_premium: premiumCap,
+        });
+        if (error) throw error;
+        return data;
+    } catch (error) {
+        console.error('[DATABASE ERROR] consumeAiQuota():', error);
+        return null;
+    }
+}
+
+/** Cấp/gia hạn Premium thêm số ngày. Trả mốc hết hạn mới (ISO) hoặc null. */
+async function grantPremium(userId, days) {
+    try {
+        const { data, error } = await supabase.rpc('grant_premium', { p_user_id: userId, p_days: days });
+        if (error) throw error;
+        return data;
+    } catch (error) {
+        console.error('[DATABASE ERROR] grantPremium():', error);
+        return null;
+    }
+}
+
+// ============================================================
 //  ADMIN — chỉ owner dùng (qua /eco-admin)
 // ============================================================
 /** Đặt cứng số dư ví/bank. */
@@ -864,6 +893,9 @@ module.exports = {
     getGuildSettings,
     setGuildSetting,
     nextConfessionNumber,
+    // ai quota & premium
+    consumeAiQuota,
+    grantPremium,
     // admin
     setBalance,
     setExp,

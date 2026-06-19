@@ -39,6 +39,7 @@ const CATEGORIES = [
     { name: '💬 Trò chuyện', cmds: [
         ['ask', 'trò chuyện với Waguri (hoặc @tag Waguri)'],
         ['relationship', 'xem mức thân thiết với Waguri 💞'],
+        ['premium', 'xem gói Premium 💎 (thêm lượt chat AI)'],
     ] },
     { name: '🎀 Vui & Cộng đồng', cmds: [
         ['ship', 'đo độ hợp giữa hai người'],

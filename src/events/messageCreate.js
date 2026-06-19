@@ -65,10 +65,22 @@ module.exports = {
         if (message.mentions.has(message.client.user, { ignoreEveryone: true, ignoreRoles: true })) {
             const text = message.content.replace(/<@!?\d+>/g, '').trim();
             if (!text) return;
+
+            // Cấu hình AI theo server (admin đặt qua /config ai)
+            const gs = await db.getGuildSettings(message.guild.id);
+            if (gs.ai_enabled === '0') return;                                   // AI bị tắt ở server này
+            if (gs.ai_channel && gs.ai_channel !== message.channelId) return;    // chỉ trả lời ở kênh chỉ định
+
             if (onCooldown(message.author.id)) return;
             await message.channel.sendTyping().catch(() => {});
-            const reply = await chatWithWaguri(message.channelId, message.author.id, message.author.username, text);
-            if (reply) message.reply(reply.slice(0, 2000)).catch(() => {});
+            const res = await chatWithWaguri(message.channelId, message.author.id, message.author.username, text);
+            if (!res.ok) {
+                if (res.reason === 'quota') {
+                    message.reply(`Cậu đã dùng hết **${res.cap}** lượt chat với mình hôm nay rồi 🥺 — nâng cấp \`/premium\` để có thêm nhé 💎`).catch(() => {});
+                }
+                return;
+            }
+            message.reply(res.reply.slice(0, 2000)).catch(() => {});
             return;
         }
 

@@ -36,9 +36,16 @@ function onCooldown(userId) {
 }
 
 /**
- * Trò chuyện với Waguri. Trả về câu trả lời, hoặc null nếu lỗi/chưa cấu hình.
+ * Trò chuyện với Waguri.
+ * Trả object: {ok:true, reply} | {ok:false, reason:'quota', used, cap, premium} | {ok:false, reason:'error'}
  */
 async function chatWithWaguri(channelId, userId, userName, userText) {
+    // Quota AI hằng ngày (Premium nhiều lượt hơn). DB lỗi -> không chặn (lỗi hạ tầng).
+    const q = await db.consumeAiQuota(userId, config.AI.FREE_DAILY, config.AI.PREMIUM_DAILY);
+    if (q && q.allowed === false) {
+        return { ok: false, reason: 'quota', used: q.used, cap: q.cap, premium: q.premium };
+    }
+
     const provider = getProvider();
     let history = contexts.get(channelId) || [];
     const framed = `${userName}: ${userText}`;
@@ -54,9 +61,9 @@ async function chatWithWaguri(channelId, userId, userName, userText) {
         reply = await provider.chat(systemPrompt, history, framed);
     } catch (error) {
         console.error('[AI ERROR]', error.message);
-        return null;
+        return { ok: false, reason: 'error' };
     }
-    if (!reply) return null;
+    if (!reply) return { ok: false, reason: 'error' };
     reply = formatReply(reply, userId, userName); // @mention + bọc lệnh trong `code`
 
     db.incrAffection(userId, 1); // trò chuyện làm Waguri thân thiết hơn
@@ -69,7 +76,7 @@ async function chatWithWaguri(channelId, userId, userName, userText) {
     if (history[0] && history[0].role === 'assistant') history = history.slice(1);
     contexts.set(channelId, history);
 
-    return reply;
+    return { ok: true, reply };
 }
 
 module.exports = { chatWithWaguri, onCooldown };
