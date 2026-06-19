@@ -125,6 +125,7 @@ module.exports = {
         COOLDOWN_MS: 60_000,
         MIN_COINS: 5, MAX_COINS: 15,
         MIN_EXP: 3, MAX_EXP: 8,
-        MIN_LEN: 3, // bỏ qua tin nhắn quá ngắn
+        MIN_LEN: 12,       // bỏ qua tin nhắn quá ngắn (chống farm "kkk", "lol")
+        DAILY_CAP: 50,     // tối đa 50 lượt thưởng chat/ngày/người
     },
 };

@@ -23,7 +23,7 @@ module.exports = {
 
         let desc = `Cậu nhận được **${fmt(r.reward)}** ${config.CURRENCY}!`;
         if (r.interest && Number(r.interest) > 0) {
-            desc += `\n📈 Lãi tiết kiệm ngân hàng (0.5%): **+${fmt(r.interest)}** ${config.CURRENCY} *(đã cộng vào bank)*.`;
+            desc += `\n📈 Lãi tiết kiệm ngân hàng (0.2%/ngày): **+${fmt(r.interest)}** ${config.CURRENCY} *(đã cộng vào bank)*.`;
         }
 
         const embed = new EmbedBuilder()

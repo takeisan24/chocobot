@@ -21,14 +21,15 @@ module.exports = {
         const money = mult => { const amt = Math.floor(cost * mult); db.addMoney(userId, amt, 'wallet'); return amt; };
         const giveItem = async pool => { const id = rpick(pool); await db.giveItemAdmin(userId, id, 1); const it = await db.getItem(id); return it ? it.name : id; };
 
+        // Phân phối EV ÂM (~0.7x) -> rương là money sink thật, spam mở sẽ lỗ dần.
         const r = Math.random();
         let desc, color = config.COLORS.SUCCESS;
-        if (r < 0.35) { const a = money(0.3 + Math.random() * 0.5); desc = `💵 Chút tiền lẻ: **+${fmt(a)}** ${config.CURRENCY}`; color = config.COLORS.WARNING; }
-        else if (r < 0.60) { const a = money(1 + Math.random()); desc = `💰 Khá đó! **+${fmt(a)}** ${config.CURRENCY}`; }
-        else if (r < 0.75) { desc = `📦 Vật phẩm: **${await giveItem(COMMON)}**!`; }
-        else if (r < 0.87) { const a = money(2 + Math.random() * 2); desc = `💰💰 Trúng lớn: **+${fmt(a)}** ${config.CURRENCY}!`; }
-        else if (r < 0.95) { desc = `🎁 Vật phẩm xịn: **${await giveItem(GOOD)}**!`; }
-        else if (r < 0.99) { const a = money(5 + Math.random() * 5); desc = `🤑 ĐẠI TRÚNG: **+${fmt(a)}** ${config.CURRENCY}!!!`; color = config.COLORS.JACKPOT; }
+        if (r < 0.40) { const a = money(0.1 + Math.random() * 0.3); desc = `💵 Chút tiền lẻ: **+${fmt(a)}** ${config.CURRENCY}`; color = config.COLORS.WARNING; }
+        else if (r < 0.65) { const a = money(0.5 + Math.random() * 0.4); desc = `💰 Cũng được! **+${fmt(a)}** ${config.CURRENCY}`; color = config.COLORS.WARNING; }
+        else if (r < 0.80) { desc = `📦 Vật phẩm: **${await giveItem(COMMON)}**!`; }
+        else if (r < 0.92) { const a = money(1 + Math.random() * 0.8); desc = `💰💰 Khá đó! **+${fmt(a)}** ${config.CURRENCY}`; }
+        else if (r < 0.975) { desc = `🎁 Vật phẩm xịn: **${await giveItem(GOOD)}**!`; }
+        else if (r < 0.997) { const a = money(2.5 + Math.random() * 1.5); desc = `🤑 ĐẠI TRÚNG: **+${fmt(a)}** ${config.CURRENCY}!!!`; color = config.COLORS.JACKPOT; }
         else { desc = `💎 CỰC HIẾM! Cậu nhận được **${await giveItem(RARE)}**!`; color = config.COLORS.JACKPOT; }
 
         const u = await db.getUser(userId);

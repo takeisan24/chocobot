@@ -5,13 +5,25 @@ const { buildPrefixInteraction } = require('../lib/prefixShim');
 const { chatWithWaguri, onCooldown } = require('../lib/ai');
 const { handleMessage: handleNoiTu } = require('../lib/noitu');
 
-// Chat-leveling: thưởng xu/EXP khi chat (có cooldown chống farm)
-const chatCD = new Map();
+// Chat-leveling: thưởng xu/EXP khi chat (có cooldown + cap ngày chống farm)
+const chatCD = new Map();    // userId -> hết cooldown (ms)
+const chatDaily = new Map(); // userId -> { date, count }
 const rand = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
 function grantChatReward(message) {
     if (message.content.trim().length < config.CHAT.MIN_LEN) return;
     const now = Date.now();
     if (now < (chatCD.get(message.author.id) || 0)) return;
+
+    // Cap số lượt thưởng/ngày (reset theo ngày)
+    const today = new Date().toISOString().slice(0, 10);
+    const d = chatDaily.get(message.author.id);
+    if (d && d.date === today) {
+        if (d.count >= config.CHAT.DAILY_CAP) return;
+        d.count++;
+    } else {
+        chatDaily.set(message.author.id, { date: today, count: 1 });
+    }
+
     chatCD.set(message.author.id, now + config.CHAT.COOLDOWN_MS);
     db.addMoney(message.author.id, rand(config.CHAT.MIN_COINS, config.CHAT.MAX_COINS), 'wallet');
     db.updateExp(message.author.id, rand(config.CHAT.MIN_EXP, config.CHAT.MAX_EXP));
