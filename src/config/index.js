@@ -133,8 +133,8 @@ module.exports = {
     // Chợ mua bán đồ giữa người chơi (chợ cắt % = sink)
     MARKET: { FEE_PCT: 0.05, MIN_PRICE: 1 },
 
-    // Bang hội: phí lập bang (sink)
-    CLAN: { CREATE_COST: 50000 },
+    // Bang hội: phí lập bang (sink) + cược chiến tranh bang
+    CLAN: { CREATE_COST: 50000, WAR_STAKE: 20000 },
 
     // Quyền lợi Premium trong game (ngoài quota AI): +% thu nhập lao động
     PREMIUM: { INCOME_BONUS: 0.10 },

@@ -1,9 +1,12 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, MessageFlags } = require('discord.js');
 const db = require('../../database.js');
 const config = require('../../config');
+const { getLevelFromExp } = require('../../lib/leveling');
 
 const fmt = n => Number(n).toLocaleString('vi-VN');
 const clanLevel = xp => Math.floor(Math.sqrt(Number(xp || 0) / 10000)) + 1;
+const warCooldown = new Map(); // clanId -> hết cooldown (ms)
+const clanPower = exps => exps.reduce((s, e) => s + getLevelFromExp(e) + 1, 0);
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -23,7 +26,9 @@ module.exports = {
             .addIntegerOption(o => o.setName('amount').setDescription('Số tiền').setRequired(true).setMinValue(1)))
         .addSubcommand(s => s.setName('kick').setDescription('Đuổi thành viên (chỉ trưởng bang)')
             .addUserOption(o => o.setName('user').setDescription('Thành viên').setRequired(true)))
-        .addSubcommand(s => s.setName('disband').setDescription('Giải tán bang (chỉ trưởng bang)')),
+        .addSubcommand(s => s.setName('disband').setDescription('Giải tán bang (chỉ trưởng bang)'))
+        .addSubcommand(s => s.setName('war').setDescription('Khai chiến với bang khác (chỉ trưởng bang)')
+            .addStringOption(o => o.setName('clan').setDescription('Tên bang đối thủ').setRequired(true))),
 
     async execute(interaction) {
         await interaction.deferReply();
@@ -97,6 +102,52 @@ module.exports = {
             if (!clans.length) return interaction.editReply('Chưa có bang nào được lập~ Hãy là người đầu tiên với `/clan create`!');
             const lines = clans.map((c, i) => `${['🥇', '🥈', '🥉'][i] || `**${i + 1}.**`} **${c.name}** (Lv.${clanLevel(c.xp)}) — quỹ **${fmt(c.bank)}** ${C} · <@${c.leader_id}>`);
             return interaction.editReply({ embeds: [new EmbedBuilder().setColor(config.COLORS.JACKPOT).setTitle('🏰 Bảng xếp hạng Bang hội').setDescription(lines.join('\n'))] });
+        }
+
+        if (sub === 'war') {
+            const u = await db.getUser(me.id);
+            if (!u?.clan_id) return interaction.editReply('Cậu chưa ở bang nào~');
+            const myClan = await db.clanById(u.clan_id);
+            if (!myClan || myClan.leader_id !== me.id) return interaction.editReply('Chỉ trưởng bang mới khai chiến được nhé~');
+            const cdUntil = warCooldown.get(myClan.id) || 0;
+            if (Date.now() < cdUntil) return interaction.editReply(`Bang cậu vừa chinh chiến xong, nghỉ ngơi đã~ Quay lại sau <t:${Math.floor(cdUntil / 1000)}:R>.`);
+            const foe = await db.clanByName(interaction.options.getString('clan').trim());
+            if (!foe) return interaction.editReply('Không tìm thấy bang đối thủ~');
+            if (foe.id === myClan.id) return interaction.editReply('Không thể tự đánh bang mình đâu~ 😅');
+            const stake = Math.min(Number(myClan.bank), Number(foe.bank), config.CLAN.WAR_STAKE);
+            if (stake <= 0) return interaction.editReply(`Cả hai bang đều cần có quỹ (cược tối đa ${fmt(config.CLAN.WAR_STAKE)} ${C}) mới khai chiến được. Góp quỹ thêm nhé~`);
+
+            const embed = new EmbedBuilder().setColor(config.COLORS.WARNING).setTitle('⚔️ Lời tuyên chiến!')
+                .setDescription(`Bang **${myClan.name}** tuyên chiến với bang **${foe.name}**!\nCược: **${fmt(stake)}** ${C} — bang thua mất, bang thắng cướp.\n\n<@${foe.leader_id}> (trưởng bang **${foe.name}**) có chấp nhận không?`);
+            const row = (dis = false) => new ActionRowBuilder().addComponents(
+                new ButtonBuilder().setCustomId('accept').setLabel('Chấp nhận ⚔️').setStyle(ButtonStyle.Danger).setDisabled(dis),
+                new ButtonBuilder().setCustomId('decline').setLabel('Từ chối 🏳️').setStyle(ButtonStyle.Secondary).setDisabled(dis));
+            const msg = await interaction.editReply({ content: `<@${foe.leader_id}>`, embeds: [embed], components: [row()] });
+            const collector = msg.createMessageComponentCollector({ componentType: ComponentType.Button, time: 60000 });
+            let answered = false;
+            collector.on('collect', async (i) => {
+                if (i.user.id !== foe.leader_id) return i.reply({ content: 'Chỉ trưởng bang đối thủ mới trả lời được~', flags: MessageFlags.Ephemeral });
+                answered = true;
+                if (i.customId === 'decline') {
+                    await i.update({ embeds: [embed.setColor(config.COLORS.ERROR).setDescription(`Bang **${foe.name}** đã từ chối khai chiến. 🏳️`)], components: [] });
+                    return collector.stop('done');
+                }
+                const [myExps, foeExps] = await Promise.all([db.clanMembersExp(myClan.id), db.clanMembersExp(foe.id)]);
+                const pA = clanPower(myExps) * (0.8 + Math.random() * 0.4);
+                const pB = clanPower(foeExps) * (0.8 + Math.random() * 0.4);
+                const winner = pA >= pB ? myClan : foe;
+                const loser = pA >= pB ? foe : myClan;
+                const r = await db.clanWar(winner.id, loser.id, stake);
+                const taken = r?.taken ?? 0;
+                warCooldown.set(myClan.id, Date.now() + 10 * 60000);
+                await i.update({ embeds: [new EmbedBuilder().setColor(config.COLORS.JACKPOT).setTitle('⚔️ Kết quả chiến tranh bang')
+                    .setDescription(`**${myClan.name}** (sức mạnh ${Math.round(pA)}) ⚔️ **${foe.name}** (sức mạnh ${Math.round(pB)})\n\n🏆 Bang **${winner.name}** chiến thắng, cướp **${fmt(taken)}** ${C} vào quỹ!`)], components: [] });
+                collector.stop('done');
+            });
+            collector.on('end', async () => {
+                if (!answered) await interaction.editReply({ embeds: [embed.setColor(config.COLORS.ERROR).setDescription(`Bang **${foe.name}** không trả lời kịp. Khai chiến bị huỷ.`)], components: [] }).catch(() => {});
+            });
+            return;
         }
 
         // info

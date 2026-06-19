@@ -882,6 +882,13 @@ async function clanList(limit = 20) {
     try { const { data } = await supabase.from('clans').select('*').order('bank', { ascending: false }).limit(limit); return data || []; }
     catch { return []; }
 }
+/** EXP của các thành viên 1 bang (để tính sức mạnh chiến tranh). */
+async function clanMembersExp(clanId) {
+    try { const { data } = await supabase.from('users').select('exp').eq('clan_id', clanId); return (data || []).map(r => Number(r.exp || 0)); }
+    catch { return []; }
+}
+/** Chuyển cược chiến tranh bang thua -> thắng. Trả {status, taken}. */
+const clanWar = (winnerId, loserId, stake) => clanRpc('clan_war', { p_winner: winnerId, p_loser: loserId, p_stake: stake });
 
 // ============================================================
 //  CHỢ (market — P2P trading)
@@ -1144,6 +1151,8 @@ module.exports = {
     clanByName,
     clanMembers,
     clanList,
+    clanMembersExp,
+    clanWar,
     // market
     marketList,
     marketBuy,

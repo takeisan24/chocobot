@@ -78,7 +78,7 @@ const CATEGORIES = [
         ['config', 'cấu hình bot cho server (Quản lý Server)'],
     ] },
     { name: '🏰 Bang hội', cmds: [
-        ['clan', 'lập bang / gia nhập / quỹ chung (create·join·info·list·deposit·withdraw·kick·disband)'],
+        ['clan', 'lập bang / quỹ chung / ⚔️ chiến tranh bang (create·join·info·list·deposit·withdraw·kick·disband·war)'],
     ] },
     { name: '🏆 Khác', cmds: [
         ['leaderboard', 'bảng xếp hạng'],
