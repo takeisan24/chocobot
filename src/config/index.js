@@ -34,11 +34,11 @@ module.exports = {
     // Ảnh/GIF thumbnail theo trạng thái (Waguri). ĐỂ TRỐNG = dùng avatar bot.
     // GIF Tenor (đã verify); đổi link tuỳ thích. Bản nét hơn: đổi đuôi AAAAM -> AAAAd / AAAAC.
     WAGURI_IMAGES: {
-        MAIN:    'https://media.tenor.com/saOAfF_zx6UAAAAM/kaoruko-waguri-the-fragrant-flower-blooms-with-dignity.gif',
+        MAIN: 'https://media.tenor.com/saOAfF_zx6UAAAAM/kaoruko-waguri-the-fragrant-flower-blooms-with-dignity.gif',
         SUCCESS: 'https://media.tenor.com/gUP3bf_s600AAAAM/waguri-kaoruko.gif',
-        ERROR:   'https://media.tenor.com/Jz4bNe6EF-wAAAAM/the-fragrant-flower-blooms-with-dignity-kaoru-hana-wa-rin-to-saku.gif',
+        ERROR: 'https://media.tenor.com/Jz4bNe6EF-wAAAAM/the-fragrant-flower-blooms-with-dignity-kaoru-hana-wa-rin-to-saku.gif',
         WARNING: 'https://media.tenor.com/WMRHrfBlNmEAAAAM/kaoruko-waguri-waguri-kaoruko.gif',
-        JACKPOT: 'https://media.tenor.com/A3zPIwf6BfQAAAAM/kaoruko-waguri-the-fragrant-flower-blooms-with-dignity.gif',
+        JACKPOT: 'https://media.tenor.com/TdCu1_KQmAcAAAAM/kaoruko-waguri-kaoruko.gif',
     },
 
     LEVELING: {

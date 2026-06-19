@@ -53,7 +53,7 @@ function buildWaguriEmbed(interaction, type = 'info', opts = {}) {
         jackpot: config.COLORS.JACKPOT
     };
 
-    // Ảnh theo type (config.WAGURI_IMAGES). Nếu chưa cấu hình ảnh thật -> fallback avatar bot (luôn hợp lệ).
+    // Ảnh/GIF Waguri theo type (config.WAGURI_IMAGES) -> hiển thị dạng ẢNH LỚN (image).
     const imgKey = { info: 'MAIN', success: 'SUCCESS', error: 'ERROR', warning: 'WARNING', jackpot: 'JACKPOT' }[type] || 'MAIN';
     const typeImg = config.WAGURI_IMAGES?.[imgKey];
     const botAvatar = interaction.client?.user?.displayAvatarURL();
@@ -66,11 +66,13 @@ function buildWaguriEmbed(interaction, type = 'info', opts = {}) {
     if (description) embed.setDescription(description);
     if (fields && fields.length) embed.addFields(fields);
 
-    // Thumbnail: custom > ảnh type đã cấu hình > avatar bot
-    const thumb = thumbnail || typeImg || botAvatar;
-    if (thumb) embed.setThumbnail(thumb);
+    // Ảnh lớn: custom image > ảnh Waguri theo trạng thái
+    const big = image || typeImg;
+    if (big) embed.setImage(big);
 
-    if (image) embed.setImage(image);
+    // Thumbnail nhỏ: chỉ khi lệnh truyền riêng (vd avatar người dùng); nếu không có ảnh lớn thì dùng avatar bot
+    if (thumbnail) embed.setThumbnail(thumbnail);
+    else if (!big && botAvatar) embed.setThumbnail(botAvatar);
 
     return embed;
 }
