@@ -11,6 +11,7 @@ const CATEGORIES = [
         ['quest', 'nhiệm vụ hằng ngày (thưởng tiền)'],
         ['achievements', 'thành tựu (mở khóa nhận thưởng)'],
         ['balance', 'xem ví / ngân hàng / cấp độ / năng lượng'],
+        ['status', 'trạng thái: năng lượng/mệt/buff/Premium/sự kiện 📊'],
         ['profile', 'hồ sơ tổng quan'],
         ['jobs', 'xem & xin nghề (list / info / apply)'],
         ['pet', 'thú cưng: nhận nuôi / cho ăn / xem 🐾'],

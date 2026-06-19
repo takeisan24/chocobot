@@ -21,6 +21,14 @@ function fatigueMultiplier(userId) {
     return mult;
 }
 
+/** Xem hệ số mệt mỏi hiện tại mà KHÔNG tăng đếm (cho /status). */
+function peekFatigue(userId) {
+    const r = store.get(userId);
+    if (!r) return 1;
+    const count = (Date.now() - r.ts > config.FATIGUE.RESET_MS) ? 0 : r.count;
+    return Math.max(config.FATIGUE.FLOOR, 1 - count * config.FATIGUE.STEP);
+}
+
 /** Giải trí/nghỉ ngơi -> giảm bớt độ mệt (giảm count). */
 function restFatigue(userId, amount = 1) {
     const r = store.get(userId);
@@ -32,4 +40,4 @@ function resetFatigue(userId) {
     store.delete(userId);
 }
 
-module.exports = { fatigueMultiplier, restFatigue, resetFatigue };
+module.exports = { fatigueMultiplier, restFatigue, resetFatigue, peekFatigue };
