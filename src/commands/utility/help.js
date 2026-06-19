@@ -57,6 +57,7 @@ const CATEGORIES = [
         ['thoitiet', 'xem thời tiết một thành phố'],
     ] },
     { name: '⚙️ Quản trị (cần quyền)', cmds: [
+        ['setup', 'tạo phòng riêng cho Waguri + hướng dẫn nhanh'],
         ['config', 'cấu hình bot cho server (Quản lý Server)'],
     ] },
     { name: '🏆 Khác', cmds: [

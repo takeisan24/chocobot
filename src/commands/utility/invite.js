@@ -18,7 +18,9 @@ module.exports = {
                 PermissionFlagsBits.ReadMessageHistory,
                 PermissionFlagsBits.AddReactions,
                 PermissionFlagsBits.UseExternalEmojis,
-                PermissionFlagsBits.ModerateMembers,
+                PermissionFlagsBits.ModerateMembers, // tạm giam (timeout) khi bị công an bắt
+                PermissionFlagsBits.ManageChannels,   // /setup tạo phòng riêng
+                PermissionFlagsBits.ManageRoles,      // gán role (tính năng sắp tới)
             ],
         });
         await interaction.editReply({ embeds: [new EmbedBuilder()
