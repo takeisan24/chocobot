@@ -5,6 +5,7 @@ const scripts = require('../../data/workScripts');
 const { getLevelFromExp, levelUpReward } = require('../../lib/leveling');
 const { onCooldown } = require('../../lib/cooldown');
 const { fatigueMultiplier } = require('../../lib/fatigue');
+const { getEventMult } = require('../../lib/event');
 
 const fmt = n => Number(n).toLocaleString('vi-VN');
 
@@ -128,6 +129,10 @@ module.exports = {
             const premium = user.premium_until && new Date(user.premium_until).getTime() > Date.now();
             if (premium && earnedMoney > 0) earnedMoney = Math.round(earnedMoney * (1 + config.PREMIUM.INCOME_BONUS));
 
+            // Sự kiện toàn cục (vd Tết x2): nhân thu nhập + EXP
+            const eventMult = getEventMult();
+            if (eventMult !== 1 && earnedMoney > 0) earnedMoney = Math.round(earnedMoney * eventMult);
+
             await db.addMoney(userId, earnedMoney, 'wallet');
             const userAfter = await db.getUser(userId);
             const newWallet = userAfter ? Number(userAfter.wallet) : (Number(user.wallet) + earnedMoney);
@@ -143,6 +148,7 @@ module.exports = {
                 .replace(/\{job\}/g, jobName);
             if (buffActive && earnedMoney > 0) resultMessage += ` *(buff +${Math.round((buffMult - 1) * 100)}%)*`;
             if (premium && earnedMoney > 0) resultMessage += ` *(Premium +${Math.round(config.PREMIUM.INCOME_BONUS * 100)}% 💎)*`;
+            if (eventMult > 1 && earnedMoney > 0) resultMessage += ` *(Sự kiện x${eventMult} 🎉)*`;
             if (fatigue < 1 && earnedMoney > 0) resultMessage += ` *(mệt -${Math.round((1 - fatigue) * 100)}%)*`;
             if (usedInsurance) resultMessage += `\n🛡️ **Bảo hiểm Lao động** đã kích hoạt giúp gánh 80% thiệt hại!`;
             if (category === 'jackpot' && catBuff) resultMessage += `\n🐱 Bé mèo **${userPetName}** dụi dụi mang lại tài lộc đầy túi!`;
@@ -153,8 +159,9 @@ module.exports = {
             }
 
             // 5. EXP theo cấp nghề
-            const gainedExp = Math.round(config.WORK.EXP_BASE + config.WORK.EXP_PER_LEVEL * jobLevel)
+            let gainedExp = Math.round(config.WORK.EXP_BASE + config.WORK.EXP_PER_LEVEL * jobLevel)
                 + Math.floor(Math.random() * (config.WORK.EXP_RANDOM + 1));
+            if (eventMult !== 1) gainedExp = Math.round(gainedExp * eventMult);
             const oldLevel = getLevelFromExp(Number(user.exp));
             const newExp = await db.updateExp(userId, gainedExp);
             const newLevel = newExp === null ? oldLevel : getLevelFromExp(newExp);

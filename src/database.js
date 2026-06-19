@@ -931,6 +931,17 @@ async function coupleLove(userId, amount) {
     } catch (error) { console.error('[DATABASE ERROR] coupleLove():', error); return null; }
 }
 
+/** Lấy cấu hình sự kiện hiện tại (1 dòng). */
+async function getGameEvent() {
+    try { const { data } = await supabase.from('game_event').select('*').eq('id', 1).single(); return data; }
+    catch (error) { console.error('[DATABASE ERROR] getGameEvent():', error); return null; }
+}
+/** Đặt sự kiện (multiplier, ends_at ISO|null, name). */
+async function setGameEvent(multiplier, endsAt, name) {
+    try { const { error } = await supabase.from('game_event').update({ multiplier, ends_at: endsAt, name }).eq('id', 1); if (error) throw error; return true; }
+    catch (error) { console.error('[DATABASE ERROR] setGameEvent():', error); return false; }
+}
+
 /** Chặn/bỏ chặn user. */
 async function setBanned(userId, val) {
     try {
@@ -1116,6 +1127,9 @@ module.exports = {
     // ban
     setBanned,
     getBannedIds,
+    // event
+    getGameEvent,
+    setGameEvent,
     // couple
     coupleLove,
     // clan

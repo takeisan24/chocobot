@@ -120,5 +120,8 @@ for (const file of fs.readdirSync(eventsPath).filter(f => f.endsWith('.js'))) {
 require('./src/lib/bans').loadBans()
     .then(n => console.log(`[SYSTEM] Đã nạp ${n} user bị ban.`))
     .catch(() => {});
+require('./src/lib/event').loadEvent()
+    .then(e => console.log(`[SYSTEM] Sự kiện: ${e.until && Date.now() < e.until ? `x${e.mult} (${e.name || 'không tên'})` : 'không có'}.`))
+    .catch(() => {});
 
 client.login(process.env.DISCORD_TOKEN);

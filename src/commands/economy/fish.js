@@ -5,6 +5,7 @@ const FISH = require('../../data/fish');
 const { onCooldown } = require('../../lib/cooldown');
 const { fatigueMultiplier } = require('../../lib/fatigue');
 const { getLevelFromExp, levelUpReward } = require('../../lib/leveling');
+const { getEventMult } = require('../../lib/event');
 
 const fmt = n => Number(n).toLocaleString('vi-VN');
 
@@ -57,6 +58,8 @@ module.exports = {
         if (payout > 0) payout = Math.round(payout * fatigue);
         const premium = user.premium_until && new Date(user.premium_until).getTime() > Date.now();
         if (premium && payout > 0) payout = Math.round(payout * (1 + config.PREMIUM.INCOME_BONUS));
+        const eventMult = getEventMult();
+        if (eventMult !== 1 && payout > 0) payout = Math.round(payout * eventMult);
 
         let desc;
         if (payout > 0) {
@@ -64,7 +67,8 @@ module.exports = {
             db.questIncr(userId, 'earn', payout);
             desc = `Cậu câu được ${c.emoji} **${c.name}** và bán được **+${fmt(payout)}** ${config.CURRENCY}!`
                 + (fatigue < 1 && gross > 0 ? ` *(gốc ${fmt(gross)}, mệt -${Math.round((1 - fatigue) * 100)}%)*` : '')
-                + (premium ? ` *(Premium +${Math.round(config.PREMIUM.INCOME_BONUS * 100)}% 💎)*` : '');
+                + (premium ? ` *(Premium +${Math.round(config.PREMIUM.INCOME_BONUS * 100)}% 💎)*` : '')
+                + (eventMult > 1 ? ` *(Sự kiện x${eventMult} 🎉)*` : '');
         } else {
             desc = `Cậu chỉ câu phải ${c.emoji} **${c.name}**... chẳng được gì cả 😅 Lần sau may hơn nhé~`;
         }
@@ -72,7 +76,8 @@ module.exports = {
         desc += `\nĐộ bền Cần câu: **${toolResult.durability}/100** 🎣` + (toolResult.broken ? ' *(đã hỏng! Cần mua mới hoặc sửa)*' : '');
 
         const u = await db.getUser(userId);
-        const gainedExp = 4 + Math.floor(Math.random() * 3); // 4..6 EXP
+        let gainedExp = 4 + Math.floor(Math.random() * 3); // 4..6 EXP
+        if (eventMult !== 1) gainedExp = Math.round(gainedExp * eventMult);
         const oldLevel = getLevelFromExp(Number(u?.exp || 0));
         const newExp = await db.updateExp(userId, gainedExp);
         const newLevel = newExp === null ? oldLevel : getLevelFromExp(newExp);

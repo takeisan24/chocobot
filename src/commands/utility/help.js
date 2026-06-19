@@ -82,6 +82,7 @@ const CATEGORIES = [
     ] },
     { name: '🏆 Khác', cmds: [
         ['leaderboard', 'bảng xếp hạng'],
+        ['event', 'xem sự kiện x2 đang diễn ra 🎉'],
         ['invite', 'mời Waguri về server của cậu 🌸'],
         ['ping', 'độ trễ & trạng thái bot'],
         ['server', 'thông tin server'],
