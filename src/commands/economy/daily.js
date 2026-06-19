@@ -31,6 +31,9 @@ module.exports = {
         if (r.tax && Number(r.tax) > 0) {
             desc += `\n🏛️ Thuế tài sản (1% phần vượt 100k): **-${fmt(r.tax)}** ${config.CURRENCY} *(người giàu góp ngân sách~)*.`;
         }
+        if (r.clan_dividend && Number(r.clan_dividend) > 0) {
+            desc += `\n🏰 Cổ tức bang hội: **+${fmt(r.clan_dividend)}** ${config.CURRENCY}`;
+        }
 
         const embed = new EmbedBuilder()
             .setColor(config.COLORS.SUCCESS)

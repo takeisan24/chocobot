@@ -3,6 +3,7 @@ const db = require('../../database.js');
 const config = require('../../config');
 
 const fmt = n => Number(n).toLocaleString('vi-VN');
+const clanLevel = xp => Math.floor(Math.sqrt(Number(xp || 0) / 10000)) + 1;
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -94,7 +95,7 @@ module.exports = {
         if (sub === 'list') {
             const clans = await db.clanList(15);
             if (!clans.length) return interaction.editReply('Chưa có bang nào được lập~ Hãy là người đầu tiên với `/clan create`!');
-            const lines = clans.map((c, i) => `${['🥇', '🥈', '🥉'][i] || `**${i + 1}.**`} **${c.name}** — quỹ **${fmt(c.bank)}** ${C} · <@${c.leader_id}>`);
+            const lines = clans.map((c, i) => `${['🥇', '🥈', '🥉'][i] || `**${i + 1}.**`} **${c.name}** (Lv.${clanLevel(c.xp)}) — quỹ **${fmt(c.bank)}** ${C} · <@${c.leader_id}>`);
             return interaction.editReply({ embeds: [new EmbedBuilder().setColor(config.COLORS.JACKPOT).setTitle('🏰 Bảng xếp hạng Bang hội').setDescription(lines.join('\n'))] });
         }
 
@@ -109,11 +110,13 @@ module.exports = {
         const memList = members.map(id => `${id === clan.leader_id ? '👑' : '▫️'} <@${id}>`).join('\n') || '*(trống)*';
         return interaction.editReply({ embeds: [new EmbedBuilder()
             .setColor(config.COLORS.INFO)
-            .setTitle(`🏰 Bang: ${clan.name}`)
+            .setTitle(`🏰 Bang: ${clan.name} (Lv.${clanLevel(clan.xp)})`)
             .addFields(
                 { name: 'Trưởng bang', value: `<@${clan.leader_id}>`, inline: true },
                 { name: 'Quỹ bang', value: `${fmt(clan.bank)} ${C}`, inline: true },
+                { name: 'Cổ tức/ngày', value: `${fmt(clanLevel(clan.xp) * 100)} ${C}/thành viên`, inline: true },
                 { name: `Thành viên (${members.length})`, value: memList, inline: false },
-            )] });
+            )
+            .setFooter({ text: 'Góp quỹ (/clan deposit) để bang lên cấp & cổ tức cao hơn~' })] });
     },
 };
