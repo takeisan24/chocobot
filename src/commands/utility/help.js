@@ -76,6 +76,9 @@ const CATEGORIES = [
         ['setup', 'tạo phòng riêng cho Waguri + hướng dẫn nhanh'],
         ['config', 'cấu hình bot cho server (Quản lý Server)'],
     ] },
+    { name: '🏰 Bang hội', cmds: [
+        ['clan', 'lập bang / gia nhập / quỹ chung (create·join·info·list·deposit·withdraw·kick·disband)'],
+    ] },
     { name: '🏆 Khác', cmds: [
         ['leaderboard', 'bảng xếp hạng'],
         ['invite', 'mời Waguri về server của cậu 🌸'],

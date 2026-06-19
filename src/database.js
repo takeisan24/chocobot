@@ -852,6 +852,38 @@ async function loanCollect(lenderId, borrowerId) {
 }
 
 // ============================================================
+//  BANG HỘI (clan)
+// ============================================================
+const { CLAN } = config;
+const clanRpc = async (fn, args) => {
+    try { const { data, error } = await supabase.rpc(fn, args); if (error) throw error; return data; }
+    catch (error) { console.error(`[DATABASE ERROR] ${fn}():`, error); return null; }
+};
+const clanCreate = (userId, name) => clanRpc('clan_create', { p_user: userId, p_name: name, p_cost: CLAN.CREATE_COST });
+const clanJoin = (userId, name) => clanRpc('clan_join', { p_user: userId, p_name: name });
+const clanLeave = (userId) => clanRpc('clan_leave', { p_user: userId });
+const clanDeposit = (userId, amount) => clanRpc('clan_deposit', { p_user: userId, p_amount: amount });
+const clanWithdraw = (userId, amount) => clanRpc('clan_withdraw', { p_user: userId, p_amount: amount });
+const clanKick = (leaderId, targetId) => clanRpc('clan_kick', { p_leader: leaderId, p_target: targetId });
+const clanDisband = (userId) => clanRpc('clan_disband', { p_user: userId });
+async function clanById(id) {
+    try { const { data } = await supabase.from('clans').select('*').eq('id', id).single(); return data; }
+    catch { return null; }
+}
+async function clanByName(name) {
+    try { const { data } = await supabase.from('clans').select('*').ilike('name', name).limit(1); return data?.[0] || null; }
+    catch { return null; }
+}
+async function clanMembers(clanId) {
+    try { const { data } = await supabase.from('users').select('user_id').eq('clan_id', clanId); return (data || []).map(r => r.user_id); }
+    catch { return []; }
+}
+async function clanList(limit = 20) {
+    try { const { data } = await supabase.from('clans').select('*').order('bank', { ascending: false }).limit(limit); return data || []; }
+    catch { return []; }
+}
+
+// ============================================================
 //  CHỢ (market — P2P trading)
 // ============================================================
 const { MARKET } = config;
@@ -1066,6 +1098,18 @@ module.exports = {
     craftItem,
     // couple
     coupleLove,
+    // clan
+    clanCreate,
+    clanJoin,
+    clanLeave,
+    clanDeposit,
+    clanWithdraw,
+    clanKick,
+    clanDisband,
+    clanById,
+    clanByName,
+    clanMembers,
+    clanList,
     // market
     marketList,
     marketBuy,

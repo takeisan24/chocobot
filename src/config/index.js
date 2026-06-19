@@ -133,6 +133,9 @@ module.exports = {
     // Chợ mua bán đồ giữa người chơi (chợ cắt % = sink)
     MARKET: { FEE_PCT: 0.05, MIN_PRICE: 1 },
 
+    // Bang hội: phí lập bang (sink)
+    CLAN: { CREATE_COST: 50000 },
+
     // Công an bắt cờ bạc — chơi càng nhiều, xác suất bị bắt càng cao
     POLICE: {
         BASE_CHANCE: 0.0,   // lần đầu không bị bắt
