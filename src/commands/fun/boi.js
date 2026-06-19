@@ -79,43 +79,50 @@ module.exports = {
         await interaction.deferReply();
         restFatigue(interaction.user.id, 1); // giải trí giảm mệt
         const sub = interaction.options.getSubcommand();
+        const { buildWaguriEmbed } = require('../../lib/embed');
 
         if (sub === 'cunghoangdao') {
             const cung = interaction.options.getString('cung');
             const z = ZODIAC.find(x => x.id === cung);
             const h = seed(cung + today());
-            const embed = new EmbedBuilder()
-                .setColor(config.COLORS.JACKPOT)
-                .setTitle(`🔮 Tử vi hôm nay — ${z.name}`)
-                .setDescription(pick(HOROSCOPE, h))
-                .addFields(
+            const embed = buildWaguriEmbed(interaction, 'jackpot', {
+                title: `🔮・Tử vi hôm nay — ${z.name}`,
+                description: pick(HOROSCOPE, h),
+                fields: [
                     { name: '🍀 May mắn', value: pick(MAY_MAN, h >>> 4), inline: true },
-                    { name: '🔢 Số may mắn', value: `${(h % 99) + 1}`, inline: true },
-                )
-                .setFooter({ text: 'Bói cho vui thôi nha~' });
+                    { name: '🔢 Số may mắn', value: `${(h % 99) + 1}`, inline: true }
+                ]
+            });
+            embed.setFooter({
+                text: `Bói cho vui thôi nha~ • ${embed.data.footer.text}`,
+                iconURL: embed.data.footer.icon_url
+            });
             return interaction.editReply({ embeds: [embed] });
         }
 
         if (sub === 'thaydo') {
-            const embed = new EmbedBuilder()
-                .setColor(config.COLORS.INFO)
-                .setTitle('🧙 Thầy đồ phán')
-                .setDescription(THAYDO[Math.floor(Math.random() * THAYDO.length)]);
+            const embed = buildWaguriEmbed(interaction, 'info', {
+                title: '🧙・Thầy đồ phán',
+                description: THAYDO[Math.floor(Math.random() * THAYDO.length)]
+            });
             return interaction.editReply({ embeds: [embed] });
         }
 
         // hangngay (mặc định)
         const h = seed(interaction.user.id + today());
-        const embed = new EmbedBuilder()
-            .setColor(config.COLORS.JACKPOT)
-            .setTitle(`🔮 Vận mệnh hôm nay của ${interaction.user.username}`)
-            .addFields(
+        const embed = buildWaguriEmbed(interaction, 'jackpot', {
+            title: `🔮・Vận mệnh hôm nay của ${interaction.user.username}`,
+            fields: [
                 { name: '💕 Tình duyên', value: pick(TINH_DUYEN, h), inline: false },
                 { name: '💰 Tài lộc', value: pick(TAI_LOC, h >>> 3), inline: false },
                 { name: '🍀 May mắn', value: pick(MAY_MAN, h >>> 6), inline: false },
-                { name: '🌸 Lời khuyên của Waguri', value: pick(LOI_KHUYEN, h >>> 9), inline: false },
-            )
-            .setFooter({ text: 'Bói cho vui thôi nha~ Quay lại mai để xem tiếp!' });
+                { name: '🌸 Lời khuyên của Waguri', value: pick(LOI_KHUYEN, h >>> 9), inline: false }
+            ]
+        });
+        embed.setFooter({
+            text: `Bói cho vui thôi nha~ Quay lại mai để xem tiếp! • ${embed.data.footer.text}`,
+            iconURL: embed.data.footer.icon_url
+        });
         await interaction.editReply({ embeds: [embed] });
     },
 };

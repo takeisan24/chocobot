@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const db = require('../../database.js');
 const config = require('../../config');
 const scripts = require('../../data/workScripts');
@@ -6,6 +6,7 @@ const { getLevelFromExp, levelUpReward } = require('../../lib/leveling');
 const { onCooldown } = require('../../lib/cooldown');
 const { fatigueMultiplier } = require('../../lib/fatigue');
 const { getEventMult } = require('../../lib/event');
+const { buildWaguriEmbed } = require('../../lib/embed');
 
 const fmt = n => Number(n).toLocaleString('vi-VN');
 
@@ -24,16 +25,30 @@ module.exports = {
 
         // 0. Cooldown nhẹ chống spam
         const cd = onCooldown('work', userId, config.ACTION_COOLDOWN_MS);
-        if (cd) return interaction.editReply(`Từ từ thôi nào~ nghỉ ${cd}s rồi làm tiếp nhé! 🌸`);
+        if (cd) {
+            const embed = buildWaguriEmbed(interaction, 'warning', {
+                description: `Từ từ thôi nào~ nghỉ ${cd}s rồi làm tiếp nhé! 🌸`
+            });
+            return interaction.editReply({ embeds: [embed] });
+        }
 
         try {
             const user = await db.getUser(userId);
-            if (!user) return interaction.editReply('Hơ, mình chưa lấy được dữ liệu của cậu, thử lại sau nhé~ 🌸');
+            if (!user) {
+                const embed = buildWaguriEmbed(interaction, 'error', {
+                    description: 'Hơ, mình chưa lấy được dữ liệu của cậu, thử lại sau nhé~ 🌸'
+                });
+                return interaction.editReply({ embeds: [embed] });
+            }
 
             // 1. Kiểm tra sức khỏe (Health)
             const userHealth = user.health !== undefined ? user.health : 100;
             if (userHealth < 30) {
-                return interaction.editReply(`🏥 Sức khỏe của cậu quá yếu (**${userHealth}/100** ❤️). Cậu cần ít nhất **30** sức khỏe để làm việc. Hãy dùng thuốc/hộp y tế (\`/eat\`) hoặc chạy lệnh \`/hospital\` để nhập viện nhé!`);
+                const embed = buildWaguriEmbed(interaction, 'warning', {
+                    title: '🏥 Sức khỏe quá yếu',
+                    description: `Sức khỏe của cậu quá yếu (**${userHealth}/100** ❤️). Cậu cần ít nhất **30** sức khỏe để làm việc. Hãy dùng thuốc/hộp y tế (\`/eat\`) hoặc chạy lệnh \`/hospital\` để nhập viện nhé!`
+                });
+                return interaction.editReply({ embeds: [embed] });
             }
 
             // 2. Kiểm tra phương tiện di chuyển trong kho đồ để tính chi phí năng lượng
@@ -55,10 +70,10 @@ module.exports = {
             const energyLeft = await db.spendEnergy(userId, energyCost);
             if (energyLeft < 0) {
                 const cur = await db.getEnergy(userId);
-                return interaction.editReply(
-                    `Cậu hết năng lượng rồi (${cur}/${config.ENERGY.MAX} ⚡, cần ${energyCost}). ` +
-                    `Nghỉ ngơi chút hoặc ăn gì đó bằng \`/eat\` nhé~ 🌸`
-                );
+                const embed = buildWaguriEmbed(interaction, 'warning', {
+                    description: `Cậu hết năng lượng rồi (${cur}/${config.ENERGY.MAX} ⚡, cần ${energyCost}). Nghỉ ngơi chút hoặc ăn gì đó bằng \`/eat\` nhé~ 🌸`
+                });
+                return interaction.editReply({ embeds: [embed] });
             }
 
             // 4. Sử dụng xe (trừ độ bền)
@@ -167,28 +182,38 @@ module.exports = {
             const newLevel = newExp === null ? oldLevel : getLevelFromExp(newExp);
 
             // 6. Embed
-            const embed = new EmbedBuilder()
-                .setColor(color)
-                .setTitle('💼 Kết quả làm việc')
-                .setDescription(resultMessage)
-                .addFields(
-                    { name: '💵 Số dư ví', value: `${earnedMoney >= 0 ? '+' : '-'}${fmt(Math.abs(earnedMoney))}${fatigue < 1 && grossMoney > 0 ? ` *(gốc ${fmt(grossMoney)}, mệt -${Math.round((1 - fatigue) * 100)}%)*` : ''} → **${fmt(newWallet)}** ${config.CURRENCY}`, inline: false },
-                    { name: 'Kinh nghiệm', value: `+${gainedExp} EXP`, inline: true },
-                    { name: 'Cấp độ', value: `Lv.${newLevel}`, inline: true },
-                    { name: 'Năng lượng', value: `${energyLeft}/${config.ENERGY.MAX} ⚡`, inline: true },
-                    { name: '❤️ Sức khỏe', value: `${currentHealth}/100`, inline: true },
-                )
-                .setTimestamp();
+            const description = `> ${resultMessage}\n\n`;
+            const fields = [
+                { name: '💵 Số dư ví', value: `${earnedMoney >= 0 ? '+' : '-'}${fmt(Math.abs(earnedMoney))}${fatigue < 1 && grossMoney > 0 ? ` *(gốc ${fmt(grossMoney)}, mệt -${Math.round((1 - fatigue) * 100)}%)*` : ''} → **${fmt(newWallet)}** ${config.CURRENCY}`, inline: false },
+                { name: 'Kinh nghiệm', value: `+${gainedExp} EXP`, inline: true },
+                { name: 'Cấp độ', value: `Lv.${newLevel}`, inline: true },
+                { name: 'Năng lượng', value: `${energyLeft}/${config.ENERGY.MAX} ⚡`, inline: true },
+                { name: '❤️ Sức khỏe', value: `${currentHealth}/100`, inline: true },
+            ];
+
             if (newLevel > oldLevel) {
                 const bonus = levelUpReward(oldLevel, newLevel);
                 if (bonus > 0) await db.addMoney(userId, bonus, 'wallet');
-                embed.addFields({ name: '🎉 Lên cấp!', value: `Chúc mừng cậu đạt **Level ${newLevel}**! Thưởng **+${fmt(bonus)}** ${config.CURRENCY} 🎁`, inline: false });
+                fields.push({ name: '🎉 Lên cấp!', value: `Chúc mừng cậu đạt **Level ${newLevel}**! Thưởng **+${fmt(bonus)}** ${config.CURRENCY} 🎁`, inline: false });
             }
+
+            const typeMap = { fail: 'error', jackpot: 'jackpot', success: 'success' };
+            const embedType = typeMap[category] || 'success';
+            
+            const embed = buildWaguriEmbed(interaction, embedType, {
+                title: '💼・Kết quả làm việc',
+                description,
+                fields
+            }).setTimestamp();
+
             await interaction.editReply({ embeds: [embed] });
 
         } catch (error) {
             console.error('[WORK COMMAND ERROR]', error);
-            await interaction.editReply('Ơ, có lỗi khi xử lý lệnh làm việc rồi, cậu thử lại sau nhé~ 🌸');
+            const embed = buildWaguriEmbed(interaction, 'error', {
+                description: 'Ơ, có lỗi khi xử lý lệnh làm việc rồi, cậu thử lại sau nhé~ 🌸'
+            });
+            await interaction.editReply({ embeds: [embed] });
         }
     },
 };

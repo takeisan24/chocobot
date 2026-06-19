@@ -19,15 +19,19 @@ module.exports = {
         const rtt = Date.now() - start;
         const ws = Math.round(interaction.client.ws.ping);
 
-        const embed = new EmbedBuilder()
-            .setColor(config.COLORS.INFO)
-            .setTitle('🏓 Pong!')
-            .addFields(
+        const { buildWaguriEmbed } = require('../../lib/embed');
+        const embed = buildWaguriEmbed(interaction, 'info', {
+            title: '🏓・Pong!',
+            fields: [
                 { name: '📡 API (WebSocket)', value: ws < 0 ? 'đang đo...' : `${ws}ms`, inline: true },
                 { name: '⏱️ Phản hồi', value: `${rtt}ms`, inline: true },
-                { name: '⏰ Online', value: fmtUptime(interaction.client.uptime), inline: true },
-            )
-            .setFooter({ text: 'Waguri vẫn đang chạy ngon lành~ 🌸' });
+                { name: '⏰ Online', value: fmtUptime(interaction.client.uptime), inline: true }
+            ]
+        });
+        embed.setFooter({
+            text: `Waguri vẫn đang chạy ngon lành~ • ${embed.data.footer.text}`,
+            iconURL: embed.data.footer.icon_url
+        });
         await interaction.editReply({ embeds: [embed] });
     },
 };

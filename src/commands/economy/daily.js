@@ -11,11 +11,18 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply();
         const r = await db.claimDaily(interaction.user.id);
-        if (!r) return interaction.editReply('Ơ, có lỗi rồi, cậu thử lại sau nhé~ 🌸');
+        const { buildWaguriEmbed } = require('../../lib/embed');
+        if (!r) {
+            const embed = buildWaguriEmbed(interaction, 'error', { description: 'Ơ, có lỗi rồi, cậu thử lại sau nhé~ 🌸' });
+            return interaction.editReply({ embeds: [embed] });
+        }
 
         if (r.status === 'claimed') {
             const ts = Math.floor(new Date(r.next).getTime() / 1000);
-            return interaction.editReply(`Hôm nay cậu điểm danh rồi mà~ Quay lại sau <t:${ts}:R> nhé! 🌸`);
+            const embed = buildWaguriEmbed(interaction, 'warning', {
+                description: `Hôm nay cậu điểm danh rồi mà~ Quay lại sau <t:${ts}:R> nhé! 🌸`
+            });
+            return interaction.editReply({ embeds: [embed] });
         }
 
         db.questIncr(interaction.user.id, 'daily', 1); // nhiệm vụ điểm danh
@@ -35,15 +42,16 @@ module.exports = {
             desc += `\n🏰 Cổ tức bang hội: **+${fmt(r.clan_dividend)}** ${config.CURRENCY}`;
         }
 
-        const embed = new EmbedBuilder()
-            .setColor(config.COLORS.SUCCESS)
-            .setTitle('🎁 Điểm danh thành công!')
-            .setDescription(desc)
-            .addFields(
+        const description = `> ${desc}\n\n`;
+        const embed = buildWaguriEmbed(interaction, 'success', {
+            title: '🎁・Điểm danh thành công!',
+            description,
+            fields: [
                 { name: '🔥 Chuỗi ngày', value: `${r.streak} ngày liên tiếp`, inline: true },
                 { name: '💵 Số dư ví', value: `${Number(u?.wallet || 0).toLocaleString('vi-VN')} ${config.CURRENCY}`, inline: true },
-            )
-            .setFooter({ text: 'Điểm danh mỗi ngày để giữ chuỗi & thưởng cao hơn nhé~' });
+            ]
+        }).setTimestamp();
+
         await interaction.editReply({ embeds: [embed] });
     },
 };

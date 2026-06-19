@@ -54,7 +54,11 @@ module.exports = {
     async execute(interaction) {
         const bet = interaction.options.getInteger('bet');
         const err = checkBet(bet);
-        if (err) return interaction.reply(`🌸 ${err}`);
+        if (err) {
+            const { buildWaguriEmbed } = require('../../lib/embed');
+            const embed = buildWaguriEmbed(interaction, 'warning', { description: `🌸 ${err}` });
+            return interaction.reply({ embeds: [embed] });
+        }
 
         const validate = async (userId) => {
             const u = await db.getUser(userId);
@@ -71,7 +75,9 @@ module.exports = {
         for (const p of players) { if (await db.addMoney(p.id, -bet, 'wallet')) staked.push(p); }
         if (staked.length < 2) {
             for (const p of staked) await db.addMoney(p.id, bet, 'wallet');
-            return interaction.followUp('Không đủ người đủ tiền để vào ván, đã hoàn cược~ 🌸');
+            const { buildWaguriEmbed } = require('../../lib/embed');
+            const embed = buildWaguriEmbed(interaction, 'warning', { description: 'Không đủ người đủ tiền để vào ván, đã hoàn cược~ 🌸' });
+            return interaction.followUp({ embeds: [embed] });
         }
 
         const cards = staked.map(p => ({ ...p, grid: genCard(), marked: new Set() }));
@@ -79,19 +85,23 @@ module.exports = {
         const pool = pickN(1, 75, 75); // thứ tự gọi
         const called = [];
 
+        const { buildWaguriEmbed } = require('../../lib/embed');
         const progressView = (last) => {
             const lines = cards.map(c => {
                 const prog = bestProgress(c.grid, c.marked);
                 return `${'🟩'.repeat(prog)}${'⬜'.repeat(5 - prog)} <@${c.id}> (${prog}/5)`;
             });
-            return new EmbedBuilder()
-                .setColor(config.COLORS.INFO)
-                .setTitle('🎱 Bingo đang quay!')
-                .setDescription(
-                    (last ? `🔊 Số mới: **${label(last)}**\n` : '') +
+            const embed = buildWaguriEmbed(interaction, 'info', {
+                title: '🎱・Bingo đang quay!',
+                description: (last ? `🔊 Số mới: **${label(last)}**\n` : '') +
                     `Đã gọi (${called.length}): ${called.map(label).join(', ') || '—'}\n\n` +
-                    `**Tiến độ:**\n${lines.join('\n')}`)
-                .setFooter({ text: `Pot: ${fmt(pot)} ${config.CURRENCY}` });
+                    `**Tiến độ:**\n${lines.join('\n')}`
+            });
+            embed.setFooter({
+                text: `Pot: ${fmt(pot)} ${config.CURRENCY} • ${embed.data.footer.text}`,
+                iconURL: embed.data.footer.icon_url
+            });
+            return embed;
         };
 
         const msg = await interaction.followUp({ embeds: [progressView(null)] });
@@ -117,10 +127,15 @@ module.exports = {
         db.questIncr(winner.id, 'gamble_win', 1);
 
         await msg.edit({ embeds: [progressView(called[called.length - 1])] }).catch(() => {});
-        await interaction.followUp({ embeds: [new EmbedBuilder()
-            .setColor(config.COLORS.JACKPOT)
-            .setTitle('🎉 BINGO!')
-            .setDescription(`🏆 <@${winner.id}> thắng **${fmt(prize)}** ${config.CURRENCY}!\n\nThẻ của người thắng:\n${renderCard(winner.grid, winner.marked)}`)
-            .setFooter({ text: `Pot ${fmt(pot)} · nhà cái giữ ${Math.round(config.PARTY.HOUSE_CUT * 100)}%` })] });
+        
+        const winEmbed = buildWaguriEmbed(interaction, 'jackpot', {
+            title: '🎉・BINGO!',
+            description: `🏆 <@${winner.id}> thắng **${fmt(prize)}** ${config.CURRENCY}!\n\nThẻ của người thắng:\n${renderCard(winner.grid, winner.marked)}`
+        });
+        winEmbed.setFooter({
+            text: `Pot ${fmt(pot)} · nhà cái giữ ${Math.round(config.PARTY.HOUSE_CUT * 100)}% • ${winEmbed.data.footer.text}`,
+            iconURL: winEmbed.data.footer.icon_url
+        });
+        await interaction.followUp({ embeds: [winEmbed] });
     },
 };

@@ -7,9 +7,9 @@ test('Sprint 3: Vehicle configurations and cost validation', () => {
     assert.strictEqual(config.VEHICLES.xe_wave.energy_cost, 8);
     assert.strictEqual(config.VEHICLES.xe_sh.energy_cost, 6);
     assert.strictEqual(config.VEHICLES.o_to_vinfast.energy_cost, 4);
-    assert.strictEqual(config.VEHICLES.xe_wave.name, 'Xe Wave');
-    assert.strictEqual(config.VEHICLES.xe_sh.name, 'Xe SH');
-    assert.strictEqual(config.VEHICLES.o_to_vinfast.name, 'Ô tô VinFast');
+    assert.strictEqual(config.VEHICLES.xe_wave.name, 'Xe Honda Wave');
+    assert.strictEqual(config.VEHICLES.xe_sh.name, 'Xe Vespa Hồng Cute');
+    assert.strictEqual(config.VEHICLES.o_to_vinfast.name, 'Ô tô VinFast VF3');
 });
 
 test('Sprint 3: Vehicle selection priority logic', () => {

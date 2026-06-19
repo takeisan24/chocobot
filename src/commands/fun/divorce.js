@@ -1,6 +1,7 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const db = require('../../database.js');
 const config = require('../../config');
+const { buildWaguriEmbed } = require('../../lib/embed');
 
 const fmt = n => Number(n).toLocaleString('vi-VN');
 
@@ -12,21 +13,40 @@ module.exports = {
         await interaction.deferReply();
         const user = await db.getUser(interaction.user.id);
         const partner = user?.partner_id;
-        if (!partner) return interaction.editReply('Cậu đang độc thân mà~ Đâu có ai để chia tay đâu 😅');
+        if (!partner) {
+            const embed = buildWaguriEmbed(interaction, 'warning', {
+                description: 'Cậu đang độc thân mà~ Đâu có ai để chia tay đâu 😅'
+            });
+            return interaction.editReply({ embeds: [embed] });
+        }
 
         const fee = config.MARRY.DIVORCE_COST;
         if (Number(user.wallet) < fee) {
-            return interaction.editReply(`Ly hôn cần **${fmt(fee)}** ${config.CURRENCY} án phí 😅 — ví cậu chưa đủ. Kiếm thêm rồi quay lại nhé~`);
+            const embed = buildWaguriEmbed(interaction, 'warning', {
+                description: `Ly hôn cần **${fmt(fee)}** ${config.CURRENCY} án phí 😅 — ví cậu chưa đủ. Kiếm thêm rồi quay lại nhé~`
+            });
+            return interaction.editReply({ embeds: [embed] });
         }
 
         const r = await db.divorceUser(interaction.user.id);
-        if (r === 'single') return interaction.editReply('Cậu đang độc thân mà~ Đâu có ai để chia tay đâu 😅');
-        if (r !== 'ok') return interaction.editReply('Ơ, có lỗi rồi, thử lại sau nhé~ 🌸');
+        if (r === 'single') {
+            const embed = buildWaguriEmbed(interaction, 'warning', {
+                description: 'Cậu đang độc thân mà~ Đâu có ai để chia tay đâu 😅'
+            });
+            return interaction.editReply({ embeds: [embed] });
+        }
+        if (r !== 'ok') {
+            const embed = buildWaguriEmbed(interaction, 'error', {
+                description: 'Ơ, có lỗi rồi, thử lại sau nhé~ 🌸'
+            });
+            return interaction.editReply({ embeds: [embed] });
+        }
         await db.addMoney(interaction.user.id, -fee, 'wallet'); // án phí ly hôn
 
-        const embed = new EmbedBuilder()
-            .setColor(config.COLORS.WARNING)
-            .setDescription(`💔 Cậu và ${partner ? `<@${partner}>` : 'người ấy'} đã chia tay rồi. Án phí **-${fmt(fee)}** ${config.CURRENCY}. Mong cậu sớm tìm được hạnh phúc mới~ 🌸`);
+        const embed = buildWaguriEmbed(interaction, 'warning', {
+            title: '💔・Quyết định ly hôn',
+            description: `Cậu và ${partner ? `<@${partner}>` : 'người ấy'} đã chính thức đường ai nấy đi rồi... Án phí **-${fmt(fee)}** ${config.CURRENCY}.\nMong cả hai sớm tìm lại sự bình yên và hạnh phúc mới nhé~ 🌸`
+        }).setTimestamp();
         await interaction.editReply({ embeds: [embed] });
     },
 };

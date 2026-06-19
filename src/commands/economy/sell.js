@@ -26,22 +26,32 @@ module.exports = {
         const itemId = interaction.options.getString('item');
         const qty = interaction.options.getInteger('quantity') || 1;
         const item = await db.getItem(itemId);
-        if (!item) return interaction.editReply('Mình không tìm thấy vật phẩm này~ 🌸');
+        const { buildWaguriEmbed } = require('../../lib/embed');
+        if (!item) {
+            const embed = buildWaguriEmbed(interaction, 'error', { title: '🏪・Bán Vật Phẩm', description: 'Mình không tìm thấy vật phẩm này~ 🌸' });
+            return interaction.editReply({ embeds: [embed] });
+        }
 
         const r = await db.sellItem(interaction.user.id, itemId, qty);
-        if (!r) return interaction.editReply('Ơ, có lỗi khi bán rồi, cậu thử lại sau nhé~');
+        if (!r) {
+            const embed = buildWaguriEmbed(interaction, 'error', { title: '🏪・Bán Vật Phẩm', description: 'Ơ, có lỗi khi bán rồi, cậu thử lại sau nhé~' });
+            return interaction.editReply({ embeds: [embed] });
+        }
         if (r.status !== 'ok') {
             const msg = {
                 no_have: `Cậu không có đủ **${item.name}** trong kho để bán~`,
                 no_item: 'Vật phẩm không tồn tại~',
                 bad_quantity: 'Số lượng không hợp lệ~',
             }[r.status] || 'Ơ, có lỗi rồi, thử lại sau nhé~';
-            return interaction.editReply(`🌸 ${msg}`);
+            const embed = buildWaguriEmbed(interaction, 'error', { title: '🏪・Bán Vật Phẩm', description: msg });
+            return interaction.editReply({ embeds: [embed] });
         }
 
         const u = await db.getUser(interaction.user.id);
-        await interaction.editReply({ embeds: [new EmbedBuilder()
-            .setColor(config.COLORS.SUCCESS)
-            .setDescription(`💰 Cậu đã bán **${qty}× ${item.name}** và thu về **${fmt(r.gain)}** ${config.CURRENCY}.\n💵 Số dư ví: **${fmt(u?.wallet || 0)}** ${config.CURRENCY}`)] });
+        const embedSuccess = buildWaguriEmbed(interaction, 'success', {
+            title: '🏪・Bán Vật Phẩm',
+            description: `💰 Cậu đã bán **${qty}× ${item.name}** và thu về **${fmt(r.gain)}** ${config.CURRENCY}.\n💵 Số dư ví: **${fmt(u?.wallet || 0)}** ${config.CURRENCY}`
+        });
+        await interaction.editReply({ embeds: [embedSuccess] });
     },
 };

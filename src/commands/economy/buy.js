@@ -23,18 +23,23 @@ module.exports = {
         await interaction.deferReply();
         const itemId = interaction.options.getString('item');
         const qty = interaction.options.getInteger('quantity') || 1;
+        const { buildWaguriEmbed } = require('../../lib/embed');
 
         const item = await db.getItem(itemId);
-        if (!item) return interaction.editReply('Vật phẩm này không tồn tại trong cửa hàng 🤔');
+        if (!item) {
+            const embed = buildWaguriEmbed(interaction, 'error', { title: '🏪・Mua Vật Phẩm', description: 'Vật phẩm này không tồn tại trong cửa hàng 🤔' });
+            return interaction.editReply({ embeds: [embed] });
+        }
 
         const result = await db.buyItem(interaction.user.id, itemId, qty);
         const total = (Number(item.price) * qty).toLocaleString('vi-VN');
 
         if (result === 'ok') {
             const u = await db.getUser(interaction.user.id);
-            const embed = new EmbedBuilder()
-                .setColor(config.COLORS.SUCCESS)
-                .setDescription(`✅ Đã mua **${qty}× ${item.name}** với giá **${total}** ${config.CURRENCY}.\n💵 Số dư ví: **${Number(u?.wallet || 0).toLocaleString('vi-VN')}** ${config.CURRENCY}`);
+            const embed = buildWaguriEmbed(interaction, 'success', {
+                title: '🏪・Mua Vật Phẩm',
+                description: `Đã mua **${qty}× ${item.name}** với giá **${total}** ${config.CURRENCY}.\n💵 Số dư ví: **${Number(u?.wallet || 0).toLocaleString('vi-VN')}** ${config.CURRENCY}`
+            });
             return interaction.editReply({ embeds: [embed] });
         }
 
@@ -43,6 +48,8 @@ module.exports = {
             no_item: 'Mình không tìm thấy vật phẩm này trong cửa hàng~',
             bad_quantity: 'Số lượng chưa hợp lệ nè, cậu nhập lại giúp mình nhé~',
         }[result] || 'Ơ, có lỗi khi mua rồi, cậu thử lại sau nhé~';
-        return interaction.editReply(`🌸 ${msg}`);
+
+        const embedErr = buildWaguriEmbed(interaction, 'error', { title: '🏪・Mua Vật Phẩm', description: msg });
+        return interaction.editReply({ embeds: [embedErr] });
     },
 };

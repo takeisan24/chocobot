@@ -23,10 +23,15 @@ module.exports = {
                 PermissionFlagsBits.ManageRoles,      // gán role (tính năng sắp tới)
             ],
         });
-        await interaction.editReply({ embeds: [new EmbedBuilder()
-            .setColor(config.COLORS.INFO)
-            .setTitle('🌸 Mời Waguri về server')
-            .setDescription(`[**Bấm vào đây để mời mình nha~**](${url})\n\nMình sẽ mang cả nền kinh tế, minigame và những cuộc trò chuyện dễ thương tới server của cậu! 💕`)
-            .setFooter({ text: 'Cảm ơn cậu đã yêu mến Waguri!' })] });
+        const { buildWaguriEmbed } = require('../../lib/embed');
+        const embed = buildWaguriEmbed(interaction, 'info', {
+            title: '🌸・Mời Waguri về server',
+            description: `[**Bấm vào đây để mời mình nha~**](${url})\n\nMình sẽ mang cả nền kinh tế, minigame và những cuộc trò chuyện dễ thương tới server của cậu! 💕`
+        });
+        embed.setFooter({
+            text: `Cảm ơn cậu đã yêu mến Waguri! • ${embed.data.footer.text}`,
+            iconURL: embed.data.footer.icon_url
+        });
+        await interaction.editReply({ embeds: [embed] });
     },
 };

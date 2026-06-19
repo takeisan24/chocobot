@@ -1,14 +1,10 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const db = require('../../database.js');
 const config = require('../../config');
 const QUESTS = require('../../data/quests');
+const { createWaguriBar, buildWaguriEmbed, getWaguriFooter } = require('../../lib/embed');
 
 const fmt = n => Number(n).toLocaleString('vi-VN');
-function bar(cur, max, size = 10) {
-    const r = max > 0 ? Math.min(cur / max, 1) : 0;
-    const f = Math.round(r * size);
-    return '█'.repeat(f) + '░'.repeat(size - f);
-}
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -35,14 +31,17 @@ module.exports = {
             const done = claimed[q.id];
             const icon = done ? '✅' : (cur >= q.required ? '🎁' : '⬜');
             return `${icon} **${q.name}** — ${cur}/${q.required}\n` +
-                `　${bar(cur, q.required)} · 🪙 ${fmt(q.reward)} ${config.CURRENCY}`;
+                `　${createWaguriBar(cur, q.required, 8)} · 🪙 ${fmt(q.reward)} ${config.CURRENCY}`;
         });
 
-        const embed = new EmbedBuilder()
-            .setColor(config.COLORS.INFO)
-            .setTitle('📜 Nhiệm vụ hôm nay')
-            .setDescription(lines.join('\n'))
-            .setFooter({ text: 'Làm xong tự nhận thưởng khi gõ /quest · reset mỗi ngày' });
+        const embed = buildWaguriEmbed(interaction, 'info', {
+            title: '📜・Nhiệm vụ hằng ngày của cậu',
+            description: lines.join('\n')
+        });
+
+        const footerObj = getWaguriFooter(interaction.client);
+        footerObj.text = 'Làm xong tự nhận thưởng khi gõ /quest · ' + footerObj.text;
+        embed.setFooter(footerObj);
 
         if (totalReward > 0) {
             embed.addFields({ name: '🎉 Vừa nhận', value: `+${fmt(totalReward)} ${config.CURRENCY}!`, inline: false });

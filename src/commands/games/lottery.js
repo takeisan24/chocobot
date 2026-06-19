@@ -23,39 +23,55 @@ module.exports = {
         await interaction.deferReply();
         const userId = interaction.user.id;
         const sub = interaction.options.getSubcommand();
+        const { buildWaguriEmbed } = require('../../lib/embed');
 
         if (sub === 'buy') {
             const count = interaction.options.getInteger('count');
             const r = await db.lotteryBuy(userId, count);
-            if (!r) return interaction.editReply('Ơ, lỗi xổ số, thử lại sau nhé~ 🌸');
+            if (!r) {
+                const embed = buildWaguriEmbed(interaction, 'error', { title: '🎟️・Mua Vé Xổ Số', description: 'Ơ, lỗi xổ số, thử lại sau nhé~ 🌸' });
+                return interaction.editReply({ embeds: [embed] });
+            }
             if (r.status === 'poor') {
-                return interaction.editReply(`Cậu cần **${fmt(r.cost)}** ${config.CURRENCY} để mua ${count} vé mà ví chưa đủ~ 😟${drawLine(r.draw)}`);
+                const embed = buildWaguriEmbed(interaction, 'error', {
+                    title: '🎟️・Mua Vé Xổ Số',
+                    description: `Cậu cần **${fmt(r.cost)}** ${config.CURRENCY} để mua ${count} vé mà ví chưa đủ~ 😟${drawLine(r.draw)}`
+                });
+                return interaction.editReply({ embeds: [embed] });
             }
             const endTs = Math.floor(new Date(r.ends_at).getTime() / 1000);
-            return interaction.editReply({ embeds: [new EmbedBuilder()
-                .setColor(config.COLORS.SUCCESS)
-                .setTitle('🎟️ Mua vé xổ số')
-                .setDescription(
-                    `Cậu mua **${count} vé** (**-${fmt(r.cost)}** ${config.CURRENCY}).\n` +
+            const embed = buildWaguriEmbed(interaction, 'success', {
+                title: '🎟️・Mua Vé Xổ Số',
+                description: `Cậu mua **${count} vé** (**-${fmt(r.cost)}** ${config.CURRENCY}).\n` +
                     `🎫 Vé của cậu vòng này: **${fmt(r.my_tickets)}**\n` +
                     `💰 Hũ thưởng: **${fmt(r.pool)}** ${config.CURRENCY}\n` +
-                    `⏰ Quay <t:${endTs}:R>${drawLine(r.draw)}`)] });
+                    `⏰ Quay <t:${endTs}:R>${drawLine(r.draw)}`
+            });
+            return interaction.editReply({ embeds: [embed] });
         }
 
         // info
         const v = await db.lotteryView(userId);
-        if (!v) return interaction.editReply('Ơ, lỗi xổ số, thử lại sau nhé~ 🌸');
+        if (!v) {
+            const embed = buildWaguriEmbed(interaction, 'error', { title: '🎟️・Xổ Số Cộng Đồng', description: 'Ơ, lỗi xổ số, thử lại sau nhé~ 🌸' });
+            return interaction.editReply({ embeds: [embed] });
+        }
         const endTs = Math.floor(new Date(v.ends_at).getTime() / 1000);
         const prize = Math.floor(Number(v.pool) * (1 - config.LOTTERY.HOUSE_CUT));
-        await interaction.editReply({ embeds: [new EmbedBuilder()
-            .setColor(config.COLORS.JACKPOT)
-            .setTitle('🎟️ Xổ Số Cộng Đồng')
-            .setDescription(
-                `💰 Hũ thưởng vòng **#${v.round}**: **${fmt(v.pool)}** ${config.CURRENCY}\n` +
+        const embed = buildWaguriEmbed(interaction, 'jackpot', {
+            title: '🎟️・Xổ Số Cộng Đồng',
+            description: `💰 Hũ thưởng vòng **#${v.round}**: **${fmt(v.pool)}** ${config.CURRENCY}\n` +
                 `🏆 Người trúng nhận: **${fmt(prize)}** ${config.CURRENCY} *(nhà cái giữ ${Math.round(config.LOTTERY.HOUSE_CUT * 100)}%)*\n` +
                 `🎫 Giá vé: **${fmt(config.LOTTERY.TICKET_PRICE)}** ${config.CURRENCY} · Vé của cậu: **${fmt(v.my_tickets)}**/${fmt(v.total_tickets)}\n` +
                 `⏰ Quay <t:${endTs}:R>` +
-                (v.last_winner ? `\n\n🎉 Vòng #${v.last_round}: <@${v.last_winner}> đã trúng **${fmt(v.last_prize)}** ${config.CURRENCY}!` : ''))
-            .setFooter({ text: 'Mua vé: /lottery buy <số vé> — vé càng nhiều, cơ hội càng cao!' })] });
+                (v.last_winner ? `\n\n🎉 Vòng #${v.last_round}: <@${v.last_winner}> đã trúng **${fmt(v.last_prize)}** ${config.CURRENCY}!` : '')
+        });
+        
+        embed.setFooter({
+            text: `Mua vé: /lottery buy <số vé> • ${embed.data.footer.text}`,
+            iconURL: embed.data.footer.icon_url
+        });
+
+        await interaction.editReply({ embeds: [embed] });
     },
 };

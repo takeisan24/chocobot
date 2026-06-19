@@ -1,7 +1,8 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const db = require('../../database.js');
 const config = require('../../config');
 const { getLevelFromExp } = require('../../lib/leveling');
+const { buildWaguriEmbed } = require('../../lib/embed');
 
 const fmt = n => Number(n).toLocaleString('vi-VN');
 
@@ -26,48 +27,47 @@ module.exports = {
 
     async execute(interaction) {
         const sub = interaction.options.getSubcommand();
-        if (sub === 'list') return listJobs(interaction);
+        if (sub === 'list') return jobList(interaction);
         if (sub === 'info') return jobInfo(interaction);
         if (sub === 'apply') return applyJob(interaction);
     },
 };
 
-async function listJobs(interaction) {
+async function jobList(interaction) {
     await interaction.deferReply();
-    const [jobs, user] = await Promise.all([db.getJobs(), db.getUser(interaction.user.id)]);
-    const level = user ? getLevelFromExp(Number(user.exp)) : 1;
-
-    const lines = await Promise.all(jobs.map(async j => {
-        const reqItem = j.required_item_id ? await db.getItem(j.required_item_id) : null;
-        const current = user && user.job_id === j.id ? ' ◀ **đang làm**' : '';
-        const ok = level >= j.required_level;
-        return `${ok ? '✅' : '🔒'} **${j.name}** — Lv.${j.required_level}+ · ${fmt(j.min_wage)}–${fmt(j.max_wage)} ${config.CURRENCY}` +
-            `${reqItem ? ` · cần *${reqItem.name}*` : ''}${current}`;
-    }));
-
-    const embed = new EmbedBuilder()
-        .setColor(config.COLORS.INFO)
-        .setTitle('💼 Danh sách nghề')
-        .setDescription(lines.join('\n'))
-        .setFooter({ text: `Cấp của bạn: Lv.${level} · dùng /jobs apply để xin việc` });
+    const jobs = await db.getJobs();
+    const lines = jobs.map(j => `• **${j.name}** (Lv.${j.required_level}) · 🪙 Lương: **${fmt(j.min_wage)}–${fmt(j.max_wage)}**`);
+    
+    const embed = buildWaguriEmbed(interaction, 'info', {
+        title: '💼・Danh sách nghề nghiệp',
+        description: lines.join('\n')
+    });
+    const footerObj = embed.data.footer;
+    footerObj.text = 'Xem chi tiết: /jobs info <nghề> · ' + footerObj.text;
+    embed.setFooter(footerObj);
     await interaction.editReply({ embeds: [embed] });
 }
 
 async function jobInfo(interaction) {
     await interaction.deferReply();
     const job = await db.getJob(interaction.options.getString('job'));
-    if (!job) return interaction.editReply('Không tìm thấy nghề này 🤔');
+    if (!job) {
+        const embed = buildWaguriEmbed(interaction, 'warning', {
+            description: 'Không tìm thấy nghề này 🤔'
+        });
+        return interaction.editReply({ embeds: [embed] });
+    }
 
     const reqItem = job.required_item_id ? await db.getItem(job.required_item_id) : null;
-    const embed = new EmbedBuilder()
-        .setColor(config.COLORS.INFO)
-        .setTitle(`💼 ${job.name}`)
-        .addFields(
+    const embed = buildWaguriEmbed(interaction, 'info', {
+        title: `💼・Thông tin nghề: ${job.name}`,
+        fields: [
             { name: 'Cấp yêu cầu', value: `Lv.${job.required_level}`, inline: true },
             { name: 'Lương', value: `${fmt(job.min_wage)}–${fmt(job.max_wage)} ${config.CURRENCY}`, inline: true },
             { name: 'Rủi ro', value: `${Math.round(job.risk_rate * 100)}%`, inline: true },
             { name: 'Vật phẩm cần', value: reqItem ? reqItem.name : 'Không', inline: true },
-        );
+        ]
+    });
     await interaction.editReply({ embeds: [embed] });
 }
 
@@ -76,29 +76,55 @@ async function applyJob(interaction) {
     const jobId = interaction.options.getString('job');
     const [job, user] = await Promise.all([db.getJob(jobId), db.getUser(interaction.user.id)]);
 
-    if (!job) return interaction.editReply('Mình không tìm thấy nghề này, cậu xem lại giúp nhé~ 🌸');
-    if (!user) return interaction.editReply('Hơ, mình chưa lấy được dữ liệu, thử lại sau chút nhé~');
-    if (user.job_id === jobId) return interaction.editReply(`Cậu đang làm **${job.name}** rồi mà~ 😄`);
+    if (!job) {
+        const embed = buildWaguriEmbed(interaction, 'warning', {
+            description: 'Mình không tìm thấy nghề này, cậu xem lại giúp nhé~ 🌸'
+        });
+        return interaction.editReply({ embeds: [embed] });
+    }
+    if (!user) {
+        const embed = buildWaguriEmbed(interaction, 'error', {
+            description: 'Hơ, mình chưa lấy được dữ liệu, thử lại sau chút nhé~'
+        });
+        return interaction.editReply({ embeds: [embed] });
+    }
+    if (user.job_id === jobId) {
+        const embed = buildWaguriEmbed(interaction, 'warning', {
+            description: `Cậu đang làm **${job.name}** rồi mà~ 😄`
+        });
+        return interaction.editReply({ embeds: [embed] });
+    }
 
     const level = getLevelFromExp(Number(user.exp));
     if (level < job.required_level) {
-        return interaction.editReply(`Cậu cần đạt **Lv.${job.required_level}** mới làm **${job.name}** được, giờ cậu mới Lv.${level} thôi. Cố thêm chút nữa nha, cậu làm được mà! 🌸`);
+        const embed = buildWaguriEmbed(interaction, 'warning', {
+            description: `Cậu cần đạt **Lv.${job.required_level}** mới làm **${job.name}** được, giờ cậu mới Lv.${level} thôi. Cố thêm chút nữa nha, cậu làm được mà! 🌸`
+        });
+        return interaction.editReply({ embeds: [embed] });
     }
 
     if (job.required_item_id) {
         const has = await db.hasItem(interaction.user.id, job.required_item_id);
         if (!has) {
             const reqItem = await db.getItem(job.required_item_id);
-            return interaction.editReply(`À, để làm nghề này cậu cần có **${reqItem ? reqItem.name : job.required_item_id}** trước đã. Ghé \`/shop\` sắm một cái rồi quay lại nhé~ 🌸`);
+            const embed = buildWaguriEmbed(interaction, 'warning', {
+                description: `À, để làm nghề này cậu cần có **${reqItem ? reqItem.name : job.required_item_id}** trước đã. Ghé \`/shop\` sắm một cái rồi quay lại nhé~ 🌸`
+            });
+            return interaction.editReply({ embeds: [embed] });
         }
     }
 
     const ok = await db.setUserJob(interaction.user.id, jobId);
-    if (!ok) return interaction.editReply('Ơ, có lỗi khi nhận việc rồi, cậu thử lại sau nhé~');
+    if (!ok) {
+        const embed = buildWaguriEmbed(interaction, 'error', {
+            description: 'Ơ, có lỗi khi nhận việc rồi, cậu thử lại sau nhé~'
+        });
+        return interaction.editReply({ embeds: [embed] });
+    }
 
-    const embed = new EmbedBuilder()
-        .setColor(config.COLORS.SUCCESS)
-        .setTitle('🎉 Nhận việc thành công!')
-        .setDescription(`Từ giờ cậu là **${job.name}** rồi đó. Cùng cố gắng nhé, gõ \`/work\` để bắt đầu làm việc thôi! 💪`);
+    const embed = buildWaguriEmbed(interaction, 'success', {
+        title: '🎉・Nhận việc thành công!',
+        description: `Từ giờ cậu là **${job.name}** rồi đó. Cùng cố gắng nhé, gõ \`/work\` để bắt đầu làm việc thôi! 💪`
+    });
     await interaction.editReply({ embeds: [embed] });
 }

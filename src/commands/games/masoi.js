@@ -20,7 +20,11 @@ module.exports = {
     async execute(interaction) {
         const bet = interaction.options.getInteger('bet');
         const err = checkBet(bet);
-        if (err) return interaction.reply(`🌸 ${err}`);
+        if (err) {
+            const { buildWaguriEmbed } = require('../../lib/embed');
+            const embed = buildWaguriEmbed(interaction, 'warning', { description: `🌸 ${err}` });
+            return interaction.reply({ embeds: [embed] });
+        }
 
         const validate = async (userId) => {
             const u = await db.getUser(userId);
@@ -37,7 +41,9 @@ module.exports = {
         for (const p of players) { if (await db.addMoney(p.id, -bet, 'wallet')) staked.push(p); }
         if (staked.length < 4) {
             for (const p of staked) await db.addMoney(p.id, bet, 'wallet');
-            return interaction.followUp('Không đủ người đủ tiền để chơi, đã hoàn cược~ 🌸');
+            const { buildWaguriEmbed } = require('../../lib/embed');
+            const embed = buildWaguriEmbed(interaction, 'warning', { description: 'Không đủ người đủ tiền để chơi, đã hoàn cược~ 🌸' });
+            return interaction.followUp({ embeds: [embed] });
         }
 
         const channel = interaction.channel;
@@ -67,9 +73,11 @@ module.exports = {
         }
 
         // ----- Phase: xem vai -----
-        await channel.send({ embeds: [new EmbedBuilder().setColor(config.COLORS.INFO)
-            .setTitle('🐺 Ván Ma Sói bắt đầu!')
-            .setDescription(`**${staked.length}** người chơi · pot **${fmt(pot)}** ${config.CURRENCY}.\nNhấn nút bên dưới để **xem vai bí mật** của mình nhé~`)] });
+        const { buildWaguriEmbed } = require('../../lib/embed');
+        await channel.send({ embeds: [buildWaguriEmbed(interaction, 'info', {
+            title: '🐺・Ván Ma Sói bắt đầu!',
+            description: `**${staked.length}** người chơi · pot **${fmt(pot)}** ${config.CURRENCY}.\nNhấn nút bên dưới để **xem vai bí mật** của mình nhé~`
+        })] });
 
         const revealBtn = new ActionRowBuilder().addComponents(
             new ButtonBuilder().setCustomId('ms_reveal').setLabel('👁️ Xem vai của tôi').setStyle(ButtonStyle.Primary));
@@ -106,9 +114,9 @@ module.exports = {
             }
             const title = cause === 'night' ? '🌅 Trời sáng' : '⚖️ Kết quả bỏ phiếu';
             if (announced.length) {
-                await channel.send({ embeds: [new EmbedBuilder().setColor(config.COLORS.ERROR).setTitle(title).setDescription(`Đã khuất:\n${announced.join('\n')}`)] });
+                await channel.send({ embeds: [buildWaguriEmbed(interaction, 'error', { title, description: `Đã khuất:\n${announced.join('\n')}` })] });
             } else if (cause === 'night') {
-                await channel.send({ embeds: [new EmbedBuilder().setColor(config.COLORS.SUCCESS).setTitle(title).setDescription('Đêm qua bình yên, không ai thiệt mạng! 🌸')] });
+                await channel.send({ embeds: [buildWaguriEmbed(interaction, 'success', { title, description: 'Đêm qua bình yên, không ai thiệt mạng! 🌸' })] });
             }
         }
 
@@ -130,9 +138,10 @@ module.exports = {
             const acted = new Set();
             const btn = new ActionRowBuilder().addComponents(
                 new ButtonBuilder().setCustomId('ms_act').setLabel('🎭 Hành động đêm').setStyle(ButtonStyle.Primary));
-            const msg = await channel.send({ embeds: [new EmbedBuilder().setColor(0x2b2d31)
-                .setTitle('🌙 Đêm xuống...')
-                .setDescription(`Cả làng chìm vào giấc ngủ. Các vai đêm hãy nhấn **Hành động đêm** (riêng tư).\n⏰ ${NIGHT_MS / 1000}s.`)], components: [btn] });
+            const msg = await channel.send({ embeds: [buildWaguriEmbed(interaction, 'info', {
+                title: '🌙・Đêm xuống...',
+                description: `Cả làng chìm vào giấc ngủ. Các vai đêm hãy nhấn **Hành động đêm** (riêng tư).\n⏰ ${NIGHT_MS / 1000}s.`
+            }).setColor(0x2b2d31)], components: [btn] });
             const col = msg.createMessageComponentCollector({ componentType: ComponentType.Button, time: NIGHT_MS });
             col.on('collect', async (i) => {
                 const me = state.players[i.user.id];
@@ -184,9 +193,10 @@ module.exports = {
         async function votePhase() {
             const votes = {};
             const menu = new StringSelectMenuBuilder().setCustomId('ms_vote').setPlaceholder('Bỏ phiếu treo cổ...').addOptions(aliveOptions().slice(0, 25));
-            const msg = await channel.send({ embeds: [new EmbedBuilder().setColor(config.COLORS.WARNING)
-                .setTitle('🗳️ Bỏ phiếu treo cổ')
-                .setDescription(`Người còn sống hãy chọn nghi phạm. ⏰ ${VOTE_MS / 1000}s.`)], components: [new ActionRowBuilder().addComponents(menu)] });
+            const msg = await channel.send({ embeds: [buildWaguriEmbed(interaction, 'warning', {
+                title: '🗳️・Bỏ phiếu treo cổ',
+                description: `Người còn sống hãy chọn nghi phạm. ⏰ ${VOTE_MS / 1000}s.`
+            })], components: [new ActionRowBuilder().addComponents(menu)] });
             const col = msg.createMessageComponentCollector({ componentType: ComponentType.StringSelect, time: VOTE_MS });
             col.on('collect', async (i) => {
                 if (!state.players[i.user.id]?.alive) return i.reply({ content: 'Người đã khuất không bỏ phiếu được~', flags: EPH });
@@ -209,9 +219,10 @@ module.exports = {
                 winner = checkWin(state.players);
                 if (winner) break;
 
-                await channel.send({ embeds: [new EmbedBuilder().setColor(config.COLORS.INFO)
-                    .setTitle(`☀️ Ngày ${round} — Thảo luận`)
-                    .setDescription(`Còn sống: ${aliveIds().map(id => `<@${id}>`).join(', ')}\n💬 Thảo luận **${DISCUSS_MS / 1000}s** rồi bỏ phiếu.`)] });
+                await channel.send({ embeds: [buildWaguriEmbed(interaction, 'info', {
+                    title: `☀️・Ngày ${round} — Thảo luận`,
+                    description: `Còn sống: ${aliveIds().map(id => `<@${id}>`).join(', ')}\n💬 Thảo luận **${DISCUSS_MS / 1000}s** rồi bỏ phiếu.`
+                })] });
                 await sleep(DISCUSS_MS);
 
                 const lynched = await votePhase();
@@ -231,7 +242,11 @@ module.exports = {
         if (!team) {
             // hết vòng / lỗi -> hoàn cược
             for (const p of staked) await db.addMoney(p.id, bet, 'wallet');
-            return channel.send({ embeds: [new EmbedBuilder().setColor(config.COLORS.WARNING).setTitle('🐺 Ván Ma Sói kết thúc bất phân thắng bại').setDescription(`Đã hoàn cược cho mọi người.\n\n${allRoles}`)] });
+            const drawEmbed = buildWaguriEmbed(interaction, 'warning', {
+                title: '🐺・Ván Ma Sói kết thúc bất phân thắng bại',
+                description: `Đã hoàn cược cho mọi người.\n\n${allRoles}`
+            });
+            return channel.send({ embeds: [drawEmbed] });
         }
 
         const winIds = Object.keys(state.players).filter(id => ROLES[state.players[id].role].team === team);
@@ -241,10 +256,15 @@ module.exports = {
         const share = Math.floor(prize / payees.length);
         for (const id of payees) { await db.addMoney(id, share, 'wallet'); db.questIncr(id, 'gamble_win', 1); }
 
-        await channel.send({ embeds: [new EmbedBuilder()
-            .setColor(team === 'wolves' ? config.COLORS.ERROR : config.COLORS.SUCCESS)
-            .setTitle(team === 'wolves' ? '🐺 BẦY SÓI THẮNG!' : '🎉 DÂN LÀNG THẮNG!')
-            .setDescription(`${allRoles}\n\n🏆 ${payees.map(id => `<@${id}>`).join(', ')} chia nhau **${fmt(share)}** ${config.CURRENCY} mỗi người!`)
-            .setFooter({ text: `Pot ${fmt(pot)} · nhà cái giữ ${Math.round(config.PARTY.HOUSE_CUT * 100)}%` })] });
+        const winType = team === 'wolves' ? 'error' : 'success';
+        const winEmbed = buildWaguriEmbed(interaction, winType, {
+            title: team === 'wolves' ? '🐺・BẦY SÓI THẮNG!' : '🎉・DÂN LÀNG THẮNG!',
+            description: `${allRoles}\n\n🏆 ${payees.map(id => `<@${id}>`).join(', ')} chia nhau **${fmt(share)}** ${config.CURRENCY} mỗi người!`
+        });
+        winEmbed.setFooter({
+            text: `Pot ${fmt(pot)} · nhà cái giữ ${Math.round(config.PARTY.HOUSE_CUT * 100)}% • ${winEmbed.data.footer.text}`,
+            iconURL: winEmbed.data.footer.icon_url
+        });
+        await channel.send({ embeds: [winEmbed] });
     },
 };

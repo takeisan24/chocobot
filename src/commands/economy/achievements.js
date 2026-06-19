@@ -48,11 +48,15 @@ module.exports = {
             ? `🏅 **${a.name}** — ${a.desc}`
             : `🔒 ${a.name} — ${a.desc} · 🪙 ${fmt(a.reward)}`);
 
-        const embed = new EmbedBuilder()
-            .setColor(config.COLORS.JACKPOT)
-            .setTitle('🏅 Thành tựu')
-            .setDescription(lines.join('\n'))
-            .setFooter({ text: `Đã mở khóa ${unlocked.size}/${ACH.length}` });
+        const { buildWaguriEmbed } = require('../../lib/embed');
+        const embed = buildWaguriEmbed(interaction, 'jackpot', {
+            title: '🏅・Thành tựu',
+            description: lines.join('\n')
+        });
+        embed.setFooter({
+            text: `Đã mở khóa ${unlocked.size}/${ACH.length} • ${embed.data.footer.text}`,
+            iconURL: embed.data.footer.icon_url
+        });
 
         if (newly.length) {
             embed.addFields({ name: '🎉 Vừa mở khóa!', value: `${newly.length} thành tựu · +${fmt(reward)} ${config.CURRENCY}`, inline: false });

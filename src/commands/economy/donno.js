@@ -1,6 +1,7 @@
 const { SlashCommandBuilder } = require('discord.js');
 const db = require('../../database.js');
 const config = require('../../config');
+const { buildWaguriEmbed } = require('../../lib/embed');
 
 const fmt = n => Number(n).toLocaleString('vi-VN');
 
@@ -13,19 +14,38 @@ module.exports = {
         await interaction.deferReply();
         const me = interaction.user;
         const borrower = interaction.options.getUser('borrower');
-        if (!borrower || borrower.id === me.id) return interaction.editReply('Cậu muốn đòi nợ ai? Nhập @con nợ nhé~ 🌸');
+        if (!borrower || borrower.id === me.id) {
+            const embed = buildWaguriEmbed(interaction, 'warning', {
+                description: 'Cậu muốn đòi nợ ai? Nhập @con nợ nhé~ 🌸'
+            });
+            return interaction.editReply({ embeds: [embed] });
+        }
 
         const r = await db.loanCollect(me.id, borrower.id);
-        if (!r) return interaction.editReply('Ơ, có lỗi khi đòi nợ, thử lại sau nhé~ 🌸');
+        if (!r) {
+            const embed = buildWaguriEmbed(interaction, 'error', {
+                description: 'Ơ, có lỗi khi đòi nợ, thử lại sau nhé~ 🌸'
+            });
+            return interaction.editReply({ embeds: [embed] });
+        }
         if (r.status === 'not_overdue') {
-            return interaction.editReply(`<@${borrower.id}> chưa có khoản nào **quá hạn** để đòi (hoặc không nợ cậu). Kiên nhẫn chút nha~ 🌸`);
+            const embed = buildWaguriEmbed(interaction, 'warning', {
+                description: `<@${borrower.id}> chưa có khoản nào **quá hạn** để đòi (hoặc không nợ cậu). Kiên nhẫn chút nha~ 🌸`
+            });
+            return interaction.editReply({ embeds: [embed] });
         }
         if (r.status === 'broke') {
-            return interaction.editReply(`<@${borrower.id}> đang **cháy túi**, chưa moi được đồng nào 😤 Khoản quá hạn còn lại: **${fmt(r.overdue)}** ${config.CURRENCY}.`);
+            const embed = buildWaguriEmbed(interaction, 'error', {
+                description: `<@${borrower.id}> đang **cháy túi**, chưa moi được đồng nào 😤 Khoản quá hạn còn lại: **${fmt(r.overdue)}** ${config.CURRENCY}.`
+            });
+            return interaction.editReply({ embeds: [embed] });
         }
-        return interaction.editReply(
-            `🧾 Cậu đã cưỡng chế thu của <@${borrower.id}> **${fmt(r.collected)}** ${config.CURRENCY} ` +
-            `*(ví ${fmt(r.from_wallet)} + ngân hàng ${fmt(r.from_bank)})*.\n` +
-            (Number(r.overdue_left) > 0 ? `Còn nợ quá hạn: **${fmt(r.overdue_left)}** ${config.CURRENCY} — đòi tiếp khi nó có tiền nhé!` : '🎉 Đã thu đủ phần quá hạn!'));
+        
+        const embed = buildWaguriEmbed(interaction, 'success', {
+            title: '🧾 Cưỡng chế đòi nợ thành công!',
+            description: `Cậu đã cưỡng chế thu của <@${borrower.id}> **${fmt(r.collected)}** ${config.CURRENCY} *(ví ${fmt(r.from_wallet)} + ngân hàng ${fmt(r.from_bank)})*.\n` +
+                (Number(r.overdue_left) > 0 ? `Còn nợ quá hạn: **${fmt(r.overdue_left)}** ${config.CURRENCY} — đòi tiếp khi họ có tiền nhé!` : '🎉 Đã thu đủ phần quá hạn!')
+        });
+        return interaction.editReply({ embeds: [embed] });
     },
 };

@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, EmbedBuilder, ApplicationCommandOptionType } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ApplicationCommandOptionType, ActionRowBuilder, StringSelectMenuBuilder, ComponentType, MessageFlags } = require('discord.js');
 const config = require('../../config');
 
 const CATEGORIES = [
@@ -120,22 +120,32 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply();
         const cmdName = interaction.options.getString('command');
+        const { buildWaguriEmbed } = require('../../lib/embed');
 
         // --- Chi tiết một lệnh ---
         if (cmdName) {
             const command = interaction.client.commands.get(cmdName.replace(/^\//, '').toLowerCase());
-            if (!command) return interaction.editReply(`Không tìm thấy lệnh \`${cmdName}\`~ Gõ \`/help\` để xem danh sách nhé.`);
+            if (!command) {
+                const errEmbed = buildWaguriEmbed(interaction, 'error', {
+                    title: '🔎・Không tìm thấy lệnh',
+                    description: `Không tìm thấy lệnh \`${cmdName}\`~ Gõ \`/help\` để xem danh sách nhé.`
+                });
+                return interaction.editReply({ embeds: [errEmbed] });
+            }
 
             const json = command.data.toJSON();
-            const embed = new EmbedBuilder()
-                .setColor(config.COLORS.INFO)
-                .setTitle(`Lệnh: /${json.name}`)
-                .setDescription(json.description || 'Không có mô tả.')
-                .addFields(
+            const embed = buildWaguriEmbed(interaction, 'info', {
+                title: `🔎・Lệnh: /${json.name}`,
+                description: json.description || 'Không có mô tả.',
+                fields: [
                     { name: '📝 Cách dùng', value: '```\n' + buildUsage(json) + '\n```' },
-                    { name: '⌨️ Prefix', value: `Cũng gõ được: \`${config.PREFIX}${json.name}\`` },
-                )
-                .setFooter({ text: '<bắt buộc> · [tuỳ chọn]' });
+                    { name: '⌨️ Prefix', value: `Cũng gõ được: \`${config.PREFIX}${json.name}\`` }
+                ]
+            });
+            embed.setFooter({
+                text: `<bắt buộc> · [tuỳ chọn] • ${embed.data.footer.text}`,
+                iconURL: embed.data.footer.icon_url
+            });
 
             const opts = json.options || [];
             const subs = opts.filter(o => o.type === ApplicationCommandOptionType.Subcommand);
@@ -147,16 +157,66 @@ module.exports = {
             return interaction.editReply({ embeds: [embed] });
         }
 
-        // --- Danh sách theo nhóm ---
-        const embed = new EmbedBuilder()
-            .setColor(config.COLORS.INFO)
-            .setTitle('🌸 Bảng lệnh của Waguri')
-            .setDescription(`Dùng được cả **slash** (\`/work\`) lẫn **prefix** (\`${config.PREFIX}work\`). Gõ \`/help <lệnh>\` để xem chi tiết~`)
-            .setFooter({ text: `Tiền tố: ${config.PREFIX} • ví dụ: ${config.PREFIX}help work` });
+        // --- Danh sách theo nhóm qua Select Menu ---
+        const welcomeEmbed = buildWaguriEmbed(interaction, 'info', {
+            title: '🌸・Sổ Tay Hướng Dẫn Của Waguri',
+            description: `Chào cậu! Tớ là Waguri Kaoruko đây~ Cậu có muốn cùng tớ khám phá Kikyo Academy hay ghé tiệm bánh Gekka ăn bánh kem dâu không? 🍰\n\nDưới đây là danh sách các danh mục lệnh tớ có thể giúp cậu. Hãy chọn một danh mục ở menu bên dưới để tớ giới thiệu chi tiết từng lệnh nhé!\n\n*(Dùng được cả **Slash** \`/work\` lẫn **Prefix** \`${config.PREFIX}work\`)*`
+        });
 
-        for (const cat of CATEGORIES) {
-            embed.addFields({ name: cat.name, value: cat.cmds.map(([c, d]) => `\`/${c}\` — ${d}`).join('\n') });
-        }
-        await interaction.editReply({ embeds: [embed] });
+        welcomeEmbed.setFooter({
+            text: `Chọn danh mục bên dưới • ${welcomeEmbed.data.footer.text}`,
+            iconURL: welcomeEmbed.data.footer.icon_url
+        });
+
+        // Tạo Select Menu các danh mục
+        const selectMenu = new StringSelectMenuBuilder()
+            .setCustomId('help_category')
+            .setPlaceholder('🌸 Chọn một danh mục lệnh...')
+            .addOptions(
+                CATEGORIES.map((cat, idx) => ({
+                    label: cat.name,
+                    description: `Xem các lệnh thuộc nhóm ${cat.name}`,
+                    value: String(idx)
+                }))
+            );
+
+        const row = new ActionRowBuilder().addComponents(selectMenu);
+        const msg = await interaction.editReply({ embeds: [welcomeEmbed], components: [row] });
+
+        const collector = msg.createMessageComponentCollector({
+            componentType: ComponentType.StringSelect,
+            time: 90000
+        });
+
+        collector.on('collect', async (i) => {
+            if (i.user.id !== interaction.user.id) {
+                return i.reply({ content: 'Chỉ người gõ lệnh mới điều khiển được menu này thôi nha~ 🌸', flags: MessageFlags.Ephemeral });
+            }
+
+            const catIdx = parseInt(i.values[0], 10);
+            const cat = CATEGORIES[catIdx];
+
+            const categoryEmbed = buildWaguriEmbed(interaction, 'info', {
+                title: `🌸・Danh mục: ${cat.name}`,
+                description: `Dưới đây là các lệnh thuộc nhóm **${cat.name}**:\n\n` +
+                    cat.cmds.map(([c, d]) => `> \`/${c}\` — ${d}`).join('\n') +
+                    `\n\n*Gõ \`/help <lệnh>\` để xem chi tiết cách dùng của từng lệnh nhé!*`
+            });
+
+            // Giữ nguyên footer
+            categoryEmbed.setFooter({
+                text: `Chọn danh mục bên dưới • ${categoryEmbed.data.footer.text}`,
+                iconURL: categoryEmbed.data.footer.icon_url
+            });
+
+            await i.update({ embeds: [categoryEmbed], components: [row] });
+        });
+
+        collector.on('end', async () => {
+            // Vô hiệu hóa Select Menu sau khi hết thời gian tương tác
+            const disabledMenu = StringSelectMenuBuilder.from(selectMenu).setDisabled(true).setPlaceholder('Menu đã hết hạn sử dụng 🌸');
+            const disabledRow = new ActionRowBuilder().addComponents(disabledMenu);
+            await interaction.editReply({ components: [disabledRow] }).catch(() => {});
+        });
     },
 };

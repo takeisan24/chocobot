@@ -23,18 +23,22 @@ module.exports = {
 
         // Phân phối EV ÂM (~0.7x) -> rương là money sink thật, spam mở sẽ lỗ dần.
         const r = Math.random();
-        let desc, color = config.COLORS.SUCCESS;
-        if (r < 0.40) { const a = money(0.1 + Math.random() * 0.3); desc = `💵 Chút tiền lẻ: **+${fmt(a)}** ${config.CURRENCY}`; color = config.COLORS.WARNING; }
-        else if (r < 0.65) { const a = money(0.5 + Math.random() * 0.4); desc = `💰 Cũng được! **+${fmt(a)}** ${config.CURRENCY}`; color = config.COLORS.WARNING; }
+        let desc, type = 'success';
+        if (r < 0.40) { const a = money(0.1 + Math.random() * 0.3); desc = `💵 Chút tiền lẻ: **+${fmt(a)}** ${config.CURRENCY}`; type = 'warning'; }
+        else if (r < 0.65) { const a = money(0.5 + Math.random() * 0.4); desc = `💰 Cũng được! **+${fmt(a)}** ${config.CURRENCY}`; type = 'warning'; }
         else if (r < 0.80) { desc = `📦 Vật phẩm: **${await giveItem(COMMON)}**!`; }
         else if (r < 0.92) { const a = money(1 + Math.random() * 0.8); desc = `💰💰 Khá đó! **+${fmt(a)}** ${config.CURRENCY}`; }
         else if (r < 0.975) { desc = `🎁 Vật phẩm xịn: **${await giveItem(GOOD)}**!`; }
-        else if (r < 0.997) { const a = money(2.5 + Math.random() * 1.5); desc = `🤑 ĐẠI TRÚNG: **+${fmt(a)}** ${config.CURRENCY}!!!`; color = config.COLORS.JACKPOT; }
-        else { desc = `💎 CỰC HIẾM! Cậu nhận được **${await giveItem(RARE)}**!`; color = config.COLORS.JACKPOT; }
+        else if (r < 0.997) { const a = money(2.5 + Math.random() * 1.5); desc = `🤑 ĐẠI TRÚNG: **+${fmt(a)}** ${config.CURRENCY}!!!`; type = 'jackpot'; }
+        else { desc = `💎 CỰC HIẾM! Cậu nhận được **${await giveItem(RARE)}**!`; type = 'jackpot'; }
 
         const u = await db.getUser(userId);
-        await interaction.editReply({ embeds: [new EmbedBuilder()
-            .setColor(color).setTitle('🎁 Mở Rương Bí Ẩn')
-            .setDescription(`Cậu chi **${fmt(cost)}** ${config.CURRENCY} mở rương...\n\n${desc}\n\n💵 Số dư ví: **${fmt(u?.wallet || 0)}** ${config.CURRENCY}`)] });
+        const { buildWaguriEmbed } = require('../../lib/embed');
+        const embed = buildWaguriEmbed(interaction, type, {
+            title: '🎁・Mở Rương Bí Ẩn',
+            description: `Cậu chi **${fmt(cost)}** ${config.CURRENCY} mở rương...\n\n${desc}\n\n💵 Số dư ví: **${fmt(u?.wallet || 0)}** ${config.CURRENCY}`
+        }).setTimestamp();
+
+        await interaction.editReply({ embeds: [embed] });
     },
 };

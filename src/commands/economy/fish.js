@@ -29,26 +29,42 @@ module.exports = {
 
         const user = await db.getUser(userId);
         const userHealth = user && user.health !== undefined ? user.health : 100;
+        const { buildWaguriEmbed } = require('../../lib/embed');
         if (userHealth < 30) {
-            return interaction.editReply(`🏥 Sức khỏe của cậu quá yếu (**${userHealth}/100** ❤️). Cậu cần ít nhất **30** sức khỏe để câu cá. Hãy dùng thuốc/hộp y tế (\`/eat\`) hoặc chạy lệnh \`/hospital\` để nhập viện nhé!`);
+            const embed = buildWaguriEmbed(interaction, 'error', {
+                title: '🎣・Đi câu cá',
+                description: `🏥 Sức khỏe của cậu quá yếu (**${userHealth}/100** ❤️). Cậu cần ít nhất **30** sức khỏe để câu cá. Hãy dùng thuốc/hộp y tế (\`/eat\`) hoặc chạy lệnh \`/hospital\` để nhập viện nhé!`
+            });
+            return interaction.editReply({ embeds: [embed] });
         }
 
         // Kiểm tra và sử dụng công cụ
         const toolResult = await db.useTool(userId, 'can_cau');
         if (!toolResult || toolResult.status === 'no_tool') {
-            return interaction.editReply('Cậu cần mua **Cần câu cá** 🎣 ở `/shop` mới đi câu được nhé~ 🌸');
+            const embed = buildWaguriEmbed(interaction, 'error', {
+                title: '🎣・Đi câu cá',
+                description: 'Cậu cần mua **Cần câu cá** 🎣 ở `/shop` mới đi câu được nhé~ 🌸'
+            });
+            return interaction.editReply({ embeds: [embed] });
         }
 
         const cd = onCooldown('fish', userId, config.ACTION_COOLDOWN_MS);
-        if (cd) return interaction.editReply(`Từ từ thôi nào~ nghỉ ${cd}s rồi câu tiếp nhé! 🌸`);
+        if (cd) {
+            const embed = buildWaguriEmbed(interaction, 'warning', {
+                title: '🎣・Đi câu cá',
+                description: `Từ từ thôi nào~ nghỉ ${cd}s rồi câu tiếp nhé! 🌸`
+            });
+            return interaction.editReply({ embeds: [embed] });
+        }
 
         const energyLeft = await db.spendEnergy(userId, config.FISH.ENERGY_COST);
         if (energyLeft < 0) {
             const cur = await db.getEnergy(userId);
-            return interaction.editReply(
-                `Cậu hết năng lượng để câu rồi (${cur}/${config.ENERGY.MAX} ⚡, cần ${config.FISH.ENERGY_COST}). ` +
-                `Nghỉ chút hoặc \`/eat\` nhé~ 🌸`
-            );
+            const embed = buildWaguriEmbed(interaction, 'warning', {
+                title: '🎣・Đi câu cá',
+                description: `Cậu hết năng lượng để câu rồi (${cur}/${config.ENERGY.MAX} ⚡, cần ${config.FISH.ENERGY_COST}). Nghỉ chút hoặc \`/eat\` nhé~ 🌸`
+            });
+            return interaction.editReply({ embeds: [embed] });
         }
 
         const c = pickCatch();
@@ -87,17 +103,17 @@ module.exports = {
             desc += `\n🎉 Lên **Level ${newLevel}**! Thưởng **+${fmt(bonus)}** ${config.CURRENCY} 🎁`;
         }
 
-        const embed = new EmbedBuilder()
-            .setColor(payout > 0 ? config.COLORS.SUCCESS : config.COLORS.WARNING)
-            .setTitle('🎣 Đi câu cá')
-            .setDescription(desc)
-            .addFields(
+        const embedType = payout > 0 ? 'success' : 'warning';
+        const embed = buildWaguriEmbed(interaction, embedType, {
+            title: '🎣・Đi câu cá',
+            description: desc,
+            fields: [
                 { name: '💵 Số dư ví', value: `${payout > 0 ? '+' + fmt(payout) + ' → ' : ''}**${fmt(u?.wallet || 0)}** ${config.CURRENCY}`, inline: false },
                 { name: 'Kinh nghiệm', value: `+${gainedExp} EXP`, inline: true },
                 { name: 'Năng lượng', value: `${energyLeft}/${config.ENERGY.MAX} ⚡`, inline: true },
-                { name: '❤️ Sức khỏe', value: `${u && u.health !== undefined ? u.health : 100}/100`, inline: true },
-            )
-            .setTimestamp();
+                { name: '❤️ Sức khỏe', value: `${u && u.health !== undefined ? u.health : 100}/100`, inline: true }
+            ]
+        }).setTimestamp();
         await interaction.editReply({ embeds: [embed] });
     },
 };

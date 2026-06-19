@@ -1,6 +1,6 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const config = require('../../config');
+const { SlashCommandBuilder } = require('discord.js');
 const { restFatigue } = require('../../lib/fatigue');
+const { buildWaguriEmbed } = require('../../lib/embed');
 
 // Độ hợp ổn định theo cặp (cùng cặp luôn ra cùng %)
 function compat(a, b) {
@@ -32,13 +32,18 @@ module.exports = {
         restFatigue(interaction.user.id, 1); // giải trí giảm mệt
         const a = interaction.options.getUser('user1');
         const b = interaction.options.getUser('user2') || interaction.user;
-        if (a.id === b.id) return interaction.editReply('Ghép một người với chính họ thì... 100% yêu bản thân nhé! 💖');
+        if (a.id === b.id) {
+            const embed = buildWaguriEmbed(interaction, 'warning', {
+                description: 'Ghép một người với chính họ thì... 100% yêu bản thân nhé! 💖'
+            });
+            return interaction.editReply({ embeds: [embed] });
+        }
 
         const p = compat(a.id, b.id);
-        const embed = new EmbedBuilder()
-            .setColor(config.COLORS.INFO)
-            .setTitle('💘 Đo độ hợp')
-            .setDescription(`<@${a.id}> 💞 <@${b.id}>\n\n${bar(p)}\n**${p}%** — ${comment(p)}`);
+        const embed = buildWaguriEmbed(interaction, 'info', {
+            title: '💘 Đo độ hợp đôi',
+            description: `<@${a.id}> 💞 <@${b.id}>\n\n${bar(p)}\n**${p}%** — ${comment(p)}`
+        });
         await interaction.editReply({ embeds: [embed] });
     },
 };

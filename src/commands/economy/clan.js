@@ -35,90 +35,104 @@ module.exports = {
         const me = interaction.user;
         const sub = interaction.options.getSubcommand();
         const C = config.CURRENCY;
+        const { buildWaguriEmbed } = require('../../lib/embed');
+
+        const replyEmbed = (type, title, desc) => {
+            const embed = buildWaguriEmbed(interaction, type, { title, description: desc });
+            return interaction.editReply({ embeds: [embed] });
+        };
 
         if (sub === 'create') {
             const name = interaction.options.getString('name').trim();
             const r = await db.clanCreate(me.id, name);
-            if (!r) return interaction.editReply('Ơ, có lỗi, thử lại sau nhé~');
+            if (!r) return replyEmbed('error', '🏰・Lập Bang Hội', 'Ơ, có lỗi, thử lại sau nhé~ 🌸');
             const msg = { in_clan: 'Cậu đang ở trong một bang rồi~ Rời bang trước đã nhé.', name_taken: 'Tên bang này đã có người dùng rồi~', poor: `Cần **${fmt(config.CLAN.CREATE_COST)}** ${C} để lập bang mà ví chưa đủ~ 😟` }[r.status];
-            if (msg) return interaction.editReply(msg);
-            return interaction.editReply(`🏰 Chúc mừng! Cậu đã lập bang **${name}** (phí ${fmt(config.CLAN.CREATE_COST)} ${C}). Rủ bạn bè \`/clan join ${name}\` nhé~`);
+            if (msg) return replyEmbed('error', '🏰・Lập Bang Hội', msg);
+            return replyEmbed('success', '🏰・Lập Bang Hội', `Chúc mừng! Cậu đã lập bang **${name}** (phí ${fmt(config.CLAN.CREATE_COST)} ${C}).\nRủ bạn bè dùng \`/clan join ${name}\` nhé~`);
         }
 
         if (sub === 'join') {
             const name = interaction.options.getString('name').trim();
             const r = await db.clanJoin(me.id, name);
-            if (!r) return interaction.editReply('Ơ, có lỗi, thử lại sau nhé~');
+            if (!r) return replyEmbed('error', '🏰・Gia nhập Bang', 'Ơ, có lỗi, thử lại sau nhé~ 🌸');
             const msg = { in_clan: 'Cậu đang ở trong một bang rồi~', notfound: 'Không tìm thấy bang này~' }[r.status];
-            if (msg) return interaction.editReply(msg);
-            return interaction.editReply(`🏰 Cậu đã gia nhập bang **${r.name}**! Chào mừng tân binh~ 🎉`);
+            if (msg) return replyEmbed('error', '🏰・Gia nhập Bang', msg);
+            return replyEmbed('success', '🏰・Gia nhập Bang', `Cậu đã gia nhập bang **${r.name}**! Chào mừng tân binh~ 🎉`);
         }
 
         if (sub === 'leave') {
             const r = await db.clanLeave(me.id);
-            if (!r) return interaction.editReply('Ơ, có lỗi, thử lại sau nhé~');
+            if (!r) return replyEmbed('error', '🏰・Rời Bang', 'Ơ, có lỗi, thử lại sau nhé~ 🌸');
             const msg = { not_in: 'Cậu đâu có ở bang nào~', is_leader: 'Cậu là trưởng bang — phải `/clan disband` hoặc chuyển giao trước nhé.' }[r.status];
-            if (msg) return interaction.editReply(msg);
-            return interaction.editReply('👋 Cậu đã rời bang. Hẹn gặp lại~');
+            if (msg) return replyEmbed('error', '🏰・Rời Bang', msg);
+            return replyEmbed('success', '🏰・Rời Bang', 'Cậu đã rời bang. Hẹn gặp lại~ 👋');
         }
 
         if (sub === 'deposit') {
             const amount = interaction.options.getInteger('amount');
             const r = await db.clanDeposit(me.id, amount);
-            if (!r) return interaction.editReply('Ơ, có lỗi, thử lại sau nhé~');
-            if (r.status === 'not_in') return interaction.editReply('Cậu chưa ở bang nào~');
-            if (r.status === 'poor') return interaction.editReply('Ví cậu không đủ để góp~ 😟');
-            return interaction.editReply(`💰 Cậu đã góp **${fmt(amount)}** ${C} vào quỹ bang. Quỹ hiện có: **${fmt(r.bank)}** ${C}.`);
+            if (!r) return replyEmbed('error', '💰・Góp Quỹ Bang', 'Ơ, có lỗi, thử lại sau nhé~ 🌸');
+            if (r.status === 'not_in') return replyEmbed('error', '💰・Góp Quỹ Bang', 'Cậu chưa ở bang nào~');
+            if (r.status === 'poor') return replyEmbed('error', '💰・Góp Quỹ Bang', 'Ví cậu không đủ để góp~ 😟');
+            return replyEmbed('success', '💰・Góp Quỹ Bang', `Cậu đã góp **${fmt(amount)}** ${C} vào quỹ bang. Quỹ hiện có: **${fmt(r.bank)}** ${C}.`);
         }
 
         if (sub === 'withdraw') {
             const amount = interaction.options.getInteger('amount');
             const r = await db.clanWithdraw(me.id, amount);
-            if (!r) return interaction.editReply('Ơ, có lỗi, thử lại sau nhé~');
+            if (!r) return replyEmbed('error', '💸・Rút Quỹ Bang', 'Ơ, có lỗi, thử lại sau nhé~ 🌸');
             const msg = { not_in: 'Cậu chưa ở bang nào~', not_leader: 'Chỉ trưởng bang mới rút quỹ được nhé~', poor_clan: `Quỹ bang chỉ còn **${fmt(r.bank)}** ${C}, không đủ~` }[r.status];
-            if (msg) return interaction.editReply(msg);
-            return interaction.editReply(`💸 Đã rút **${fmt(amount)}** ${C} từ quỹ bang về ví của cậu.`);
+            if (msg) return replyEmbed('error', '💸・Rút Quỹ Bang', msg);
+            return replyEmbed('success', '💸・Rút Quỹ Bang', `Đã rút **${fmt(amount)}** ${C} từ quỹ bang về ví của cậu.`);
         }
 
         if (sub === 'kick') {
             const target = interaction.options.getUser('user');
             const r = await db.clanKick(me.id, target.id);
-            if (!r) return interaction.editReply('Ơ, có lỗi, thử lại sau nhé~');
+            if (!r) return replyEmbed('error', '👢・Trục xuất Thành viên', 'Ơ, có lỗi, thử lại sau nhé~ 🌸');
             const msg = { not_in: 'Cậu chưa ở bang nào~', not_leader: 'Chỉ trưởng bang mới đuổi được~', self: 'Không tự đuổi mình được đâu~ 😄', not_member: `<@${target.id}> không ở trong bang của cậu~` }[r.status];
-            if (msg) return interaction.editReply(msg);
-            return interaction.editReply(`👢 Đã đuổi <@${target.id}> khỏi bang.`);
+            if (msg) return replyEmbed('error', '👢・Trục xuất Thành viên', msg);
+            return replyEmbed('success', '👢・Trục xuất Thành viên', `Đã đuổi <@${target.id}> khỏi bang.`);
         }
 
         if (sub === 'disband') {
             const r = await db.clanDisband(me.id);
-            if (!r) return interaction.editReply('Ơ, có lỗi, thử lại sau nhé~');
+            if (!r) return replyEmbed('error', '🏚️・Giải tán Bang', 'Ơ, có lỗi, thử lại sau nhé~ 🌸');
             const msg = { not_in: 'Cậu chưa ở bang nào~', not_leader: 'Chỉ trưởng bang mới giải tán được~' }[r.status];
-            if (msg) return interaction.editReply(msg);
-            return interaction.editReply(`🏚️ Bang đã giải tán. ${Number(r.refund) > 0 ? `Quỹ còn lại **${fmt(r.refund)}** ${C} đã trả về ví cậu.` : ''}`);
+            if (msg) return replyEmbed('error', '🏚️・Giải tán Bang', msg);
+            return replyEmbed('success', '🏚️・Giải tán Bang', `Bang đã giải tán. ${Number(r.refund) > 0 ? `Quỹ còn lại **${fmt(r.refund)}** ${C} đã trả về ví cậu.` : ''}`);
         }
 
         if (sub === 'list') {
             const clans = await db.clanList(15);
             if (!clans.length) return interaction.editReply('Chưa có bang nào được lập~ Hãy là người đầu tiên với `/clan create`!');
             const lines = clans.map((c, i) => `${['🥇', '🥈', '🥉'][i] || `**${i + 1}.**`} **${c.name}** (Lv.${clanLevel(c.xp)}) — quỹ **${fmt(c.bank)}** ${C} · <@${c.leader_id}>`);
-            return interaction.editReply({ embeds: [new EmbedBuilder().setColor(config.COLORS.JACKPOT).setTitle('🏰 Bảng xếp hạng Bang hội').setDescription(lines.join('\n'))] });
+            const { buildWaguriEmbed } = require('../../lib/embed');
+            const embed = buildWaguriEmbed(interaction, 'jackpot', {
+                title: '🏰・Bảng xếp hạng Bang hội',
+                description: lines.join('\n')
+            });
+            return interaction.editReply({ embeds: [embed] });
         }
 
         if (sub === 'war') {
             const u = await db.getUser(me.id);
-            if (!u?.clan_id) return interaction.editReply('Cậu chưa ở bang nào~');
+            if (!u?.clan_id) return replyEmbed('error', '⚔️・Chiến tranh Bang hội', 'Cậu chưa ở bang nào~');
             const myClan = await db.clanById(u.clan_id);
-            if (!myClan || myClan.leader_id !== me.id) return interaction.editReply('Chỉ trưởng bang mới khai chiến được nhé~');
+            if (!myClan || myClan.leader_id !== me.id) return replyEmbed('error', '⚔️・Chiến tranh Bang hội', 'Chỉ trưởng bang mới khai chiến được nhé~');
             const cdUntil = warCooldown.get(myClan.id) || 0;
-            if (Date.now() < cdUntil) return interaction.editReply(`Bang cậu vừa chinh chiến xong, nghỉ ngơi đã~ Quay lại sau <t:${Math.floor(cdUntil / 1000)}:R>.`);
+            if (Date.now() < cdUntil) return replyEmbed('warning', '⚔️・Chiến tranh Bang hội', `Bang cậu vừa chinh chiến xong, nghỉ ngơi đã~ Quay lại sau <t:${Math.floor(cdUntil / 1000)}:R>.`);
             const foe = await db.clanByName(interaction.options.getString('clan').trim());
-            if (!foe) return interaction.editReply('Không tìm thấy bang đối thủ~');
-            if (foe.id === myClan.id) return interaction.editReply('Không thể tự đánh bang mình đâu~ 😅');
+            if (!foe) return replyEmbed('error', '⚔️・Chiến tranh Bang hội', 'Không tìm thấy bang đối thủ~');
+            if (foe.id === myClan.id) return replyEmbed('error', '⚔️・Chiến tranh Bang hội', 'Không thể tự đánh bang mình đâu~ 😅');
             const stake = Math.min(Number(myClan.bank), Number(foe.bank), config.CLAN.WAR_STAKE);
-            if (stake <= 0) return interaction.editReply(`Cả hai bang đều cần có quỹ (cược tối đa ${fmt(config.CLAN.WAR_STAKE)} ${C}) mới khai chiến được. Góp quỹ thêm nhé~`);
+            if (stake <= 0) return replyEmbed('warning', '⚔️・Chiến tranh Bang hội', `Cả hai bang đều cần có quỹ (cược tối đa ${fmt(config.CLAN.WAR_STAKE)} ${C}) mới khai chiến được. Góp quỹ thêm nhé~`);
 
-            const embed = new EmbedBuilder().setColor(config.COLORS.WARNING).setTitle('⚔️ Lời tuyên chiến!')
-                .setDescription(`Bang **${myClan.name}** tuyên chiến với bang **${foe.name}**!\nCược: **${fmt(stake)}** ${C} — bang thua mất, bang thắng cướp.\n\n<@${foe.leader_id}> (trưởng bang **${foe.name}**) có chấp nhận không?`);
+            const { buildWaguriEmbed } = require('../../lib/embed');
+            const embed = buildWaguriEmbed(interaction, 'warning', {
+                title: '⚔️・Lời tuyên chiến!',
+                description: `Bang **${myClan.name}** tuyên chiến với bang **${foe.name}**!\nCược: **${fmt(stake)}** ${C} — bang thua mất, bang thắng cướp.\n\n<@${foe.leader_id}> (trưởng bang **${foe.name}**) có chấp nhận không?`
+            });
             const row = (dis = false) => new ActionRowBuilder().addComponents(
                 new ButtonBuilder().setCustomId('accept').setLabel('Chấp nhận ⚔️').setStyle(ButtonStyle.Danger).setDisabled(dis),
                 new ButtonBuilder().setCustomId('decline').setLabel('Từ chối 🏳️').setStyle(ButtonStyle.Secondary).setDisabled(dis));
@@ -129,7 +143,11 @@ module.exports = {
                 if (i.user.id !== foe.leader_id) return i.reply({ content: 'Chỉ trưởng bang đối thủ mới trả lời được~', flags: MessageFlags.Ephemeral });
                 answered = true;
                 if (i.customId === 'decline') {
-                    await i.update({ embeds: [embed.setColor(config.COLORS.ERROR).setDescription(`Bang **${foe.name}** đã từ chối khai chiến. 🏳️`)], components: [] });
+                    const decEmbed = buildWaguriEmbed(interaction, 'error', {
+                        title: '⚔️・Từ chối chiến đấu',
+                        description: `Bang **${foe.name}** đã từ chối lời thách đấu của bang cậu. 🏳️`
+                    });
+                    await i.update({ embeds: [decEmbed], components: [] });
                     return collector.stop('done');
                 }
                 const [myExps, foeExps] = await Promise.all([db.clanMembersExp(myClan.id), db.clanMembersExp(foe.id)]);
@@ -140,12 +158,21 @@ module.exports = {
                 const r = await db.clanWar(winner.id, loser.id, stake);
                 const taken = r?.taken ?? 0;
                 warCooldown.set(myClan.id, Date.now() + 10 * 60000);
-                await i.update({ embeds: [new EmbedBuilder().setColor(config.COLORS.JACKPOT).setTitle('⚔️ Kết quả chiến tranh bang')
-                    .setDescription(`**${myClan.name}** (sức mạnh ${Math.round(pA)}) ⚔️ **${foe.name}** (sức mạnh ${Math.round(pB)})\n\n🏆 Bang **${winner.name}** chiến thắng, cướp **${fmt(taken)}** ${C} vào quỹ!`)], components: [] });
+                const winEmbed = buildWaguriEmbed(interaction, 'jackpot', {
+                    title: '⚔️・Kết quả chiến tranh bang',
+                    description: `**${myClan.name}** (sức mạnh ${Math.round(pA)}) ⚔️ **${foe.name}** (sức mạnh ${Math.round(pB)})\n\n🏆 Bang **${winner.name}** chiến thắng, cướp **${fmt(taken)}** ${C} vào quỹ!`
+                });
+                await i.update({ embeds: [winEmbed], components: [] });
                 collector.stop('done');
             });
             collector.on('end', async () => {
-                if (!answered) await interaction.editReply({ embeds: [embed.setColor(config.COLORS.ERROR).setDescription(`Bang **${foe.name}** không trả lời kịp. Khai chiến bị huỷ.`)], components: [] }).catch(() => {});
+                if (!answered) {
+                    const timeoutEmbed = buildWaguriEmbed(interaction, 'error', {
+                        title: '⚔️・Huỷ thách đấu',
+                        description: `Bang **${foe.name}** không phản hồi kịp. Lời tuyên chiến đã hết hạn.`
+                    });
+                    await interaction.editReply({ embeds: [timeoutEmbed], components: [] }).catch(() => {});
+                }
             });
             return;
         }
@@ -155,19 +182,23 @@ module.exports = {
         let clan;
         if (name) clan = await db.clanByName(name.trim());
         else { const u = await db.getUser(me.id); clan = u?.clan_id ? await db.clanById(u.clan_id) : null; }
-        if (!clan) return interaction.editReply(name ? 'Không tìm thấy bang này~' : 'Cậu chưa ở bang nào~ Gõ `/clan list` để xem các bang nhé.');
+        if (!clan) return replyEmbed('error', '🏰・Thông tin Bang hội', name ? 'Không tìm thấy bang này~' : 'Cậu chưa ở bang nào~ Gõ `/clan list` để xem các bang nhé.');
 
         const members = await db.clanMembers(clan.id);
         const memList = members.map(id => `${id === clan.leader_id ? '👑' : '▫️'} <@${id}>`).join('\n') || '*(trống)*';
-        return interaction.editReply({ embeds: [new EmbedBuilder()
-            .setColor(config.COLORS.INFO)
-            .setTitle(`🏰 Bang: ${clan.name} (Lv.${clanLevel(clan.xp)})`)
-            .addFields(
+        const { getWaguriFooter } = require('../../lib/embed');
+        const embed = buildWaguriEmbed(interaction, 'info', {
+            title: `🏰・Bang: ${clan.name} (Lv.${clanLevel(clan.xp)})`,
+            fields: [
                 { name: 'Trưởng bang', value: `<@${clan.leader_id}>`, inline: true },
                 { name: 'Quỹ bang', value: `${fmt(clan.bank)} ${C}`, inline: true },
                 { name: 'Cổ tức/ngày', value: `${fmt(clanLevel(clan.xp) * 100)} ${C}/thành viên`, inline: true },
                 { name: `Thành viên (${members.length})`, value: memList, inline: false },
-            )
-            .setFooter({ text: 'Góp quỹ (/clan deposit) để bang lên cấp & cổ tức cao hơn~' })] });
+            ]
+        });
+        const footerObj = getWaguriFooter(interaction.client);
+        footerObj.text = 'Góp quỹ (/clan deposit) để bang lên cấp & cổ tức cao hơn · ' + footerObj.text;
+        embed.setFooter(footerObj);
+        return interaction.editReply({ embeds: [embed] });
     },
 };

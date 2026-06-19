@@ -1,7 +1,8 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const db = require('../../database.js');
 const config = require('../../config');
 const { restFatigue } = require('../../lib/fatigue');
+const { buildWaguriEmbed } = require('../../lib/embed');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -26,7 +27,13 @@ module.exports = {
         const itemId = interaction.options.getString('item');
         const qty = interaction.options.getInteger('quantity') || 1;
         const item = await db.getItem(itemId);
-        if (!item) return interaction.editReply('Mình không tìm thấy món này~ 🌸');
+        if (!item) {
+            const embed = buildWaguriEmbed(interaction, 'error', {
+                title: '😋・Sử dụng vật phẩm',
+                description: 'Mình không tìm thấy món này~ 🌸'
+            });
+            return interaction.editReply({ embeds: [embed] });
+        }
 
         // Dùng lần lượt tới khi đủ số lượng hoặc hết đồ trong kho
         let used = 0, lastStatus = 'ok';
@@ -42,7 +49,11 @@ module.exports = {
                 not_consumable: `**${item.name}** không phải đồ ăn/uống, không dùng kiểu này được đâu~`,
                 no_item: 'Mình không tìm thấy món này~',
             }[lastStatus] || 'Ơ, có lỗi rồi, cậu thử lại sau nhé~';
-            return interaction.editReply(`🌸 ${msg}`);
+            const embed = buildWaguriEmbed(interaction, 'warning', {
+                title: '😋・Sử dụng vật phẩm',
+                description: msg
+            });
+            return interaction.editReply({ embeds: [embed] });
         }
 
         restFatigue(interaction.user.id, used); // ăn uống nghỉ ngơi -> bớt mệt
@@ -58,8 +69,10 @@ module.exports = {
         }
         const note = used < qty ? ` *(kho chỉ còn đủ ${used} cái)*` : '';
 
-        await interaction.editReply({ embeds: [new EmbedBuilder()
-            .setColor(config.COLORS.SUCCESS)
-            .setDescription(`😋 Cậu đã dùng **${used}× ${item.name}** — ${effectText}${note}`)] });
+        const embed = buildWaguriEmbed(interaction, 'success', {
+            title: '😋・Sử dụng vật phẩm thành công!',
+            description: `Cậu đã dùng **${used}× ${item.name}** — ${effectText}${note}`
+        });
+        await interaction.editReply({ embeds: [embed] });
     },
 };

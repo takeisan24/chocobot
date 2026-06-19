@@ -11,20 +11,29 @@ module.exports = {
         await interaction.deferReply();
         const raw = interaction.options.getString('amount');
         const user = await db.getUser(interaction.user.id);
-        if (!user) return interaction.editReply('Hơ, mình chưa lấy được dữ liệu của cậu~ 🌸');
+        const { buildWaguriEmbed } = require('../../lib/embed');
+        if (!user) {
+            const embed = buildWaguriEmbed(interaction, 'error', { title: '🏦・Rút tiền', description: 'Hơ, mình chưa lấy được dữ liệu của cậu~ 🌸' });
+            return interaction.editReply({ embeds: [embed] });
+        }
 
         let amount = /^(all|hết|max)$/i.test(raw) ? Number(user.bank) : parseInt(raw, 10);
         if (!Number.isFinite(amount) || amount <= 0) {
-            return interaction.editReply('Số tiền không hợp lệ~ (nhập số hoặc `all`)');
+            const embed = buildWaguriEmbed(interaction, 'error', { title: '🏦・Rút tiền', description: 'Số tiền không hợp lệ~ (nhập số hoặc `all`)' });
+            return interaction.editReply({ embeds: [embed] });
         }
 
         const ok = await db.transferBank(interaction.user.id, amount, false);
-        if (!ok) return interaction.editReply('Ngân hàng của cậu không đủ tiền để rút 😟');
+        if (!ok) {
+            const embed = buildWaguriEmbed(interaction, 'error', { title: '🏦・Rút tiền', description: 'Ngân hàng của cậu không đủ tiền để rút 😟' });
+            return interaction.editReply({ embeds: [embed] });
+        }
 
         const u = await db.getUser(interaction.user.id);
-        const embed = new EmbedBuilder()
-            .setColor(config.COLORS.SUCCESS)
-            .setDescription(`💵 Đã rút **${amount.toLocaleString('vi-VN')}** ${config.CURRENCY} về ví nhé~ 🌸\n💵 Ví: **${Number(u?.wallet || 0).toLocaleString('vi-VN')}** · 🏦 Ngân hàng: **${Number(u?.bank || 0).toLocaleString('vi-VN')}** ${config.CURRENCY}`);
-        await interaction.editReply({ embeds: [embed] });
+        const embedSuccess = buildWaguriEmbed(interaction, 'success', {
+            title: '🏦・Rút tiền thành công',
+            description: `💵 Đã rút **${amount.toLocaleString('vi-VN')}** ${config.CURRENCY} về ví nhé~ 🌸\n💵 Ví: **${Number(u?.wallet || 0).toLocaleString('vi-VN')}** · 🏦 Ngân hàng: **${Number(u?.bank || 0).toLocaleString('vi-VN')}** ${config.CURRENCY}`
+        });
+        await interaction.editReply({ embeds: [embedSuccess] });
     },
 };

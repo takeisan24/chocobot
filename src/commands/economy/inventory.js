@@ -15,8 +15,13 @@ module.exports = {
         const target = interaction.options.getUser('target') || interaction.user;
 
         const inv = await db.getInventory(target.id);
+        const { buildWaguriEmbed } = require('../../lib/embed');
         if (!inv.length) {
-            return interaction.editReply(`Kho của **${target.username}** đang trống nè~ Đi \`/work\` rồi ghé \`/shop\` sắm đồ nhé! 🌸`);
+            const embed = buildWaguriEmbed(interaction, 'info', {
+                title: 'backpack・Kho đồ trống',
+                description: `Kho của **${target.username}** đang trống nè~ Đi \`/work\` rồi ghé \`/shop\` sắm đồ nhé! 🌸`
+            });
+            return interaction.editReply({ embeds: [embed] });
         }
 
         const lines = inv.map(r => `${TYPE_ICON[r.items?.type] || '📦'} **${r.items?.name || r.item_id}** ×${r.quantity}`);

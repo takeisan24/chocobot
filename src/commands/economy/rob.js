@@ -14,13 +14,24 @@ module.exports = {
         const robberId = interaction.user.id;
         const target = interaction.options.getUser('target');
 
-        if (!target) return interaction.editReply('Cậu định "ghé thăm" ai cơ? Nhập @người nhé~');
-        if (target.bot) return interaction.editReply('Bot làm gì có ví mà cướp~ 😄');
-        if (target.id === robberId) return interaction.editReply('Cậu tự cướp mình à? 🤨');
+        const { buildWaguriEmbed } = require('../../lib/embed');
+        if (!target) {
+            const embed = buildWaguriEmbed(interaction, 'error', { title: '🦹・Trộm cướp', description: 'Cậu định "ghé thăm" ai cơ? Nhập @người nhé~' });
+            return interaction.editReply({ embeds: [embed] });
+        }
+        if (target.bot) {
+            const embed = buildWaguriEmbed(interaction, 'error', { title: '🦹・Trộm cướp', description: 'Bot làm gì có ví mà cướp~ 😄' });
+            return interaction.editReply({ embeds: [embed] });
+        }
+        if (target.id === robberId) {
+            const embed = buildWaguriEmbed(interaction, 'error', { title: '🦹・Trộm cướp', description: 'Cậu tự cướp mình à? 🤨' });
+            return interaction.editReply({ embeds: [embed] });
+        }
 
         const tgt = await db.getUser(target.id);
         if (!tgt || Number(tgt.wallet) < config.ROB.MIN_TARGET_WALLET) {
-            return interaction.editReply(`Ví của <@${target.id}> trống trơn, chả có gì để lấy đâu~ 🌸`);
+            const embed = buildWaguriEmbed(interaction, 'warning', { title: '🦹・Trộm cướp', description: `Ví của <@${target.id}> trống trơn, chả có gì để lấy đâu~ 🌸` });
+            return interaction.editReply({ embeds: [embed] });
         }
 
         // Kiểm tra xem mục tiêu có nuôi Cún bảo vệ không (Level >= 5)
@@ -39,7 +50,11 @@ module.exports = {
         // Cooldown (atomic) — chỉ tính khi mục tiêu hợp lệ
         const cd = await db.claimCooldown(robberId, 'rob', config.ROB.COOLDOWN_SECONDS);
         if (cd) {
-            return interaction.editReply(`Cậu vừa "ra tay" xong, nghỉ chút đã nhé~ Quay lại sau <t:${Math.floor(cd / 1000)}:R>.`);
+            const embed = buildWaguriEmbed(interaction, 'warning', {
+                title: '🦹・Trộm cướp',
+                description: `Cậu vừa "ra tay" xong, nghỉ chút đã nhé~ Quay lại sau <t:${Math.floor(cd / 1000)}:R>.`
+            });
+            return interaction.editReply({ embeds: [embed] });
         }
 
         // Waguri không khuyến khích đâu nha 😟 nhưng game là game~
@@ -48,12 +63,16 @@ module.exports = {
             const pct = config.ROB.STEAL_MIN_PCT + Math.random() * (config.ROB.STEAL_MAX_PCT - config.ROB.STEAL_MIN_PCT);
             const amount = Math.max(1, Math.floor(Number(tgt.wallet) * pct));
             const ok = await db.transferMoney(target.id, robberId, amount);
-            if (!ok) return interaction.editReply('Hụt rồi, con mồi nhanh tay cất tiền mất tiêu~');
+            if (!ok) {
+                const embed = buildWaguriEmbed(interaction, 'error', { title: '🦹・Thất bại', description: 'Hụt rồi, con mồi nhanh tay cất tiền mất tiêu~' });
+                return interaction.editReply({ embeds: [embed] });
+            }
             const me = await db.getUser(robberId);
-            return interaction.editReply({ embeds: [new EmbedBuilder()
-                .setColor(config.COLORS.SUCCESS)
-                .setTitle('🦹 Trộm thành công!')
-                .setDescription(`Cậu lén lấy được **${fmt(amount)}** ${config.CURRENCY} từ ví <@${target.id}>.\n💵 Số dư của cậu: **${fmt(me?.wallet || 0)}** ${config.CURRENCY}\n*(Waguri giả vờ không thấy gì~ 🙈)*`)] });
+            const embedSuccess = buildWaguriEmbed(interaction, 'success', {
+                title: '🦹・Trộm thành công!',
+                description: `Cậu lén lấy được **${fmt(amount)}** ${config.CURRENCY} từ ví <@${target.id}>.\n💵 Số dư của cậu: **${fmt(me?.wallet || 0)}** ${config.CURRENCY}\n*(Waguri giả vờ không thấy gì~ 🙈)*`
+            });
+            return interaction.editReply({ embeds: [embedSuccess] });
         } else {
             const robber = await db.getUser(robberId);
             let fine = Math.floor(Number(robber.wallet) * config.ROB.FINE_PCT);
@@ -74,10 +93,11 @@ module.exports = {
             }
             desc += `\n💵 Số dư của cậu: **${fmt(displayBal)}** ${config.CURRENCY}\nLần sau đừng làm vậy nữa nhé~ 😟`;
 
-            return interaction.editReply({ embeds: [new EmbedBuilder()
-                .setColor(config.COLORS.ERROR)
-                .setTitle('🚨 Bị tóm rồi!')
-                .setDescription(desc)] });
+            const embedFail = buildWaguriEmbed(interaction, 'error', {
+                title: '🚨・Bị tóm rồi!',
+                description: desc
+            });
+            return interaction.editReply({ embeds: [embedFail] });
         }
     },
 };

@@ -1,4 +1,5 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
+const { getWaguriQuote } = require('./embed');
 
 /**
  * Gửi danh sách dạng phân trang (nút ◀ ▶). Chạy được cả slash lẫn prefix.
@@ -17,7 +18,10 @@ async function sendPaginated(interaction, { title, color, lines, perPage = 10, f
             .setColor(color)
             .setTitle(title)
             .setDescription(pages[page].join('\n'))
-            .setFooter({ text: `Trang ${page + 1}/${pages.length}${footerNote ? ' · ' + footerNote : ''}` });
+            .setFooter({
+                text: `🌸 Trang ${page + 1}/${pages.length}` + (footerNote ? ` · ${footerNote}` : '') + ` • ${getWaguriQuote()}`,
+                iconURL: interaction.client.user.displayAvatarURL()
+            });
         if (thumbnail) e.setThumbnail(thumbnail);
         return e;
     };

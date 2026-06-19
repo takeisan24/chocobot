@@ -19,41 +19,57 @@ module.exports = {
         const userId = interaction.user.id;
         const sub = interaction.options.getSubcommand();
 
+        const { buildWaguriEmbed } = require('../../lib/embed');
+        const replyEmbed = (type, title, desc) => {
+            const embed = buildWaguriEmbed(interaction, type, { title, description: desc });
+            return interaction.editReply({ embeds: [embed] });
+        };
+
         if (sub === 'view') {
             const u = await db.getUser(userId);
             const color = u?.profile_color && HEX.test(u.profile_color) ? parseInt(u.profile_color.replace('#', ''), 16) : config.COLORS.INFO;
-            return interaction.editReply({ embeds: [new EmbedBuilder().setColor(color)
-                .setTitle('🎨 Cosmetic của cậu')
-                .setDescription(
+            const embed = buildWaguriEmbed(interaction, 'info', {
+                title: '🎨・Cosmetic của cậu',
+                description:
                     `🏷️ Danh hiệu: ${u?.title ? `**${u.title}**` : '*(chưa có)*'}\n` +
-                    `🎨 Màu hồ sơ: ${u?.profile_color ? `**#${u.profile_color.replace('#', '')}**` : '*(mặc định)*'}`)
-                .setFooter({ text: 'Đặt: /cosmetic title · /cosmetic color' })] });
+                    `🎨 Màu hồ sơ: ${u?.profile_color ? `**#${u.profile_color.replace('#', '')}**` : '*(mặc định)*'}`
+            });
+            embed.setColor(color);
+            embed.setFooter({
+                text: `Đặt: /cosmetic title · /cosmetic color • ${embed.data.footer.text}`,
+                iconURL: embed.data.footer.icon_url
+            });
+            return interaction.editReply({ embeds: [embed] });
         }
 
         if (sub === 'title') {
             const text = interaction.options.getString('text').trim();
             if (!text || text.length > config.COSMETIC.MAX_TITLE_LEN) {
-                return interaction.editReply(`Danh hiệu tối đa **${config.COSMETIC.MAX_TITLE_LEN}** ký tự nhé~`);
+                return replyEmbed('error', '🎨・Đổi Danh Hiệu', `Danh hiệu tối đa **${config.COSMETIC.MAX_TITLE_LEN}** ký tự nhé~`);
             }
             if (!await db.addMoney(userId, -config.COSMETIC.TITLE_COST, 'wallet')) {
-                return interaction.editReply(`Cần **${fmt(config.COSMETIC.TITLE_COST)}** ${config.CURRENCY} để đổi danh hiệu mà ví chưa đủ~ 😟`);
+                return replyEmbed('error', '🎨・Đổi Danh Hiệu', `Cần **${fmt(config.COSMETIC.TITLE_COST)}** ${config.CURRENCY} để đổi danh hiệu mà ví chưa đủ~ 😟`);
             }
             await db.setCosmetic(userId, 'title', text);
-            return interaction.editReply(`✅ Danh hiệu mới của cậu: **${text}** — xem ở \`/profile\` nhé 🏷️`);
+            return replyEmbed('success', '🎨・Đổi Danh Hiệu', `Danh hiệu mới của cậu: **${text}** — xem ở \`/profile\` nhé 🏷️`);
         }
 
         if (sub === 'color') {
             let hex = interaction.options.getString('hex').trim();
             if (!HEX.test(hex)) {
-                return interaction.editReply('Mã màu chưa đúng~ Nhập 6 ký tự hex, vd `F1C40F` hoặc `#5865F2`.');
+                return replyEmbed('error', '🎨・Đổi Màu Hồ Sơ', 'Mã màu chưa đúng~ Nhập 6 ký tự hex, vd `F1C40F` hoặc `#5865F2`.');
             }
             hex = hex.replace('#', '').toUpperCase();
             if (!await db.addMoney(userId, -config.COSMETIC.COLOR_COST, 'wallet')) {
-                return interaction.editReply(`Cần **${fmt(config.COSMETIC.COLOR_COST)}** ${config.CURRENCY} để đổi màu mà ví chưa đủ~ 😟`);
+                return replyEmbed('error', '🎨・Đổi Màu Hồ Sơ', `Cần **${fmt(config.COSMETIC.COLOR_COST)}** ${config.CURRENCY} để đổi màu mà ví chưa đủ~ 😟`);
             }
             await db.setCosmetic(userId, 'profile_color', hex);
-            return interaction.editReply({ embeds: [new EmbedBuilder().setColor(parseInt(hex, 16))
-                .setDescription(`✅ Màu hồ sơ mới: **#${hex}** — xem ở \`/profile\` nhé 🎨`)] });
+            const embedSuccess = buildWaguriEmbed(interaction, 'success', {
+                title: '🎨・Đổi Màu Hồ Sơ',
+                description: `Màu hồ sơ mới: **#${hex}** — xem ở \`/profile\` nhé 🎨`
+            });
+            embedSuccess.setColor(parseInt(hex, 16));
+            return interaction.editReply({ embeds: [embedSuccess] });
         }
     },
 };

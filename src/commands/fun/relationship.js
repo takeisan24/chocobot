@@ -1,7 +1,7 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const db = require('../../database.js');
-const config = require('../../config');
 const { AFFECTION_TIERS, tierOf } = require('../../lib/ai/persona');
+const { buildWaguriEmbed } = require('../../lib/embed');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -17,11 +17,16 @@ module.exports = {
         const higher = [...AFFECTION_TIERS].reverse().find(x => x.min > aff);
         const nextLine = higher ? `Còn **${higher.min - aff}** điểm nữa để lên **${higher.name}**!` : 'Cậu đã đạt mức thân thiết cao nhất rồi đó~ 🥰';
 
-        const embed = new EmbedBuilder()
-            .setColor(config.COLORS.INFO)
-            .setAuthor({ name: `Thân thiết với Waguri — ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL() })
-            .setDescription(`Mức hiện tại: **${t.name}**\n💞 Điểm thiện cảm: **${aff}**\n\n${nextLine}`)
-            .setFooter({ text: 'Trò chuyện với Waguri (/ask hoặc @tag) để tăng thân thiết~' });
+        const embed = buildWaguriEmbed(interaction, 'info', {
+            description: `Mức hiện tại: **${t.name}**\n💞 Điểm thiện cảm: **${aff}**\n\n${nextLine}`
+        });
+
+        embed.setAuthor({ name: `Thân thiết với Waguri — ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL() });
+        embed.setFooter({
+            text: `Trò chuyện với Waguri (/ask hoặc @tag) để tăng thân thiết~ • ${embed.data.footer.text}`,
+            iconURL: embed.data.footer.icon_url
+        });
+
         await interaction.editReply({ embeds: [embed] });
     },
 };

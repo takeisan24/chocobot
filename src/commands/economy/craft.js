@@ -1,7 +1,8 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const db = require('../../database.js');
 const config = require('../../config');
 const RECIPES = require('../../data/recipes');
+const { buildWaguriEmbed } = require('../../lib/embed');
 
 const fmt = n => Number(n).toLocaleString('vi-VN');
 
@@ -33,22 +34,50 @@ module.exports = {
                 const costStr = r.cost > 0 ? ` + ${fmt(r.cost)} ${config.CURRENCY} tiền công` : '';
                 return `🔨 **${r.name}** — cần ${mats}${costStr}\n   → bán lại **${fmt(Math.floor(priceOf(r.result) * 0.5))}** ${config.CURRENCY}`;
             });
-            return interaction.editReply({ embeds: [new EmbedBuilder().setColor(config.COLORS.INFO)
-                .setTitle('🔨 Công thức chế tạo')
-                .setDescription(`Kiếm **Gỗ** qua \`/chop\`, **Quặng Sắt / Đá** qua \`/mine\` rồi chế nhé~\n\n${lines.join('\n')}`)
-                .setFooter({ text: 'Chế: /craft make <món>' })] });
+            
+            const embed = buildWaguriEmbed(interaction, 'info', {
+                title: '🔨 Công thức chế tạo',
+                description: `Kiếm **Gỗ** qua \`/chop\`, **Quặng Sắt / Đá** qua \`/mine\` rồi chế nhé~\n\n${lines.join('\n')}`
+            });
+            embed.setFooter({
+                text: `Chế: /craft make <món> • ${embed.data.footer.text}`,
+                iconURL: embed.data.footer.icon_url
+            });
+            return interaction.editReply({ embeds: [embed] });
         }
 
         const id = interaction.options.getString('recipe');
         const recipe = RECIPES.find(r => r.id === id);
-        if (!recipe) return interaction.editReply('Không có công thức này~ Gõ `/craft list` để xem nhé.');
+        if (!recipe) {
+            const embed = buildWaguriEmbed(interaction, 'warning', {
+                description: 'Không có công thức này~ Gõ `/craft list` để xem nhé.'
+            });
+            return interaction.editReply({ embeds: [embed] });
+        }
 
         const r = await db.craftItem(interaction.user.id, recipe);
-        if (!r) return interaction.editReply('Ơ, có lỗi khi chế tạo, thử lại sau nhé~ 🌸');
-        if (r.status === 'poor_money') return interaction.editReply(`Cậu cần **${fmt(recipe.cost)}** ${config.CURRENCY} tiền công mà ví chưa đủ~ 😟`);
-        if (r.status === 'poor_mat') return interaction.editReply(`Cậu thiếu nguyên liệu **${nameOf(r.missing)}**~ Đi \`/mine\` \`/chop\` kiếm thêm nhé! ⛏️🪓`);
+        if (!r) {
+            const embed = buildWaguriEmbed(interaction, 'error', {
+                description: 'Ơ, có lỗi khi chế tạo, thử lại sau nhé~ 🌸'
+            });
+            return interaction.editReply({ embeds: [embed] });
+        }
+        if (r.status === 'poor_money') {
+            const embed = buildWaguriEmbed(interaction, 'warning', {
+                description: `Cậu cần **${fmt(recipe.cost)}** ${config.CURRENCY} tiền công mà ví chưa đủ~ 😟`
+            });
+            return interaction.editReply({ embeds: [embed] });
+        }
+        if (r.status === 'poor_mat') {
+            const embed = buildWaguriEmbed(interaction, 'warning', {
+                description: `Cậu thiếu nguyên liệu **${nameOf(r.missing)}**~ Đi \`/mine\` \`/chop\` kiếm thêm nhé! ⛏️🪓`
+            });
+            return interaction.editReply({ embeds: [embed] });
+        }
 
-        return interaction.editReply({ embeds: [new EmbedBuilder().setColor(config.COLORS.SUCCESS)
-            .setDescription(`🔨 Chế tạo thành công **${recipe.qty}× ${recipe.name}**! Mang ra \`/sell\` kiếm lời nhé~ 💰`)] });
+        const embed = buildWaguriEmbed(interaction, 'success', {
+            description: `🔨 Chế tạo thành công **${recipe.qty}× ${recipe.name}**! Mang ra \`/sell\` kiếm lời hoặc dùng làm việc nhé~ 💰`
+        });
+        return interaction.editReply({ embeds: [embed] });
     },
 };

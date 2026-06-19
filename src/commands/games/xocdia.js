@@ -15,7 +15,11 @@ module.exports = {
     async execute(interaction) {
         const bet = interaction.options.getInteger('bet');
         const err = checkBet(bet);
-        if (err) return interaction.reply(`🌸 ${err}`);
+        if (err) {
+            const { buildWaguriEmbed } = require('../../lib/embed');
+            const embed = buildWaguriEmbed(interaction, 'warning', { description: `🌸 ${err}` });
+            return interaction.reply({ embeds: [embed] });
+        }
 
         const bets = new Map(); // userId -> { side, username }
         const counts = () => {
@@ -23,13 +27,14 @@ module.exports = {
             const le = [...bets.values()].filter(b => b.side === 'le').length;
             return { chan, le };
         };
+        const { buildWaguriEmbed } = require('../../lib/embed');
         const render = () => {
             const c = counts();
-            return new EmbedBuilder().setColor(config.COLORS.INFO)
-                .setTitle('🥢 Xóc Đĩa — đặt cược!')
-                .setDescription(
-                    `Cược **${fmt(bet)}** ${config.CURRENCY}/người. Thắng nhận **x${MULT}**.\n` +
-                    `🔴 **Chẵn** (0/2/4 đỏ): ${c.chan} người\n⚪ **Lẻ** (1/3 đỏ): ${c.le} người\n\n⏰ Chốt sau ${WINDOW_MS / 1000}s.`);
+            return buildWaguriEmbed(interaction, 'info', {
+                title: '🥢・Xóc Đĩa — Đặt cược!',
+                description: `Cược **${fmt(bet)}** ${config.CURRENCY}/người. Thắng nhận **x${MULT}**.\n` +
+                    `🔴 **Chẵn** (0/2/4 đỏ): ${c.chan} người\n⚪ **Lẻ** (1/3 đỏ): ${c.le} người\n\n⏰ Chốt sau ${WINDOW_MS / 1000}s.`
+            });
         };
         const row = new ActionRowBuilder().addComponents(
             new ButtonBuilder().setCustomId('chan').setLabel('Chẵn').setStyle(ButtonStyle.Danger).setEmoji('🔴'),
@@ -62,12 +67,12 @@ module.exports = {
                 if (b.side === result) { const payout = Math.round(bet * MULT); await db.addMoney(id, payout, 'wallet'); db.questIncr(id, 'gamble_win', 1); wins.push(`<@${id}> (+${fmt(payout - bet)})`); }
                 else loses.push(`<@${id}> (-${fmt(bet)})`);
             }
-            await interaction.editReply({ embeds: [new EmbedBuilder()
-                .setColor(config.COLORS.JACKPOT)
-                .setTitle('🥢 Kết quả Xóc Đĩa')
-                .setDescription(
-                    `Đĩa mở: ${faces} → **${reds} đỏ** → **${result === 'chan' ? 'CHẴN 🔴' : 'LẺ ⚪'}**!\n\n` +
-                    `🏆 Thắng: ${wins.join(', ') || '*(không ai)*'}\n💸 Thua: ${loses.join(', ') || '*(không ai)*'}`)] , components: [] }).catch(() => {});
+            const embedResult = buildWaguriEmbed(interaction, 'jackpot', {
+                title: '🥢・Kết quả Xóc Đĩa',
+                description: `Đĩa mở: ${faces} → **${reds} đỏ** → **${result === 'chan' ? 'CHẴN 🔴' : 'LẺ ⚪'}**!\n\n` +
+                    `🏆 Thắng: ${wins.join(', ') || '*(không ai)*'}\n💸 Thua: ${loses.join(', ') || '*(không ai)*'}`
+            });
+            await interaction.editReply({ embeds: [embedResult], components: [] }).catch(() => {});
         });
     },
 };

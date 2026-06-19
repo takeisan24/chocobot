@@ -1,6 +1,7 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, MessageFlags } = require('discord.js');
+const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, MessageFlags } = require('discord.js');
 const db = require('../../database.js');
 const config = require('../../config');
+const { buildWaguriEmbed } = require('../../lib/embed');
 
 const fmt = n => Number(n).toLocaleString('vi-VN');
 
@@ -14,18 +15,43 @@ module.exports = {
         const me = interaction.user;
         const target = interaction.options.getUser('user');
 
-        if (!target) return interaction.editReply('Cậu muốn cầu hôn ai? Nhập @người nhé~ 🌸');
-        if (target.bot) return interaction.editReply('Bot không kết hôn được đâu~ 😆');
-        if (target.id === me.id) return interaction.editReply('Cậu không thể tự cưới chính mình đâu nha~ 😅');
+        if (!target) {
+            const embed = buildWaguriEmbed(interaction, 'warning', {
+                description: 'Cậu muốn cầu hôn ai? Nhập @người nhé~ 🌸'
+            });
+            return interaction.editReply({ embeds: [embed] });
+        }
+        if (target.bot) {
+            const embed = buildWaguriEmbed(interaction, 'warning', {
+                description: 'Bot không kết hôn được đâu~ 😆'
+            });
+            return interaction.editReply({ embeds: [embed] });
+        }
+        if (target.id === me.id) {
+            const embed = buildWaguriEmbed(interaction, 'warning', {
+                description: 'Cậu không thể tự cưới chính mình đâu nha~ 😅'
+            });
+            return interaction.editReply({ embeds: [embed] });
+        }
 
         const [uMe, uTarget] = await Promise.all([db.getUser(me.id), db.getUser(target.id)]);
-        if (uMe?.partner_id) return interaction.editReply('Cậu đang có đôi rồi mà~ Muốn cưới người khác thì `/divorce` trước nhé.');
-        if (uTarget?.partner_id) return interaction.editReply(`<@${target.id}> đã có đôi mất rồi 💔`);
+        if (uMe?.partner_id) {
+            const embed = buildWaguriEmbed(interaction, 'warning', {
+                description: 'Cậu đang có đôi rồi mà~ Muốn cưới người khác thì `/divorce` trước nhé.'
+            });
+            return interaction.editReply({ embeds: [embed] });
+        }
+        if (uTarget?.partner_id) {
+            const embed = buildWaguriEmbed(interaction, 'warning', {
+                description: `<@${target.id}> đã có đôi mất rồi 💔`
+            });
+            return interaction.editReply({ embeds: [embed] });
+        }
 
-        const embed = new EmbedBuilder()
-            .setColor(config.COLORS.INFO)
-            .setTitle('💍 Lời cầu hôn')
-            .setDescription(`<@${me.id}> muốn kết đôi với <@${target.id}>!\n\n<@${target.id}> ơi, cậu có đồng ý không? 🌸\n\n*(Phí tổ chức lễ cưới: **${fmt(config.MARRY.COST)}** ${config.CURRENCY} — <@${me.id}> chi trả khi thành công)*`);
+        const embed = buildWaguriEmbed(interaction, 'info', {
+            title: '💍・Lời cầu hôn ngọt ngào',
+            description: `<@${me.id}> muốn kết đôi với <@${target.id}>!\n\n<@${target.id}> ơi, cậu có đồng ý không? 🌸\n\n*(Phí tổ chức lễ cưới: **${fmt(config.MARRY.COST)}** ${config.CURRENCY} — <@${me.id}> chi trả khi thành công)*`
+        });
         const row = (disabled = false) => new ActionRowBuilder().addComponents(
             new ButtonBuilder().setCustomId('yes').setLabel('Đồng ý 💖').setStyle(ButtonStyle.Success).setDisabled(disabled),
             new ButtonBuilder().setCustomId('no').setLabel('Từ chối 💔').setStyle(ButtonStyle.Secondary).setDisabled(disabled),
@@ -41,26 +67,37 @@ module.exports = {
             }
             answered = true;
             if (i.customId === 'no') {
-                await i.update({ embeds: [embed.setColor(config.COLORS.ERROR).setDescription(`<@${target.id}> đã từ chối lời cầu hôn của <@${me.id}>... 💔`)], components: [] });
+                const noEmbed = buildWaguriEmbed(interaction, 'error', {
+                    title: '💔・Cầu hôn thất bại',
+                    description: `<@${target.id}> đã từ chối lời cầu hôn của <@${me.id}>... 💔`
+                });
+                await i.update({ embeds: [noEmbed], components: [] });
                 return collector.stop('done');
             }
             // Phí cưới do người cầu hôn chi trả
             if (!await db.addMoney(me.id, -config.MARRY.COST, 'wallet')) {
-                await i.update({ embeds: [embed.setColor(config.COLORS.ERROR).setTitle('💔 Không đủ chi phí')
-                    .setDescription(`<@${me.id}> không đủ **${fmt(config.MARRY.COST)}** ${config.CURRENCY} để tổ chức lễ cưới... 💔`)], components: [] });
+                const poorEmbed = buildWaguriEmbed(interaction, 'error', {
+                    title: '💔・Không đủ chi phí',
+                    description: `<@${me.id}> không đủ **${fmt(config.MARRY.COST)}** ${config.CURRENCY} để tổ chức lễ cưới... 💔`
+                });
+                await i.update({ embeds: [poorEmbed], components: [] });
                 return collector.stop('done');
             }
             const r = await db.marryUsers(me.id, target.id);
             if (r !== 'ok') await db.addMoney(me.id, config.MARRY.COST, 'wallet'); // hoàn phí nếu cưới hụt
             const done = r === 'ok'
-                ? embed.setColor(config.COLORS.SUCCESS).setTitle('🎉 Chúc mừng đôi uyên ương!').setDescription(`<@${me.id}> 💞 <@${target.id}> giờ đã là một cặp! (Phí cưới **${fmt(config.MARRY.COST)}** ${config.CURRENCY}) Hạnh phúc nhé~ 🌸`)
-                : embed.setColor(config.COLORS.ERROR).setDescription('Ơ, có ai đó vừa kết hôn mất rồi, không thành công 💔');
+                ? buildWaguriEmbed(interaction, 'success', { title: '🎉・Chúc mừng đôi uyên ương!', description: `<@${me.id}> 💞 <@${target.id}> giờ đã là một cặp! (Phí cưới **${fmt(config.MARRY.COST)}** ${config.CURRENCY}) Hạnh phúc nhé~ 🌸` })
+                : buildWaguriEmbed(interaction, 'error', { description: 'Ơ, có ai đó vừa kết hôn mất rồi, không thành công 💔' });
             await i.update({ embeds: [done], components: [] });
             collector.stop('done');
         });
         collector.on('end', async () => {
             if (!answered) {
-                await interaction.editReply({ embeds: [embed.setColor(config.COLORS.WARNING).setDescription(`Hết giờ rồi mà <@${target.id}> chưa trả lời... thử lại sau nhé~ 😢`)], components: [] }).catch(() => {});
+                const timeoutEmbed = buildWaguriEmbed(interaction, 'warning', {
+                    title: '⏱️・Hết thời gian',
+                    description: `Hết giờ rồi mà <@${target.id}> chưa trả lời... thử lại sau nhé~ 😢`
+                });
+                await interaction.editReply({ embeds: [timeoutEmbed], components: [] }).catch(() => {});
             }
         });
     },

@@ -1,7 +1,7 @@
-const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
-const config = require('../../config');
+const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const { isOwner } = require('../../lib/owner');
 const { setEvent, clearEvent, getEventInfo } = require('../../lib/event');
+const { buildWaguriEmbed } = require('../../lib/embed');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -25,18 +25,33 @@ module.exports = {
             const hours = interaction.options.getInteger('hours');
             const name = interaction.options.getString('name') || 'Sự kiện';
             await setEvent(mult, hours, name);
-            return interaction.editReply(`🎉 Đã bật **${name}**: nhân **x${mult}** thu nhập & EXP (/work /fish /mine /chop) trong **${hours} giờ**!`);
+            const embed = buildWaguriEmbed(interaction, 'success', {
+                title: '🎉 Đã bật sự kiện thành công!',
+                description: `Đã bật **${name}**: nhân **x${mult}** thu nhập & EXP (/work /fish /mine /chop) trong **${hours} giờ**!`
+            });
+            return interaction.editReply({ embeds: [embed] });
         }
         if (sub === 'stop') {
             await clearEvent();
-            return interaction.editReply('🛑 Đã tắt sự kiện. Thu nhập trở về bình thường.');
+            const embed = buildWaguriEmbed(interaction, 'success', {
+                title: '🛑 Tắt sự kiện thành công',
+                description: 'Đã tắt sự kiện. Thu nhập trở về bình thường.'
+            });
+            return interaction.editReply({ embeds: [embed] });
         }
 
         const e = getEventInfo();
-        if (!e.active) return interaction.editReply('Hiện không có sự kiện nào đang chạy~ 🌸');
+        if (!e.active) {
+            const embed = buildWaguriEmbed(interaction, 'info', {
+                description: 'Hiện không có sự kiện nào đang chạy~ 🌸'
+            });
+            return interaction.editReply({ embeds: [embed] });
+        }
         const ts = Math.floor(e.until / 1000);
-        return interaction.editReply({ embeds: [new EmbedBuilder().setColor(config.COLORS.JACKPOT)
-            .setTitle('🎉 Sự kiện đang diễn ra!')
-            .setDescription(`**${e.name || 'Sự kiện'}** — nhân **x${e.mult}** thu nhập & EXP\n⏰ Kết thúc <t:${ts}:R>`)] });
+        const embed = buildWaguriEmbed(interaction, 'jackpot', {
+            title: '🎉 Sự kiện đang diễn ra!',
+            description: `**${e.name || 'Sự kiện'}** — nhân **x${e.mult}** thu nhập & EXP\n⏰ Kết thúc <t:${ts}:R>`
+        });
+        return interaction.editReply({ embeds: [embed] });
     },
 };

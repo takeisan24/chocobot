@@ -1,9 +1,10 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
+const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
 const db = require('../../database.js');
 const config = require('../../config');
 const { parseAmount } = require('../../lib/amount');
 const { checkBet } = require('../../lib/bet');
 const { applyPolice } = require('../../lib/police');
+const { buildWaguriEmbed } = require('../../lib/embed');
 
 const fmt = n => Number(n).toLocaleString('vi-VN');
 const SUITS = ['♠', '♥', '♦', '♣'];
@@ -33,32 +34,47 @@ const render = cards => cards.map(c => `${c.r}${c.s}`).join(' ');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('blackjack')
-        .setDescription('Xì dách (Blackjack) — cược tiền với nhà cái')
+        .setDescription('Chơi Blackjack (Xì Dách) với nhà cái Waguri 🃏')
         .addStringOption(o => o.setName('bet').setDescription('Số tiền cược (vd 1000, 1k, all)').setRequired(true)),
     async execute(interaction) {
         await interaction.deferReply();
         const userId = interaction.user.id;
         const user = await db.getUser(userId);
-        if (!user) return interaction.editReply('Hơ, lỗi dữ liệu, thử lại sau nhé~ 🌸');
+        if (!user) {
+            const embed = buildWaguriEmbed(interaction, 'error', {
+                description: 'Hơ, lỗi dữ liệu, thử lại sau nhé~ 🌸'
+            });
+            return interaction.editReply({ embeds: [embed] });
+        }
 
         const bet = parseAmount(interaction.options.getString('bet'), Number(user.wallet));
         const err = checkBet(bet);
-        if (err) return interaction.editReply(`🌸 ${err}`);
-        if (!await db.addMoney(userId, -bet, 'wallet')) return interaction.editReply('Ví cậu không đủ để cược~ 😟');
+        if (err) {
+            const embed = buildWaguriEmbed(interaction, 'warning', {
+                description: `🌸 ${err}`
+            });
+            return interaction.editReply({ embeds: [embed] });
+        }
+        if (!await db.addMoney(userId, -bet, 'wallet')) {
+            const embed = buildWaguriEmbed(interaction, 'warning', {
+                description: 'Ví cậu không đủ để cược~ 😟'
+            });
+            return interaction.editReply({ embeds: [embed] });
+        }
 
         const deck = makeDeck();
         const player = [deck.pop(), deck.pop()];
         const dealer = [deck.pop(), deck.pop()];
         let settled = false;
 
-        const embed = (reveal, note, color) => new EmbedBuilder()
-            .setColor(color ?? config.COLORS.INFO)
-            .setTitle('🃏 Xì Dách (Blackjack)')
-            .addFields(
+        const embed = (reveal, note, type = 'info') => buildWaguriEmbed(interaction, type, {
+            title: '🃏・Xì Dách (Blackjack)',
+            description: note ?? `Cược: **${fmt(bet)}** ${config.CURRENCY}`,
+            fields: [
                 { name: `Bài của cậu (${handValue(player)})`, value: render(player), inline: false },
                 { name: reveal ? `Nhà cái (${handValue(dealer)})` : 'Nhà cái', value: reveal ? render(dealer) : `${dealer[0].r}${dealer[0].s} 🂠`, inline: false },
-            )
-            .setDescription(note ?? `Cược: **${fmt(bet)}** ${config.CURRENCY}`);
+            ]
+        });
 
         const settle = async (outcome) => {
             if (settled) return;
@@ -88,8 +104,8 @@ module.exports = {
 
             const u = await db.getUser(userId);
             const noteFull = `${note}\n💵 Số dư ví: **${fmt(u?.wallet || 0)}** ${config.CURRENCY}`;
-            const color = policeRes !== null ? config.COLORS.ERROR : (net > 0 ? config.COLORS.SUCCESS : (net === 0 ? config.COLORS.WARNING : config.COLORS.ERROR));
-            return embed(true, noteFull, color);
+            const type = policeRes !== null ? 'error' : (net > 0 ? (outcome === 'blackjack' ? 'jackpot' : 'success') : (net === 0 ? 'warning' : 'error'));
+            return embed(true, noteFull, type);
         };
 
         // Xì dách ngay từ 2 lá

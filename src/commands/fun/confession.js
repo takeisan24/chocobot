@@ -1,6 +1,6 @@
-const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
+const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const db = require('../../database.js');
-const config = require('../../config');
+const { buildWaguriEmbed } = require('../../lib/embed');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -10,28 +10,45 @@ module.exports = {
     async execute(interaction) {
         const content = interaction.options.getString('noi_dung');
         const gid = interaction.guild?.id;
-        if (!gid) return interaction.reply({ content: 'Lệnh này chỉ dùng trong server~', flags: MessageFlags.Ephemeral });
+        if (!gid) {
+            const embed = buildWaguriEmbed(interaction, 'error', {
+                description: 'Lệnh này chỉ dùng trong server~'
+            });
+            return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+        }
 
         const s = await db.getGuildSettings(gid);
         if (!s.confession_channel) {
-            return interaction.reply({ content: 'Server chưa cấu hình kênh confession. Nhờ admin gõ `/config confession-channel` nhé~ 🌸', flags: MessageFlags.Ephemeral });
+            const embed = buildWaguriEmbed(interaction, 'warning', {
+                description: 'Server chưa cấu hình kênh confession. Nhờ admin gõ `/config confession-channel` nhé~ 🌸'
+            });
+            return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
         }
 
         const channel = interaction.guild.channels.cache.get(s.confession_channel)
             || await interaction.guild.channels.fetch(s.confession_channel).catch(() => null);
         if (!channel) {
-            return interaction.reply({ content: 'Kênh confession không còn tồn tại, nhờ admin đặt lại giúp nhé~', flags: MessageFlags.Ephemeral });
+            const embed = buildWaguriEmbed(interaction, 'error', {
+                description: 'Kênh confession không còn tồn tại, nhờ admin đặt lại giúp nhé~'
+            });
+            return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
         }
 
         const num = await db.nextConfessionNumber(gid);
-        const embed = new EmbedBuilder()
-            .setColor(config.COLORS.INFO)
-            .setTitle(`🤫 Confession #${num}`)
-            .setDescription(content.slice(0, 4000))
-            .setFooter({ text: 'Gửi ẩn danh qua Waguri 🌸' })
-            .setTimestamp();
+        const embed = buildWaguriEmbed(interaction, 'info', {
+            title: `🤫 Confession #${num}`,
+            description: content.slice(0, 4000)
+        }).setTimestamp();
+
+        embed.setFooter({
+            text: `🤫 Gửi ẩn danh qua Waguri • ${embed.data.footer.text}`,
+            iconURL: embed.data.footer.icon_url
+        });
 
         await channel.send({ embeds: [embed] }).catch(() => null);
-        return interaction.reply({ content: '✅ Đã gửi confession ẩn danh của cậu rồi nhé~ (không ai biết là cậu đâu)', flags: MessageFlags.Ephemeral });
+        const successEmbed = buildWaguriEmbed(interaction, 'success', {
+            description: '✅ Đã gửi confession ẩn danh của cậu rồi nhé~ (không ai biết là cậu đâu)'
+        });
+        return interaction.reply({ embeds: [successEmbed], flags: MessageFlags.Ephemeral });
     },
 };

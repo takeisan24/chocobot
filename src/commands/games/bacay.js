@@ -42,7 +42,11 @@ module.exports = {
     async execute(interaction) {
         const bet = interaction.options.getInteger('bet');
         const err = checkBet(bet);
-        if (err) return interaction.reply(`🌸 ${err}`);
+        if (err) {
+            const { buildWaguriEmbed } = require('../../lib/embed');
+            const embed = buildWaguriEmbed(interaction, 'warning', { description: `🌸 ${err}` });
+            return interaction.reply({ embeds: [embed] });
+        }
 
         // Sảnh chờ — validate: phải đủ tiền cược
         const validate = async (userId) => {
@@ -63,7 +67,9 @@ module.exports = {
         }
         if (staked.length < 2) {
             for (const p of staked) await db.addMoney(p.id, bet, 'wallet');
-            return interaction.followUp('Không đủ người đủ tiền để vào ván, đã hoàn cược~ 🌸');
+            const { buildWaguriEmbed } = require('../../lib/embed');
+            const embed = buildWaguriEmbed(interaction, 'warning', { description: 'Không đủ người đủ tiền để vào ván, đã hoàn cược~ 🌸' });
+            return interaction.followUp({ embeds: [embed] });
         }
 
         // Chia bài & chấm điểm
@@ -87,12 +93,18 @@ module.exports = {
             .map(r => `${winners.includes(r) ? '👑' : '▫️'} <@${r.id}> — ${showCards(r.cards)} → **${r.hand.label}**`);
         const winMention = winners.map(w => `<@${w.id}>`).join(', ');
 
-        await interaction.followUp({ embeds: [new EmbedBuilder()
-            .setColor(config.COLORS.JACKPOT)
-            .setTitle('🃏 Kết quả Ba Cây')
-            .setDescription(
-                `${lines.join('\n')}\n\n` +
-                `💰 Pot: **${fmt(pot)}** ${config.CURRENCY} · 🏆 ${winMention} ${winners.length > 1 ? 'chia nhau' : 'ăn'} **${fmt(share)}** ${config.CURRENCY} mỗi người!`)
-            .setFooter({ text: `Nhà cái giữ ${Math.round(config.PARTY.HOUSE_CUT * 100)}%` })] });
+        const { buildWaguriEmbed } = require('../../lib/embed');
+        const embed = buildWaguriEmbed(interaction, 'jackpot', {
+            title: '🃏・Kết quả Ba Cây',
+            description: `${lines.join('\n')}\n\n` +
+                `💰 Pot: **${fmt(pot)}** ${config.CURRENCY} · 🏆 ${winMention} ${winners.length > 1 ? 'chia nhau' : 'ăn'} **${fmt(share)}** ${config.CURRENCY} mỗi người!`
+        });
+        
+        embed.setFooter({
+            text: `Nhà cái giữ ${Math.round(config.PARTY.HOUSE_CUT * 100)}% • ${embed.data.footer.text}`,
+            iconURL: embed.data.footer.icon_url
+        });
+
+        await interaction.followUp({ embeds: [embed] });
     },
 };

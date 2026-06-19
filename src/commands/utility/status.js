@@ -15,7 +15,13 @@ module.exports = {
         await interaction.deferReply();
         const id = interaction.user.id;
         const user = await db.getUser(id);
-        if (!user) return interaction.editReply('Hơ, mình chưa lấy được dữ liệu của cậu~ 🌸');
+        if (!user) {
+            const { buildWaguriEmbed } = require('../../lib/embed');
+            const embed = buildWaguriEmbed(interaction, 'error', {
+                description: 'Hơ, mình chưa lấy được dữ liệu của cậu~ 🌸'
+            });
+            return interaction.editReply({ embeds: [embed] });
+        }
         const energy = await db.getEnergy(id);
 
         const now = Date.now();
@@ -42,10 +48,12 @@ module.exports = {
             if (clan) fields.push({ name: '🏰 Bang hội', value: `**${clan.name}** (Lv.${clanLevel(clan.xp)})`, inline: false });
         }
 
-        await interaction.editReply({ embeds: [new EmbedBuilder()
-            .setColor(premium ? config.COLORS.JACKPOT : config.COLORS.INFO)
-            .setTitle(`📊 Trạng thái của ${interaction.user.username}${premium ? ' 💎' : ''}`)
-            .setThumbnail(interaction.user.displayAvatarURL())
-            .addFields(fields)] });
+        const { buildWaguriEmbed } = require('../../lib/embed');
+        const embed = buildWaguriEmbed(interaction, premium ? 'jackpot' : 'info', {
+            title: `📊・Trạng thái của ${interaction.user.username}${premium ? ' 💎' : ''}`,
+            fields: fields,
+            thumbnail: interaction.user.displayAvatarURL()
+        });
+        await interaction.editReply({ embeds: [embed] });
     },
 };

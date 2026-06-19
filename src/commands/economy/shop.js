@@ -13,7 +13,14 @@ module.exports = {
         await interaction.deferReply();
 
         const items = await db.getItems();
-        if (!items.length) return interaction.editReply('Cửa hàng đang trống trơn... 🕸️');
+        const { buildWaguriEmbed } = require('../../lib/embed');
+        if (!items.length) {
+            const embed = buildWaguriEmbed(interaction, 'warning', {
+                title: '🏪・Cửa Hàng Trống',
+                description: 'Cửa hàng đang trống trơn... 🕸️'
+            });
+            return interaction.editReply({ embeds: [embed] });
+        }
 
         const lines = items.map(i =>
             `${TYPE_ICON[i.type] || '📦'} **${i.name}** — \`${Number(i.price).toLocaleString('vi-VN')}\` ${config.CURRENCY}\n` +

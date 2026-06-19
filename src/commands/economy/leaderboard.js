@@ -3,6 +3,7 @@ const db = require('../../database.js');
 const config = require('../../config');
 const { getLevelFromExp } = require('../../lib/leveling');
 const { sendPaginated } = require('../../lib/paginate');
+const { buildWaguriEmbed } = require('../../lib/embed');
 
 const MEDALS = ['🥇', '🥈', '🥉'];
 
@@ -18,13 +19,23 @@ module.exports = {
 
         if (sort === 'love') {
             const top = await db.getTopLove(25);
-            if (!top.length) return interaction.editReply('Chưa có cặp đôi nào~ Gõ `/marry` để bắt đầu nhé! 💕');
+            if (!top.length) {
+                const embed = buildWaguriEmbed(interaction, 'warning', {
+                    description: 'Chưa có cặp đôi nào~ Gõ `/marry` để bắt đầu nhé! 💕'
+                });
+                return interaction.editReply({ embeds: [embed] });
+            }
             const loveLines = top.map((row, i) => `${MEDALS[i] || `**${i + 1}.**`} <@${row.user_id}> 💞 <@${row.partner_id}> — **${Number(row.love).toLocaleString('vi-VN')}** điểm`);
             return sendPaginated(interaction, { title: '💞 BXH Tình Cảm', color: config.COLORS.JACKPOT, lines: loveLines, perPage: 10 });
         }
 
         const rows = await db.getLeaderboard(sort, 25);
-        if (!rows.length) return interaction.editReply('Chưa có ai trên bảng xếp hạng cả~ 🌸');
+        if (!rows.length) {
+            const embed = buildWaguriEmbed(interaction, 'warning', {
+                description: 'Chưa có ai trên bảng xếp hạng cả~ 🌸'
+            });
+            return interaction.editReply({ embeds: [embed] });
+        }
 
         const lines = rows.map((row, i) => {
             const rank = MEDALS[i] || `**${i + 1}.**`;

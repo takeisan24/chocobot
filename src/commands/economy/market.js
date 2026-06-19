@@ -2,6 +2,7 @@ const { SlashCommandBuilder } = require('discord.js');
 const db = require('../../database.js');
 const config = require('../../config');
 const { sendPaginated } = require('../../lib/paginate');
+const { buildWaguriEmbed } = require('../../lib/embed');
 
 const fmt = n => Number(n).toLocaleString('vi-VN');
 
@@ -36,7 +37,12 @@ module.exports = {
         if (sub === 'view' || sub === 'mine') {
             await interaction.deferReply();
             const rows = sub === 'mine' ? await db.marketMine(interaction.user.id) : await db.marketActive(50);
-            if (!rows.length) return interaction.editReply(sub === 'mine' ? 'Cậu chưa đăng bán món nào~' : 'Chợ đang vắng, chưa ai bán gì cả~ 🌸');
+            if (!rows.length) {
+                const embed = buildWaguriEmbed(interaction, 'warning', {
+                    description: sub === 'mine' ? 'Cậu chưa đăng bán món nào~' : 'Chợ đang vắng, chưa ai bán gì cả~ 🌸'
+                });
+                return interaction.editReply({ embeds: [embed] });
+            }
             const lines = rows.map(r => `\`#${r.id}\` **${r.qty}× ${nameOf(r.item_id)}** — **${fmt(r.price)}** ${config.CURRENCY}${sub === 'view' ? ` · <@${r.seller_id}>` : ''}`);
             return sendPaginated(interaction, {
                 title: sub === 'mine' ? '🛒 Món cậu đang bán' : '🛒 Chợ — đang bán',
@@ -50,25 +56,79 @@ module.exports = {
             const price = interaction.options.getInteger('price');
             const qty = interaction.options.getInteger('qty') || 1;
             const r = await db.marketList(interaction.user.id, itemId, qty, price);
-            if (!r) return interaction.editReply('Ơ, có lỗi khi đăng bán, thử lại sau nhé~');
-            if (r.status === 'poor_item') return interaction.editReply(`Cậu không có đủ **${qty}× ${nameOf(itemId)}** trong kho~`);
-            return interaction.editReply(`✅ Đã đăng bán **${qty}× ${nameOf(itemId)}** giá **${fmt(price)}** ${config.CURRENCY} (mã \`#${r.id}\`).\nNgười khác mua bằng \`/market buy ${r.id}\` · chợ thu phí ${Math.round(config.MARKET.FEE_PCT * 100)}% khi bán được.`);
+            if (!r) {
+                const embed = buildWaguriEmbed(interaction, 'error', {
+                    description: 'Ơ, có lỗi khi đăng bán, thử lại sau nhé~ 🌸'
+                });
+                return interaction.editReply({ embeds: [embed] });
+            }
+            if (r.status === 'poor_item') {
+                const embed = buildWaguriEmbed(interaction, 'error', {
+                    title: '🛒 Đăng bán vật phẩm',
+                    description: `Cậu không có đủ **${qty}× ${nameOf(itemId)}** trong kho~`
+                });
+                return interaction.editReply({ embeds: [embed] });
+            }
+            const embed = buildWaguriEmbed(interaction, 'success', {
+                title: '🛒 Đăng bán thành công!',
+                description: `Đã đăng bán **${qty}× ${nameOf(itemId)}** giá **${fmt(price)}** ${config.CURRENCY} (mã \`#${r.id}\`).\n\n*Người khác mua bằng \`/market buy ${r.id}\` · chợ thu phí ${Math.round(config.MARKET.FEE_PCT * 100)}% khi bán được.*`
+            });
+            return interaction.editReply({ embeds: [embed] });
         }
         if (sub === 'buy') {
             const id = interaction.options.getInteger('id');
             const r = await db.marketBuy(interaction.user.id, id);
-            if (!r) return interaction.editReply('Ơ, có lỗi khi mua, thử lại sau nhé~');
-            const msg = { notfound: 'Không tìm thấy món này~', gone: 'Món này đã bán/gỡ mất rồi 😢', own: 'Đây là món của chính cậu mà~ 😄', poor: `Cậu cần **${fmt(r.price)}** ${config.CURRENCY} để mua~ 😟` }[r.status];
-            if (msg) return interaction.editReply(msg);
-            return interaction.editReply(`✅ Cậu đã mua **${r.qty}× ${nameOf(r.item)}** với **${fmt(r.price)}** ${config.CURRENCY} từ <@${r.seller}>! Đồ đã vào kho 🎒`);
+            if (!r) {
+                const embed = buildWaguriEmbed(interaction, 'error', {
+                    description: 'Ơ, có lỗi khi mua, thử lại sau nhé~ 🌸'
+                });
+                return interaction.editReply({ embeds: [embed] });
+            }
+            const msg = {
+                notfound: 'Không tìm thấy món này~',
+                gone: 'Món này đã bán/gỡ mất rồi 😢',
+                own: 'Đây là món của chính cậu mà~ 😄',
+                poor: `Cậu cần **${fmt(r.price)}** ${config.CURRENCY} để mua~ 😟`
+            }[r.status];
+            if (msg) {
+                const embed = buildWaguriEmbed(interaction, 'error', {
+                    title: '🛒 Mua vật phẩm từ chợ',
+                    description: msg
+                });
+                return interaction.editReply({ embeds: [embed] });
+            }
+            const embed = buildWaguriEmbed(interaction, 'success', {
+                title: '🛒 Mua vật phẩm thành công!',
+                description: `Cậu đã mua **${r.qty}× ${nameOf(r.item)}** với **${fmt(r.price)}** ${config.CURRENCY} từ <@${r.seller}>! Đồ đã vào kho 🎒`
+            });
+            return interaction.editReply({ embeds: [embed] });
         }
         if (sub === 'cancel') {
             const id = interaction.options.getInteger('id');
             const r = await db.marketCancel(interaction.user.id, id);
-            if (!r) return interaction.editReply('Ơ, có lỗi, thử lại sau nhé~');
-            const msg = { notfound: 'Không tìm thấy món này~', notyours: 'Đây không phải món cậu đăng bán~', gone: 'Món này đã bán/gỡ rồi~' }[r.status];
-            if (msg) return interaction.editReply(msg);
-            return interaction.editReply(`✅ Đã gỡ **${r.qty}× ${nameOf(r.item)}** khỏi chợ, đồ trả về kho rồi nhé~`);
+            if (!r) {
+                const embed = buildWaguriEmbed(interaction, 'error', {
+                    description: 'Ơ, có lỗi, thử lại sau nhé~ 🌸'
+                });
+                return interaction.editReply({ embeds: [embed] });
+            }
+            const msg = {
+                notfound: 'Không tìm thấy món này~',
+                notyours: 'Đây không phải món cậu đăng bán~',
+                gone: 'Món này đã bán/gỡ rồi~'
+            }[r.status];
+            if (msg) {
+                const embed = buildWaguriEmbed(interaction, 'error', {
+                    title: '🛒 Hủy đăng bán',
+                    description: msg
+                });
+                return interaction.editReply({ embeds: [embed] });
+            }
+            const embed = buildWaguriEmbed(interaction, 'success', {
+                title: '🛒 Hủy đăng bán thành công',
+                description: `Đã gỡ **${r.qty}× ${nameOf(r.item)}** khỏi chợ, đồ trả về kho rồi nhé~ 🎒`
+            });
+            return interaction.editReply({ embeds: [embed] });
         }
     },
 };

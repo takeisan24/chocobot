@@ -1,6 +1,7 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const db = require('../../database.js');
 const config = require('../../config');
+const { buildWaguriEmbed } = require('../../lib/embed');
 
 const fmt = n => Number(n).toLocaleString('vi-VN');
 
@@ -21,14 +22,17 @@ module.exports = {
         const owingTotal = owing.reduce((s, l) => s + Number(l.remaining), 0);
         const owedTotal = owed.reduce((s, l) => s + Number(l.remaining), 0);
 
-        const embed = new EmbedBuilder()
-            .setColor(config.COLORS.INFO)
-            .setTitle('🧾 Sổ nợ của cậu')
-            .addFields(
-                { name: `💸 Cậu đang nợ (tổng ${fmt(owingTotal)} ${config.CURRENCY})`, value: owing.length ? owing.map(l => line(l, l.lender_id)).join('\n') : '*(không nợ ai cả~)*' },
-                { name: `🤝 Người khác nợ cậu (tổng ${fmt(owedTotal)} ${config.CURRENCY})`, value: owed.length ? owed.map(l => line(l, l.borrower_id)).join('\n') : '*(chưa cho ai vay)*' },
-            )
-            .setFooter({ text: 'Trả nợ: /trano · Đòi nợ quá hạn: /donno' });
+        const embed = buildWaguriEmbed(interaction, 'info', {
+            title: '🧾 Sổ nợ của cậu',
+            fields: [
+                { name: `💸 Cậu đang nợ (tổng ${fmt(owingTotal)} ${config.CURRENCY})`, value: owing.length ? owing.map(l => line(l, l.lender_id)).join('\n') : '*(không nợ ai cả~)*', inline: false },
+                { name: `🤝 Người khác nợ cậu (tổng ${fmt(owedTotal)} ${config.CURRENCY})`, value: owed.length ? owed.map(l => line(l, l.borrower_id)).join('\n') : '*(chưa cho ai vay)*', inline: false },
+            ]
+        });
+        embed.setFooter({
+            text: `Trả nợ: /trano · Đòi nợ quá hạn: /donno • ${embed.data.footer.text}`,
+            iconURL: embed.data.footer.icon_url
+        });
         await interaction.editReply({ embeds: [embed] });
     },
 };

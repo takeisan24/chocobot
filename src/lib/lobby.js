@@ -1,5 +1,6 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, MessageFlags } = require('discord.js');
 const config = require('../config');
+const { buildWaguriEmbed, getWaguriQuote } = require('./embed');
 
 /**
  * Mở một sảnh chờ nhiều người chơi.
@@ -17,13 +18,18 @@ function openLobby(interaction, opts) {
 
     const render = (closed = false) => {
         const list = [...players.values()].map((u, i) => `\`${i + 1}.\` ${u}`).join('\n') || '*(chưa có ai)*';
-        return new EmbedBuilder()
-            .setColor(closed ? config.COLORS.SUCCESS : config.COLORS.INFO)
-            .setTitle(title)
-            .setDescription(
-                `${description}\n\n**Người chơi (${players.size}/${maxPlayers}):**\n${list}\n\n` +
-                (closed ? '✅ Bắt đầu!' : `Bấm **Tham gia** để vào · chủ phòng bấm **Bắt đầu** khi đủ người.\n⏰ Tự bắt đầu sau **${joinSeconds}s** (cần tối thiểu ${minPlayers} người).`))
-            .setFooter({ text: `Chủ phòng: ${players.get(hostId) || interaction.user.username}` });
+        const type = closed ? 'success' : 'info';
+        const embed = buildWaguriEmbed(interaction, type, {
+            title: title,
+            description: `${description}\n\n**Người chơi (${players.size}/${maxPlayers}):**\n${list}\n\n` +
+                (closed ? '✅ Bắt đầu!' : `Bấm **Tham gia** để vào · chủ phòng bấm **Bắt đầu** khi đủ người.\n⏰ Tự bắt đầu sau **${joinSeconds}s** (cần tối thiểu ${minPlayers} người).`)
+        });
+        
+        embed.setFooter({
+            text: `Chủ phòng: ${players.get(hostId) || interaction.user.username} • ${getWaguriQuote()}`,
+            iconURL: interaction.client.user.displayAvatarURL()
+        });
+        return embed;
     };
 
     const buttons = () => new ActionRowBuilder().addComponents(
@@ -32,12 +38,17 @@ function openLobby(interaction, opts) {
         new ButtonBuilder().setCustomId('lobby_start').setLabel('Bắt đầu').setStyle(ButtonStyle.Primary),
     );
 
+    const replyEphemeral = (targetInteraction, type, text) => {
+        const embed = buildWaguriEmbed(interaction, type, { description: text });
+        return targetInteraction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
+    };
+
     return new Promise((resolve) => {
         (async () => {
             // Chủ phòng tự vào (kiểm tra điều kiện trước)
             if (validate) {
                 const err = await validate(hostId, interaction.user.username);
-                if (err) { await interaction.reply({ content: err, flags: MessageFlags.Ephemeral }); return resolve(null); }
+                if (err) { await replyEphemeral(interaction, 'warning', err); return resolve(null); }
             }
             players.set(hostId, interaction.user.username);
 
@@ -49,24 +60,24 @@ function openLobby(interaction, opts) {
 
             collector.on('collect', async (i) => {
                 if (i.customId === 'lobby_join') {
-                    if (players.has(i.user.id)) return i.reply({ content: 'Cậu đã ở trong phòng rồi~ 🌸', flags: MessageFlags.Ephemeral });
-                    if (players.size >= maxPlayers) return i.reply({ content: 'Phòng đầy mất rồi~ 😢', flags: MessageFlags.Ephemeral });
+                    if (players.has(i.user.id)) return replyEphemeral(i, 'warning', 'Cậu đã ở trong phòng rồi~ 🌸');
+                    if (players.size >= maxPlayers) return replyEphemeral(i, 'warning', 'Phòng đầy mất rồi~ 😢');
                     if (validate) {
                         const err = await validate(i.user.id, i.user.username);
-                        if (err) return i.reply({ content: err, flags: MessageFlags.Ephemeral });
+                        if (err) return replyEphemeral(i, 'warning', err);
                     }
                     players.set(i.user.id, i.user.username);
                     return i.update({ embeds: [render()], components: [buttons()] });
                 }
                 if (i.customId === 'lobby_leave') {
                     if (i.user.id === hostId) { outcome = 'cancel'; return collector.stop('cancel'); } // host rời = hủy
-                    if (!players.has(i.user.id)) return i.reply({ content: 'Cậu đâu có trong phòng~', flags: MessageFlags.Ephemeral });
+                    if (!players.has(i.user.id)) return replyEphemeral(i, 'warning', 'Cậu đâu có trong phòng~');
                     players.delete(i.user.id);
                     return i.update({ embeds: [render()], components: [buttons()] });
                 }
                 if (i.customId === 'lobby_start') {
-                    if (i.user.id !== hostId) return i.reply({ content: 'Chỉ chủ phòng mới bắt đầu được nhé~ 🌸', flags: MessageFlags.Ephemeral });
-                    if (players.size < minPlayers) return i.reply({ content: `Cần tối thiểu **${minPlayers}** người mới chơi được~`, flags: MessageFlags.Ephemeral });
+                    if (i.user.id !== hostId) return replyEphemeral(i, 'warning', 'Chỉ chủ phòng mới bắt đầu được nhé~ 🌸');
+                    if (players.size < minPlayers) return replyEphemeral(i, 'warning', `Cần tối thiểu **${minPlayers}** người mới chơi được~`);
                     outcome = 'start';
                     await i.update({ embeds: [render(true)], components: [] });
                     return collector.stop('start');

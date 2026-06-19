@@ -43,6 +43,8 @@ desktop.ini
 
 # Supabase local config & state (except migrations which are committed)
 .supabase/
+supabase/migrations/
+
 
 # Local configuration / AI developer tools (keep repository clean)
 .claude/

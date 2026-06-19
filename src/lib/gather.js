@@ -5,6 +5,7 @@ const { onCooldown } = require('./cooldown');
 const { fatigueMultiplier } = require('./fatigue');
 const { getLevelFromExp, levelUpReward } = require('./leveling');
 const { getEventMult } = require('./event');
+const { buildWaguriEmbed } = require('./embed');
 
 const fmt = n => Number(n).toLocaleString('vi-VN');
 
@@ -30,22 +31,36 @@ async function runGather(interaction, { title, table, energyCost = config.GATHER
     const userHealth = user && user.health !== undefined ? user.health : 100;
     if (userHealth < 30) {
         const typeStr = key === 'mine' ? 'đào mỏ' : 'chặt gỗ';
-        return interaction.editReply(`🏥 Sức khỏe của cậu quá yếu (**${userHealth}/100** ❤️). Cậu cần ít nhất **30** sức khỏe để ${typeStr}. Hãy dùng thuốc/hộp y tế (\`/eat\`) hoặc chạy lệnh \`/hospital\` để nhập viện nhé!`);
+        const embed = buildWaguriEmbed(interaction, 'error', {
+            description: `🏥 Sức khỏe của cậu quá yếu (**${userHealth}/100** ❤️). Cậu cần ít nhất **30** sức khỏe để ${typeStr}. Hãy dùng thuốc/hộp y tế (\`/eat\`) hoặc chạy lệnh \`/hospital\` để nhập viện nhé!`
+        });
+        return interaction.editReply({ embeds: [embed] });
     }
 
     // Kiểm tra và sử dụng công cụ
     const toolResult = await db.useTool(userId, tool.id);
     if (!toolResult || toolResult.status === 'no_tool') {
-        return interaction.editReply(`Cậu cần mua **${tool.name}** ${tool.emoji} ở \`/shop\` mới thực hiện được nhé~ 🌸`);
+        const embed = buildWaguriEmbed(interaction, 'warning', {
+            description: `Cậu cần mua **${tool.name}** ${tool.emoji} ở \`/shop\` mới thực hiện được nhé~ 🌸`
+        });
+        return interaction.editReply({ embeds: [embed] });
     }
 
     const cd = onCooldown(key, userId, config.ACTION_COOLDOWN_MS);
-    if (cd) return interaction.editReply(`Từ từ thôi nào~ nghỉ ${cd}s rồi làm tiếp nhé! 🌸`);
+    if (cd) {
+        const embed = buildWaguriEmbed(interaction, 'warning', {
+            description: `Từ từ thôi nào~ nghỉ ${cd}s rồi làm tiếp nhé! 🌸`
+        });
+        return interaction.editReply({ embeds: [embed] });
+    }
 
     const e = await db.spendEnergy(userId, energyCost);
     if (e < 0) {
         const cur = await db.getEnergy(userId);
-        return interaction.editReply(`Cậu hết năng lượng rồi (${cur}/${config.ENERGY.MAX} ⚡, cần ${energyCost}). Nghỉ chút hoặc \`/eat\` nhé~ 🌸`);
+        const embed = buildWaguriEmbed(interaction, 'warning', {
+            description: `Cậu hết năng lượng rồi (${cur}/${config.ENERGY.MAX} ⚡, cần ${energyCost}). Nghỉ chút hoặc \`/eat\` nhé~ 🌸`
+        });
+        return interaction.editReply({ embeds: [embed] });
     }
 
     const c = pick(table);
@@ -93,15 +108,19 @@ async function runGather(interaction, { title, table, energyCost = config.GATHER
         desc += `\n🎉 Lên **Level ${newLevel}**! Thưởng **+${fmt(bonus)}** ${config.CURRENCY} 🎁`;
     }
 
-    await interaction.editReply({ embeds: [new EmbedBuilder()
-        .setColor(payout > 0 ? config.COLORS.SUCCESS : config.COLORS.WARNING)
-        .setTitle(title).setDescription(desc)
-        .addFields(
+    const embedType = payout > 0 ? 'success' : 'warning';
+    const embed = buildWaguriEmbed(interaction, embedType, {
+        title: title,
+        description: desc,
+        fields: [
             { name: '💵 Số dư ví', value: `${payout > 0 ? '+' + fmt(payout) + ' → ' : ''}**${fmt(u?.wallet || 0)}** ${config.CURRENCY}`, inline: false },
             { name: 'Kinh nghiệm', value: `+${gainedExp} EXP`, inline: true },
             { name: 'Năng lượng', value: `${e}/${config.ENERGY.MAX} ⚡`, inline: true },
             { name: '❤️ Sức khỏe', value: `${u && u.health !== undefined ? u.health : 100}/100`, inline: true },
-        )] });
+        ]
+    }).setTimestamp();
+
+    await interaction.editReply({ embeds: [embed] });
 }
 
 module.exports = { runGather };

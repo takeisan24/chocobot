@@ -10,9 +10,19 @@ async function runCouple(interaction, { emoji, lines, love = 2 }) {
     await interaction.deferReply();
     const me = interaction.user;
     const target = interaction.options.getUser('user');
-    if (!target) return interaction.editReply('Cậu muốn dành cho ai? Nhập @người nhé~ 🌸');
-    if (target.bot) return interaction.editReply('Bot ngại lắm~ 😳');
-    if (target.id === me.id) return interaction.editReply('Tự thương mình cũng tốt, nhưng rủ thêm ai đó đi nào~ 😄');
+    const { buildWaguriEmbed } = require('./embed');
+    if (!target) {
+        const embed = buildWaguriEmbed(interaction, 'warning', { description: 'Cậu muốn dành cho ai? Nhập @người nhé~ 🌸' });
+        return interaction.editReply({ embeds: [embed] });
+    }
+    if (target.bot) {
+        const embed = buildWaguriEmbed(interaction, 'warning', { description: 'Bot ngại lắm~ 😳' });
+        return interaction.editReply({ embeds: [embed] });
+    }
+    if (target.id === me.id) {
+        const embed = buildWaguriEmbed(interaction, 'warning', { description: 'Tự thương mình cũng tốt, nhưng rủ thêm ai đó đi nào~ 😄' });
+        return interaction.editReply({ embeds: [embed] });
+    }
 
     const line = lines[Math.floor(Math.random() * lines.length)].replace(/\{a\}/g, `<@${me.id}>`).replace(/\{b\}/g, `<@${target.id}>`);
     const user = await db.getUser(me.id);
@@ -27,7 +37,10 @@ async function runCouple(interaction, { emoji, lines, love = 2 }) {
             extra = '\n💞 *(âu yếm hơi nhiều rồi, để tình cảm thấm thêm chút nhé~)*';
         }
     }
-    await interaction.editReply({ embeds: [new EmbedBuilder().setColor(0xE91E63).setDescription(`${emoji} ${line}${extra}`)] });
+    const embed = buildWaguriEmbed(interaction, 'info', {
+        description: `${emoji} ${line}${extra}`
+    }).setTimestamp();
+    await interaction.editReply({ embeds: [embed] });
 }
 
 module.exports = { runCouple, loveTier };

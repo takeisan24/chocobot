@@ -1,4 +1,5 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
+const { buildWaguriEmbed } = require('../../lib/embed');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -10,31 +11,30 @@ module.exports = {
                   .setRequired(false)
         ),
     async execute(interaction) {
-        // Lấy người dùng mục tiêu từ tham số, hoặc lấy người gửi nếu không nhập
         const targetUser = interaction.options.getUser('target') || interaction.user;
         const targetMember = interaction.options.getMember('target') || interaction.member; // member dành riêng trên server này
         
-        // Tạo bảng Embed
-        const userEmbed = new EmbedBuilder()
-            .setColor(targetMember?.displayHexColor !== '#000000' ? targetMember.displayHexColor : 0x00FF00) // Lấy màu từ role trên server nếu có
-            .setTitle(`Hồ sơ của ${targetUser.username}`)
-            .setImage(targetUser.displayAvatarURL({ dynamic: true, size: 1024 }))
-            .addFields(
+        const embed = buildWaguriEmbed(interaction, 'info', {
+            title: `🌸 Hồ sơ của ${targetUser.username}`,
+            image: targetUser.displayAvatarURL({ dynamic: true, size: 1024 }),
+            fields: [
                 { name: '🆔 ID người dùng', value: targetUser.id, inline: true },
                 { name: '🤖 Là Bot?', value: targetUser.bot ? 'Có' : 'Không', inline: true },
-                { name: '🗓️ Tham gia Discord', value: `<t:${Math.floor(targetUser.createdTimestamp / 1000)}:D>`, inline: false },
-            )
-            .setFooter({ text: `Yêu cầu bởi ${interaction.user.tag}` })
-            .setTimestamp();
+                { name: '🗓️ Tham gia Discord', value: `<t:${Math.floor(targetUser.createdTimestamp / 1000)}:D>`, inline: false }
+            ]
+        }).setTimestamp();
 
-        // Riêng thông tin tham gia Server (có thể null nếu bot được /user ở tin nhắn riêng)
         if (targetMember) {
-            userEmbed.addFields(
+            embed.addFields(
                 { name: '🏠 Tham gia Server', value: `<t:${Math.floor(targetMember.joinedTimestamp / 1000)}:D>`, inline: false }
             );
         }
 
-        // Gửi trả lại kết quả
-        await interaction.reply({ embeds: [userEmbed] });
+        embed.setFooter({
+            text: `Yêu cầu bởi ${interaction.user.tag} • ${embed.data.footer.text}`,
+            iconURL: embed.data.footer.icon_url
+        });
+
+        await interaction.reply({ embeds: [embed] });
     },
 };

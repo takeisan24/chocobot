@@ -1,9 +1,10 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const db = require('../../database.js');
 const config = require('../../config');
 const { parseAmount } = require('../../lib/amount');
 const { checkBet } = require('../../lib/bet');
 const { applyPolice } = require('../../lib/police');
+const { buildWaguriEmbed } = require('../../lib/embed');
 
 const DICE = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
 const fmt = n => Number(n).toLocaleString('vi-VN');
@@ -20,13 +21,28 @@ module.exports = {
         await interaction.deferReply();
         const userId = interaction.user.id;
         const user = await db.getUser(userId);
-        if (!user) return interaction.editReply('Hơ, lỗi dữ liệu, thử lại sau nhé~ 🌸');
+        if (!user) {
+            const embed = buildWaguriEmbed(interaction, 'error', {
+                description: 'Hơ, lỗi dữ liệu, thử lại sau nhé~ 🌸'
+            });
+            return interaction.editReply({ embeds: [embed] });
+        }
 
         const bet = parseAmount(interaction.options.getString('bet'), Number(user.wallet));
         const choice = interaction.options.getString('choice');
         const err = checkBet(bet);
-        if (err) return interaction.editReply(`🌸 ${err}`);
-        if (!await db.addMoney(userId, -bet, 'wallet')) return interaction.editReply('Ví cậu không đủ để cược~ 😟');
+        if (err) {
+            const embed = buildWaguriEmbed(interaction, 'warning', {
+                description: `🌸 ${err}`
+            });
+            return interaction.editReply({ embeds: [embed] });
+        }
+        if (!await db.addMoney(userId, -bet, 'wallet')) {
+            const embed = buildWaguriEmbed(interaction, 'warning', {
+                description: 'Ví cậu không đủ để cược~ 😟'
+            });
+            return interaction.editReply({ embeds: [embed] });
+        }
 
         const d = [roll(), roll(), roll()];
         const sum = d[0] + d[1] + d[2];
@@ -60,8 +76,11 @@ module.exports = {
         const afterBal = await db.getUser(userId);
         desc += `\n💵 Số dư ví: **${fmt(afterBal?.wallet || 0)}** ${config.CURRENCY}`;
 
-        await interaction.editReply({ embeds: [new EmbedBuilder()
-            .setColor(win ? config.COLORS.SUCCESS : config.COLORS.ERROR)
-            .setTitle('🎲 Tài Xỉu').setDescription(desc)] });
+        const embed = buildWaguriEmbed(interaction, win ? 'success' : 'error', {
+            title: '🎲・Tài Xỉu',
+            description: desc
+        }).setTimestamp();
+
+        await interaction.editReply({ embeds: [embed] });
     },
 };

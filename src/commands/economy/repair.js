@@ -35,28 +35,45 @@ module.exports = {
 
         const r = await db.repairTool(userId, toolId, cost);
 
+        const { buildWaguriEmbed } = require('../../lib/embed');
         if (r === 'no_tool') {
-            return interaction.editReply(`🌸 Cậu chưa sở hữu **${TOOL_NAMES[toolId]}** trong kho đồ để sửa. Hãy ghé \`/shop\` mua nhé!`);
+            const embed = buildWaguriEmbed(interaction, 'error', {
+                title: '🛠️・Sửa công cụ',
+                description: `Cậu chưa sở hữu **${TOOL_NAMES[toolId]}** trong kho đồ để sửa. Hãy ghé \`/shop\` mua nhé!`
+            });
+            return interaction.editReply({ embeds: [embed] });
         }
         if (r === 'already_repaired') {
-            return interaction.editReply(`🌸 **${TOOL_NAMES[toolId]}** vẫn còn rất mới, độ bền 100% rồi không cần sửa đâu~`);
+            const embed = buildWaguriEmbed(interaction, 'warning', {
+                title: '🛠️・Sửa công cụ',
+                description: `**${TOOL_NAMES[toolId]}** vẫn còn rất mới, độ bền 100% rồi không cần sửa đâu~`
+            });
+            return interaction.editReply({ embeds: [embed] });
         }
         if (r === 'insufficient_funds') {
-            return interaction.editReply(`🌸 Cậu không đủ **${fmt(cost)}** ${config.CURRENCY} trong ví để thanh toán chi phí sửa chữa.`);
+            const embed = buildWaguriEmbed(interaction, 'error', {
+                title: '🛠️・Sửa công cụ',
+                description: `Cậu không đủ **${fmt(cost)}** ${config.CURRENCY} trong ví để thanh toán chi phí sửa chữa.`
+            });
+            return interaction.editReply({ embeds: [embed] });
         }
         if (r !== 'ok') {
-            return interaction.editReply('🌸 Ơ, có lỗi khi sửa công cụ rồi, thử lại sau nhé~');
+            const embed = buildWaguriEmbed(interaction, 'error', {
+                title: '🛠️・Sửa công cụ',
+                description: 'Ơ, có lỗi khi sửa công cụ rồi, thử lại sau nhé~'
+            });
+            return interaction.editReply({ embeds: [embed] });
         }
 
         const u = await db.getUser(userId);
 
-        const embed = new EmbedBuilder()
-            .setColor(config.COLORS.SUCCESS)
-            .setTitle('🛠️ Sửa chữa công cụ thành công')
-            .setDescription(`Cậu đã thanh toán **${fmt(cost)}** ${config.CURRENCY} để phục hồi độ bền của **${TOOL_NAMES[toolId]}** về **100/100**! ✨`)
-            .addFields(
+        const embed = buildWaguriEmbed(interaction, 'success', {
+            title: '🛠️・Sửa chữa công cụ thành công',
+            description: `Cậu đã thanh toán **${fmt(cost)}** ${config.CURRENCY} để phục hồi độ bền của **${TOOL_NAMES[toolId]}** về **100/100**! ✨`,
+            fields: [
                 { name: '💵 Số dư ví', value: `**${fmt(u?.wallet || 0)}** ${config.CURRENCY}`, inline: true }
-            );
+            ]
+        });
 
         await interaction.editReply({ embeds: [embed] });
     },

@@ -12,11 +12,33 @@ module.exports = {
     CURRENCY: 'VNĐ',
 
     COLORS: {
-        SUCCESS: 0x57F287,
-        ERROR: 0xED4245,
-        INFO: 0x5865F2,
-        WARNING: 0xFEE75C,
-        JACKPOT: 0xF1C40F,
+        SUCCESS: 0x8DE0A6,   // Soft Matcha Green
+        ERROR: 0xFF8E9E,     // Soft Blush/Strawberry Pink (matching Waguri)
+        INFO: 0xFF9EAA,      // Waguri Cherry Blossom Pink (Theme primary)
+        WARNING: 0xFFD54F,   // Soft Honey Yellow
+        JACKPOT: 0xFFC107,   // Caramel Gold
+    },
+
+    EMOJIS: {
+        FLOWER: '🌸',
+        CAKE: '🍰',
+        COIN: '🪙',
+        ENERGY: '⚡',
+        HEART: '💖',
+        SPARKLE: '✨',
+        WARN: '⚠️',
+        SUCCESS: '✅',
+        ERROR: '❌',
+    },
+
+    // Ảnh thumbnail theo trạng thái. ĐỂ TRỐNG = dùng avatar bot (Waguri) — luôn hợp lệ.
+    // Muốn ảnh riêng từng trạng thái: tải ảnh thật lên (imgur/CDN) rồi dán URL vào đây.
+    WAGURI_IMAGES: {
+        MAIN: '',
+        SUCCESS: '',
+        ERROR: '',
+        WARNING: '',
+        JACKPOT: '',
     },
 
     LEVELING: {
@@ -95,9 +117,9 @@ module.exports = {
 
     // Phương tiện: đi làm bằng xe giúp tiết kiệm năng lượng
     VEHICLES: {
-        xe_wave: { energy_cost: 8, name: 'Xe Wave' },
-        xe_sh: { energy_cost: 6, name: 'Xe SH' },
-        o_to_vinfast: { energy_cost: 4, name: 'Ô tô VinFast' },
+        xe_wave: { energy_cost: 8, name: 'Xe Honda Wave' },
+        xe_sh: { energy_cost: 6, name: 'Xe Vespa Hồng Cute' },
+        o_to_vinfast: { energy_cost: 4, name: 'Ô tô VinFast VF3' },
     },
 
     // Thuế chuyển tiền /give (sink chống lạm phát)

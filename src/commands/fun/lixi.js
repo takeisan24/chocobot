@@ -23,17 +23,23 @@ module.exports = {
         await interaction.deferReply();
         const userId = interaction.user.id;
         const user = await db.getUser(userId);
-        if (!user) return interaction.editReply('Hơ, lỗi dữ liệu, thử lại sau nhé~ 🌸');
+        const { buildWaguriEmbed } = require('../../lib/embed');
+        if (!user) {
+            const embed = buildWaguriEmbed(interaction, 'error', { title: '🧧・Lì Xì May Mắn', description: 'Hơ, lỗi dữ liệu, thử lại sau nhé~ 🌸' });
+            return interaction.editReply({ embeds: [embed] });
+        }
 
         let amount = parseAmount(interaction.options.getString('amount'), Number(user.wallet));
         let parts = interaction.options.getInteger('parts') || 5;
         if (!amount || amount < parts) {
-            return interaction.editReply(`Số tiền không hợp lệ~ (tối thiểu **${parts}** ${config.CURRENCY} cho ${parts} bao)`);
+            const embed = buildWaguriEmbed(interaction, 'error', { title: '🧧・Lì Xì May Mắn', description: `Số tiền không hợp lệ~ (tối thiểu **${parts}** ${config.CURRENCY} cho ${parts} bao)` });
+            return interaction.editReply({ embeds: [embed] });
         }
         if (parts > amount) parts = amount;
 
         if (!await db.addMoney(userId, -amount, 'wallet')) {
-            return interaction.editReply('Ví cậu không đủ để phát lì xì rồi 😟');
+            const embed = buildWaguriEmbed(interaction, 'error', { title: '🧧・Lì Xì May Mắn', description: 'Ví cậu không đủ để phát lì xì rồi 😟' });
+            return interaction.editReply({ embeds: [embed] });
         }
 
         const portions = splitMoney(amount, parts);
@@ -45,14 +51,19 @@ module.exports = {
                 .setStyle(ButtonStyle.Danger)
                 .setDisabled(disabled || portions.length === 0));
 
-        const render = (closed = false) => new EmbedBuilder()
-            .setColor(config.COLORS.JACKPOT)
-            .setTitle('🧧 LÌ XÌ MAY MẮN 🧧')
-            .setDescription(
-                `<@${userId}> phát **${fmt(amount)}** ${config.CURRENCY} cho **${parts}** người!\n` +
-                (claimed.size ? '\n' + [...claimed].map(([u, a]) => `🧧 <@${u}> +${fmt(a)} ${config.CURRENCY}`).join('\n') : '') +
-                (closed ? '\n\n*Hết lì xì rồi~ Cảm ơn cậu đã hào phóng! 🌸*' : '\n\nNhanh tay bấm nút cướp nào! 👇'))
-            .setFooter({ text: `${parts - portions.length}/${parts} bao đã được nhận` });
+        const render = (closed = false) => {
+            const embed = buildWaguriEmbed(interaction, 'jackpot', {
+                title: '🧧・LÌ XÌ MAY MẮN・🧧',
+                description: `<@${userId}> phát **${fmt(amount)}** ${config.CURRENCY} cho **${parts}** người!\n` +
+                    (claimed.size ? '\n' + [...claimed].map(([u, a]) => `🧧 <@${u}> +${fmt(a)} ${config.CURRENCY}`).join('\n') : '') +
+                    (closed ? '\n\n*Hết lì xì rồi~ Cảm ơn cậu đã hào phóng! 🌸*' : '\n\nNhanh tay bấm nút cướp nào! 👇')
+            });
+            embed.setFooter({
+                text: `${parts - portions.length}/${parts} bao đã được nhận • ${embed.data.footer.text}`,
+                iconURL: embed.data.footer.icon_url
+            });
+            return embed;
+        };
 
         const msg = await interaction.editReply({ embeds: [render()], components: [row()] });
         const collector = msg.createMessageComponentCollector({ componentType: ComponentType.Button, time: 120_000 });

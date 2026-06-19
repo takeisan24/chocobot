@@ -1,27 +1,28 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
+const { buildWaguriEmbed } = require('../../lib/embed');
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('server')
         .setDescription('Hiển thị thông tin tổng quan về Server này'),
     async execute(interaction) {
-        // Lấy thông tin server (guild)
         const guild = interaction.guild;
         
-        // Tạo bảng Embed (Thẻ hiển thị)
-        const serverEmbed = new EmbedBuilder()
-            .setColor(0x0099FF)
-            .setTitle(`Thông tin Máy chủ: ${guild.name}`)
-            .setThumbnail(guild.iconURL({ dynamic: true }))
-            .addFields(
+        const embed = buildWaguriEmbed(interaction, 'info', {
+            title: `🌸 Máy chủ: ${guild.name}`,
+            thumbnail: guild.iconURL({ dynamic: true }) || undefined,
+            fields: [
                 { name: '🌟 Chủ phòng', value: `<@${guild.ownerId}>`, inline: true },
-                { name: '👤 Số lượng thành viên', value: `${guild.memberCount}`, inline: true },
-                { name: '📅 Tạo ngày', value: `<t:${Math.floor(guild.createdTimestamp / 1000)}:D>`, inline: false },
-            )
-            .setFooter({ text: `Yêu cầu bởi ${interaction.user.tag}` })
-            .setTimestamp();
+                { name: '👤 Thành viên', value: `${guild.memberCount}`, inline: true },
+                { name: '📅 Tạo ngày', value: `<t:${Math.floor(guild.createdTimestamp / 1000)}:D>`, inline: false }
+            ]
+        }).setTimestamp();
 
-        // Phản hồi lệnh
-        await interaction.reply({ embeds: [serverEmbed] });
+        embed.setFooter({
+            text: `Yêu cầu bởi ${interaction.user.tag} • ${embed.data.footer.text}`,
+            iconURL: embed.data.footer.icon_url
+        });
+
+        await interaction.reply({ embeds: [embed] });
     },
 };

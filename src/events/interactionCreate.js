@@ -1,6 +1,7 @@
 const { Events, MessageFlags } = require('discord.js');
 const { rateLimited } = require('../lib/ratelimit');
 const { isBanned } = require('../lib/bans');
+const { buildWaguriEmbed } = require('../lib/embed');
 
 module.exports = {
     name: Events.InteractionCreate,
@@ -28,21 +29,30 @@ module.exports = {
 
             // Chặn user bị ban
             if (isBanned(interaction.user.id)) {
-                return interaction.reply({ content: 'Cậu đã bị chặn sử dụng bot~ Liên hệ admin nếu có nhầm lẫn nhé.', flags: MessageFlags.Ephemeral });
+                const embed = buildWaguriEmbed(interaction, 'error', {
+                    description: 'Cậu đã bị chặn sử dụng bot~ Liên hệ admin nếu có nhầm lẫn nhé.'
+                });
+                return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
             }
 
             // Rate limit tổng (chống spam)
             if (rateLimited(interaction.user.id)) {
-                return interaction.reply({ content: 'Cậu thao tác hơi nhanh rồi~ chờ vài giây nhé! 🌸', flags: MessageFlags.Ephemeral });
+                const embed = buildWaguriEmbed(interaction, 'warning', {
+                    description: 'Cậu thao tác hơi nhanh rồi~ chờ vài giây nhé! 🌸'
+                });
+                return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
             }
 
             try {
                 await command.execute(interaction);
             } catch (error) {
                 console.error(`Lỗi khi thực thi lệnh ${interaction.commandName}:`, error);
+                const embed = buildWaguriEmbed(interaction, 'error', {
+                    description: 'Đã có lỗi xảy ra khi thực thi lệnh này! 🥺'
+                });
                 const errorPayload = {
-                    content: 'Đã có lỗi xảy ra khi thực thi lệnh này!',
-                    flags: MessageFlags.Ephemeral, // thay cho "ephemeral: true" đã deprecated ở v14.25
+                    embeds: [embed],
+                    flags: MessageFlags.Ephemeral,
                 };
                 try {
                     if (interaction.replied || interaction.deferred) {

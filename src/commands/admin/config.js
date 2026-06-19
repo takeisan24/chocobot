@@ -1,6 +1,6 @@
-const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, ChannelType, MessageFlags } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, ChannelType, MessageFlags } = require('discord.js');
 const db = require('../../database.js');
-const config = require('../../config');
+const { buildWaguriEmbed } = require('../../lib/embed');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -17,7 +17,10 @@ module.exports = {
     async execute(interaction) {
         // Tự enforce quyền (phòng trường hợp gọi qua prefix)
         if (!interaction.member?.permissions?.has?.(PermissionFlagsBits.ManageGuild)) {
-            return interaction.reply({ content: 'Cần quyền **Quản lý Server** để dùng lệnh này nhé~ 🌸', flags: MessageFlags.Ephemeral });
+            const embed = buildWaguriEmbed(interaction, 'error', {
+                description: 'Cần quyền **Quản lý Server** để dùng lệnh này nhé~ 🌸'
+            });
+            return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
         }
         await interaction.deferReply();
         const gid = interaction.guild.id;
@@ -25,35 +28,47 @@ module.exports = {
 
         if (sub === 'confession-channel') {
             const ch = interaction.options.getChannel('channel');
-            if (!ch) return interaction.editReply('Cậu chưa chọn kênh~ (nhập #kênh)');
+            if (!ch) {
+                const embed = buildWaguriEmbed(interaction, 'warning', {
+                    description: 'Cậu chưa chọn kênh~ (nhập #kênh)'
+                });
+                return interaction.editReply({ embeds: [embed] });
+            }
             await db.setGuildSetting(gid, 'confession_channel', ch.id);
-            return interaction.editReply(`✅ Đã đặt kênh confession là <#${ch.id}>.`);
+            const embed = buildWaguriEmbed(interaction, 'success', {
+                description: `✅ Đã đặt kênh confession là <#${ch.id}>.`
+            });
+            return interaction.editReply({ embeds: [embed] });
         }
 
         if (sub === 'ai') {
             const enabled = interaction.options.getBoolean('enabled');
             await db.setGuildSetting(gid, 'ai_enabled', enabled ? '1' : '0');
-            return interaction.editReply(`✅ Đã **${enabled ? 'BẬT' : 'TẮT'}** trò chuyện AI (@tag Waguri) ở server này.`);
+            const embed = buildWaguriEmbed(interaction, 'success', {
+                description: `✅ Đã **${enabled ? 'BẬT' : 'TẮT'}** trò chuyện AI (@tag Waguri) ở server này.`
+            });
+            return interaction.editReply({ embeds: [embed] });
         }
 
         if (sub === 'ai-channel') {
             const ch = interaction.options.getChannel('channel');
             await db.setGuildSetting(gid, 'ai_channel', ch ? ch.id : '');
-            return interaction.editReply(ch
-                ? `✅ AI giờ chỉ trả lời trong <#${ch.id}>.`
-                : '✅ Đã gỡ giới hạn kênh — AI trả lời ở mọi kênh.');
+            const embed = buildWaguriEmbed(interaction, 'success', {
+                description: ch ? `✅ AI giờ chỉ trả lời trong <#${ch.id}>.` : '✅ Đã gỡ giới hạn kênh — AI trả lời ở mọi kênh.'
+            });
+            return interaction.editReply({ embeds: [embed] });
         }
 
         if (sub === 'view') {
             const s = await db.getGuildSettings(gid);
-            const embed = new EmbedBuilder()
-                .setColor(config.COLORS.INFO)
-                .setTitle('⚙️ Cấu hình server')
-                .addFields(
+            const embed = buildWaguriEmbed(interaction, 'info', {
+                title: '⚙️ Cấu hình server',
+                fields: [
                     { name: 'Kênh confession', value: s.confession_channel ? `<#${s.confession_channel}>` : '*(chưa đặt)*' },
                     { name: 'AI trò chuyện', value: s.ai_enabled === '0' ? '🔴 Tắt' : '🟢 Bật', inline: true },
-                    { name: 'Kênh AI', value: s.ai_channel ? `<#${s.ai_channel}>` : '*(mọi kênh)*', inline: true },
-                );
+                    { name: 'Kênh AI', value: s.ai_channel ? `<#${s.ai_channel}>` : '*(mọi kênh)*', inline: true }
+                ]
+            });
             return interaction.editReply({ embeds: [embed] });
         }
     },

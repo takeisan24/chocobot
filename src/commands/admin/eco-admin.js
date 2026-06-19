@@ -1,8 +1,9 @@
-const { SlashCommandBuilder, EmbedBuilder, MessageFlags } = require('discord.js');
+const { SlashCommandBuilder, MessageFlags } = require('discord.js');
 const db = require('../../database.js');
 const config = require('../../config');
 const { isOwner } = require('../../lib/owner');
 const { setBan } = require('../../lib/bans');
+const { buildWaguriEmbed } = require('../../lib/embed');
 
 const fmt = n => Number(n).toLocaleString('vi-VN');
 
@@ -62,71 +63,114 @@ module.exports = {
     async execute(interaction) {
         // Chặn người không phải owner (chủ app tự nhận + OWNER_IDS env)
         if (!await isOwner(interaction.client, interaction.user.id)) {
-            return interaction.reply({ content: 'Lệnh này chỉ dành cho owner thôi nhé~ 🌸', flags: MessageFlags.Ephemeral });
+            const embed = buildWaguriEmbed(interaction, 'error', {
+                description: 'Lệnh này chỉ dành cho owner thôi nhé~ 🌸'
+            });
+            return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
         }
         await interaction.deferReply();
 
         const sub = interaction.options.getSubcommand();
         const target = interaction.options.getUser('user');
-        if (!target) return interaction.editReply('Thiếu người chơi.');
+        if (!target) {
+            const embed = buildWaguriEmbed(interaction, 'error', {
+                description: 'Thiếu người chơi.'
+            });
+            return interaction.editReply({ embeds: [embed] });
+        }
         const C = config.CURRENCY;
 
         if (sub === 'addmoney') {
             const amount = interaction.options.getInteger('amount');
             const field = interaction.options.getString('field') || 'wallet';
             const ok = await db.addMoney(target.id, amount, field);
-            return interaction.editReply(ok
-                ? `✅ Đã ${amount >= 0 ? 'cộng' : 'trừ'} **${fmt(Math.abs(amount))}** ${C} (${field}) cho <@${target.id}>.`
-                : '❌ Thất bại (có thể số dư không đủ để trừ).');
+            const embed = buildWaguriEmbed(interaction, ok ? 'success' : 'error', {
+                description: ok
+                    ? `✅ Đã ${amount >= 0 ? 'cộng' : 'trừ'} **${fmt(Math.abs(amount))}** ${C} (${field}) cho <@${target.id}>.`
+                    : '❌ Thất bại (có thể số dư không đủ để trừ).'
+            });
+            return interaction.editReply({ embeds: [embed] });
         }
         if (sub === 'setmoney') {
             const amount = interaction.options.getInteger('amount');
             const field = interaction.options.getString('field') || 'wallet';
             const ok = await db.setBalance(target.id, field, amount);
-            return interaction.editReply(ok ? `✅ Đặt ${field} của <@${target.id}> = **${fmt(amount)}** ${C}.` : '❌ Thất bại.');
+            const embed = buildWaguriEmbed(interaction, ok ? 'success' : 'error', {
+                description: ok ? `✅ Đặt ${field} của <@${target.id}> = **${fmt(amount)}** ${C}.` : '❌ Thất bại.'
+            });
+            return interaction.editReply({ embeds: [embed] });
         }
         if (sub === 'setenergy') {
             const value = interaction.options.getInteger('value');
             const ok = await db.setEnergy(target.id, value);
-            return interaction.editReply(ok ? `✅ Đặt năng lượng của <@${target.id}> = **${value}**.` : '❌ Thất bại.');
+            const embed = buildWaguriEmbed(interaction, ok ? 'success' : 'error', {
+                description: ok ? `✅ Đặt năng lượng của <@${target.id}> = **${value}**.` : '❌ Thất bại.'
+            });
+            return interaction.editReply({ embeds: [embed] });
         }
         if (sub === 'setexp') {
             const value = interaction.options.getInteger('value');
             const ok = await db.setExp(target.id, value);
-            return interaction.editReply(ok ? `✅ Đặt EXP của <@${target.id}> = **${fmt(value)}**.` : '❌ Thất bại.');
+            const embed = buildWaguriEmbed(interaction, ok ? 'success' : 'error', {
+                description: ok ? `✅ Đặt EXP của <@${target.id}> = **${fmt(value)}**.` : '❌ Thất bại.'
+            });
+            return interaction.editReply({ embeds: [embed] });
         }
         if (sub === 'giveitem') {
             const itemId = interaction.options.getString('item');
             const qty = interaction.options.getInteger('qty') || 1;
             const item = await db.getItem(itemId);
             const ok = await db.giveItemAdmin(target.id, itemId, qty);
-            return interaction.editReply(ok ? `✅ Đã cấp **${qty}× ${item ? item.name : itemId}** cho <@${target.id}>.` : '❌ Thất bại (item không tồn tại?).');
+            const embed = buildWaguriEmbed(interaction, ok ? 'success' : 'error', {
+                description: ok ? `✅ Đã cấp **${qty}× ${item ? item.name : itemId}** cho <@${target.id}>.` : '❌ Thất bại (item không tồn tại?).'
+            });
+            return interaction.editReply({ embeds: [embed] });
         }
         if (sub === 'setjob') {
             const jobId = interaction.options.getString('job');
             const job = await db.getJob(jobId);
-            if (!job) return interaction.editReply('❌ Không tìm thấy công việc này.');
+            if (!job) {
+                const embed = buildWaguriEmbed(interaction, 'error', {
+                    description: '❌ Không tìm thấy công việc này.'
+                });
+                return interaction.editReply({ embeds: [embed] });
+            }
             const ok = await db.setUserJob(target.id, jobId);
-            return interaction.editReply(ok ? `✅ Đã bổ nhiệm <@${target.id}> làm **${job.name}**.` : '❌ Thất bại.');
+            const embed = buildWaguriEmbed(interaction, ok ? 'success' : 'error', {
+                description: ok ? `✅ Đã bổ nhiệm <@${target.id}> làm **${job.name}**.` : '❌ Thất bại.'
+            });
+            return interaction.editReply({ embeds: [embed] });
         }
         if (sub === 'ban') {
             const ok = await setBan(target.id, true);
-            return interaction.editReply(ok ? `🚫 Đã chặn <@${target.id}> dùng bot.` : '❌ Thất bại.');
+            const embed = buildWaguriEmbed(interaction, ok ? 'success' : 'error', {
+                description: ok ? `🚫 Đã chặn <@${target.id}> dùng bot.` : '❌ Thất bại.'
+            });
+            return interaction.editReply({ embeds: [embed] });
         }
         if (sub === 'unban') {
             const ok = await setBan(target.id, false);
-            return interaction.editReply(ok ? `✅ Đã bỏ chặn <@${target.id}>.` : '❌ Thất bại.');
+            const embed = buildWaguriEmbed(interaction, ok ? 'success' : 'error', {
+                description: ok ? `✅ Đã bỏ chặn <@${target.id}>.` : '❌ Thất bại.'
+            });
+            return interaction.editReply({ embeds: [embed] });
         }
         if (sub === 'premium') {
             const days = interaction.options.getInteger('days');
             const until = await db.grantPremium(target.id, days);
-            return interaction.editReply(until
-                ? `✅ Đã cấp **Premium ${days} ngày** cho <@${target.id}> — hết hạn <t:${Math.floor(new Date(until).getTime() / 1000)}:R>.`
-                : '❌ Thất bại.');
+            const embed = buildWaguriEmbed(interaction, until ? 'success' : 'error', {
+                description: until
+                    ? `✅ Đã cấp **Premium ${days} ngày** cho <@${target.id}> — hết hạn <t:${Math.floor(new Date(until).getTime() / 1000)}:R>.`
+                    : '❌ Thất bại.'
+            });
+            return interaction.editReply({ embeds: [embed] });
         }
         if (sub === 'resetuser') {
             const ok = await db.resetUser(target.id);
-            return interaction.editReply(ok ? `✅ Đã reset toàn bộ dữ liệu của <@${target.id}>.` : '❌ Thất bại.');
+            const embed = buildWaguriEmbed(interaction, ok ? 'success' : 'error', {
+                description: ok ? `✅ Đã reset toàn bộ dữ liệu của <@${target.id}>.` : '❌ Thất bại.'
+            });
+            return interaction.editReply({ embeds: [embed] });
         }
     },
 };

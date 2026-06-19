@@ -1,6 +1,6 @@
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const images = require('../../lib/images');
-const config = require('../../config');
+const { buildWaguriEmbed } = require('../../lib/embed');
 const { restFatigue } = require('../../lib/fatigue');
 
 module.exports = {
@@ -11,9 +11,16 @@ module.exports = {
         try {
             const url = await images.cat();
             if (!url) throw new Error('no url');
-            await interaction.editReply({ embeds: [new EmbedBuilder().setColor(config.COLORS.INFO).setTitle('🐱 Mèo cho cậu nè~').setImage(url)] });
+            const embed = buildWaguriEmbed(interaction, 'info', {
+                title: '🐱 Mèo cho cậu nè~',
+                image: url
+            });
+            await interaction.editReply({ embeds: [embed] });
         } catch {
-            await interaction.editReply('Hơ, không lấy được ảnh lúc này, thử lại sau nhé~ 🌸');
+            const embedErr = buildWaguriEmbed(interaction, 'error', {
+                description: 'Hơ, không lấy được ảnh lúc này, thử lại sau nhé~ 🌸'
+            });
+            await interaction.editReply({ embeds: [embedErr] });
         }
     },
 };
