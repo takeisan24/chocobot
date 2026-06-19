@@ -121,6 +121,9 @@ module.exports = {
     // Cosmetic sink (flex, không ảnh hưởng cân bằng): danh hiệu + màu hồ sơ
     COSMETIC: { TITLE_COST: 20000, COLOR_COST: 15000, MAX_TITLE_LEN: 30 },
 
+    // Game nhiều người (ba cây, bingo, ma sói...): nhà cái cắt % pot = sink
+    PARTY: { HOUSE_CUT: 0.05, JOIN_SECONDS: 30 },
+
     // Công an bắt cờ bạc — chơi càng nhiều, xác suất bị bắt càng cao
     POLICE: {
         BASE_CHANCE: 0.0,   // lần đầu không bị bắt
