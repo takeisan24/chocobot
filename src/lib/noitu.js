@@ -2,6 +2,9 @@
 // tiếng đầu của cụm mới = tiếng cuối của cụm trước; không lặp; không đi 2 lượt liên tiếp.
 // Không kiểm tra từ điển (giữ nhẹ) — chỉ kiểm tra quy tắc nối.
 
+const db = require('../database.js');
+const config = require('../config');
+
 const games = new Map(); // channelId -> { lastWord, used:Set, lastPlayer, count }
 const START = ['con cá', 'hoa hồng', 'bầu trời', 'mặt trời', 'học sinh', 'cà phê', 'nụ cười', 'dòng sông', 'mây trắng', 'bông lúa'];
 
@@ -39,6 +42,8 @@ async function handleMessage(message) {
     g.lastPlayer = message.author.id;
     g.count++;
     message.react('✅').catch(() => {});
+    db.addMoney(message.author.id, config.NOITU.COINS, 'wallet'); // thưởng nối đúng
+    db.updateExp(message.author.id, config.NOITU.EXP);
 }
 
 module.exports = { startGame, stopGame, getGame, handleMessage };

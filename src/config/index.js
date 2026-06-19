@@ -103,8 +103,14 @@ module.exports = {
     // Thuế chuyển tiền /give (sink chống lạm phát)
     GIVE_TAX_PCT: 0.05,
 
-    // Thú cưng
-    PET: { FEED_COST: 200, FEED_EXP_MIN: 20, FEED_EXP_MAX: 40 },
+    // Thú cưng (giá cho ăn tăng theo cấp: FEED_COST + FEED_PER_LEVEL * level)
+    PET: { FEED_COST: 200, FEED_PER_LEVEL: 100, FEED_EXP_MIN: 20, FEED_EXP_MAX: 40 },
+
+    // Kết hôn / ly hôn (sink + có "án phí")
+    MARRY: { COST: 5000, DIVORCE_COST: 10000 },
+
+    // Thưởng khi nối từ đúng (/noitu)
+    NOITU: { COINS: 5, EXP: 2 },
 
     // Rương bí ẩn (money sink + cơ hội vật phẩm)
     CRATE: { COST: 1000 },

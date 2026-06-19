@@ -2,6 +2,8 @@ const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, Butt
 const db = require('../../database.js');
 const config = require('../../config');
 
+const fmt = n => Number(n).toLocaleString('vi-VN');
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('marry')
@@ -23,7 +25,7 @@ module.exports = {
         const embed = new EmbedBuilder()
             .setColor(config.COLORS.INFO)
             .setTitle('💍 Lời cầu hôn')
-            .setDescription(`<@${me.id}> muốn kết đôi với <@${target.id}>!\n\n<@${target.id}> ơi, cậu có đồng ý không? 🌸`);
+            .setDescription(`<@${me.id}> muốn kết đôi với <@${target.id}>!\n\n<@${target.id}> ơi, cậu có đồng ý không? 🌸\n\n*(Phí tổ chức lễ cưới: **${fmt(config.MARRY.COST)}** ${config.CURRENCY} — <@${me.id}> chi trả khi thành công)*`);
         const row = (disabled = false) => new ActionRowBuilder().addComponents(
             new ButtonBuilder().setCustomId('yes').setLabel('Đồng ý 💖').setStyle(ButtonStyle.Success).setDisabled(disabled),
             new ButtonBuilder().setCustomId('no').setLabel('Từ chối 💔').setStyle(ButtonStyle.Secondary).setDisabled(disabled),
@@ -42,9 +44,16 @@ module.exports = {
                 await i.update({ embeds: [embed.setColor(config.COLORS.ERROR).setDescription(`<@${target.id}> đã từ chối lời cầu hôn của <@${me.id}>... 💔`)], components: [] });
                 return collector.stop('done');
             }
+            // Phí cưới do người cầu hôn chi trả
+            if (!await db.addMoney(me.id, -config.MARRY.COST, 'wallet')) {
+                await i.update({ embeds: [embed.setColor(config.COLORS.ERROR).setTitle('💔 Không đủ chi phí')
+                    .setDescription(`<@${me.id}> không đủ **${fmt(config.MARRY.COST)}** ${config.CURRENCY} để tổ chức lễ cưới... 💔`)], components: [] });
+                return collector.stop('done');
+            }
             const r = await db.marryUsers(me.id, target.id);
+            if (r !== 'ok') await db.addMoney(me.id, config.MARRY.COST, 'wallet'); // hoàn phí nếu cưới hụt
             const done = r === 'ok'
-                ? embed.setColor(config.COLORS.SUCCESS).setTitle('🎉 Chúc mừng đôi uyên ương!').setDescription(`<@${me.id}> 💞 <@${target.id}> giờ đã là một cặp! Hạnh phúc nhé~ 🌸`)
+                ? embed.setColor(config.COLORS.SUCCESS).setTitle('🎉 Chúc mừng đôi uyên ương!').setDescription(`<@${me.id}> 💞 <@${target.id}> giờ đã là một cặp! (Phí cưới **${fmt(config.MARRY.COST)}** ${config.CURRENCY}) Hạnh phúc nhé~ 🌸`)
                 : embed.setColor(config.COLORS.ERROR).setDescription('Ơ, có ai đó vừa kết hôn mất rồi, không thành công 💔');
             await i.update({ embeds: [done], components: [] });
             collector.stop('done');

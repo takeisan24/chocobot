@@ -14,7 +14,7 @@ module.exports = {
                 .addChoices(...SPECIES.map(sp => ({ name: `${sp.emoji} ${sp.name}`, value: sp.id }))))
             .addStringOption(o => o.setName('name').setDescription('Đặt tên (tuỳ chọn)')))
         .addSubcommand(s => s.setName('view').setDescription('Xem thú cưng'))
-        .addSubcommand(s => s.setName('feed').setDescription(`Cho ăn (tốn ${200} ${'VNĐ'})`))
+        .addSubcommand(s => s.setName('feed').setDescription('Cho ăn cho bé (giá tăng theo cấp)'))
         .addSubcommand(s => s.setName('rename').setDescription('Đổi tên thú cưng')
             .addStringOption(o => o.setName('name').setDescription('Tên mới').setRequired(true))),
     async execute(interaction) {
@@ -51,15 +51,16 @@ module.exports = {
 
         if (sub === 'feed') {
             if (!pet) return interaction.editReply('Cậu chưa có thú cưng để cho ăn~ Gõ `/pet adopt` nhé!');
-            if (!await db.addMoney(userId, -config.PET.FEED_COST, 'wallet')) {
-                return interaction.editReply(`Cậu không đủ **${fmt(config.PET.FEED_COST)}** ${config.CURRENCY} để mua đồ ăn cho bé~ 😟`);
+            const oldLvl = petLevel(pet.exp);
+            const cost = config.PET.FEED_COST + config.PET.FEED_PER_LEVEL * oldLvl; // cấp càng cao ăn càng tốn
+            if (!await db.addMoney(userId, -cost, 'wallet')) {
+                return interaction.editReply(`Cậu không đủ **${fmt(cost)}** ${config.CURRENCY} để cho bé ăn (cấp càng cao ăn càng tốn)~ 😟`);
             }
             const gain = Math.floor(Math.random() * (config.PET.FEED_EXP_MAX - config.PET.FEED_EXP_MIN + 1)) + config.PET.FEED_EXP_MIN;
-            const oldLvl = petLevel(pet.exp);
             const newExp = await db.feedPet(userId, gain);
             const newLvl = petLevel(newExp);
             const sp = findSpecies(pet.species);
-            let desc = `${sp?.emoji || '🐾'} **${pet.name || sp?.name}** ăn ngon lành! +${gain} EXP 😋`;
+            let desc = `${sp?.emoji || '🐾'} **${pet.name || sp?.name}** ăn ngon lành! +${gain} EXP 😋 *(tốn ${fmt(cost)} ${config.CURRENCY})*`;
             if (newLvl > oldLvl) desc += `\n🎉 Bé đã lên **Lv.${newLvl}**!`;
             return interaction.editReply({ embeds: [new EmbedBuilder().setColor(config.COLORS.SUCCESS).setDescription(desc)] });
         }

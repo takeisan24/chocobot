@@ -5,7 +5,7 @@ const config = require('../../config');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('hospital')
-        .setDescription('🏥 Nhập viện hồi phục sức khỏe toàn diện (Tốn 10% ví, tối thiểu 500 VNĐ)'),
+        .setDescription('🏥 Nhập viện hồi phục sức khỏe toàn diện (Tốn 10% tổng tài sản, tối thiểu 500 VNĐ)'),
     async execute(interaction) {
         await interaction.deferReply();
         const userId = interaction.user.id;
@@ -28,7 +28,7 @@ module.exports = {
             const embed = new EmbedBuilder()
                 .setColor(config.COLORS.SUCCESS)
                 .setTitle('🏥 Bệnh Viện Waguri')
-                .setDescription(`🩺 Cậu đã được bác sĩ chăm sóc đặc biệt và hồi phục sức khỏe về **100/100 ❤️**!\n💵 Viện phí đã thanh toán (10% ví): **-${fmt(result.fee)}** ${config.CURRENCY}.\n💵 Số dư ví hiện tại: **${fmt(u?.wallet || 0)}** ${config.CURRENCY}`)
+                .setDescription(`🩺 Cậu đã được bác sĩ chăm sóc đặc biệt và hồi phục sức khỏe về **100/100 ❤️**!\n💵 Viện phí đã thanh toán (10% tài sản): **-${fmt(result.fee)}** ${config.CURRENCY}.\n💰 Ví: **${fmt(u?.wallet || 0)}** · 🏦 Ngân hàng: **${fmt(u?.bank || 0)}** ${config.CURRENCY}`)
                 .setTimestamp();
             return interaction.editReply({ embeds: [embed] });
         }
