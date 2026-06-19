@@ -851,6 +851,17 @@ async function loanCollect(lenderId, borrowerId) {
     } catch (error) { console.error('[DATABASE ERROR] loanCollect():', error); return null; }
 }
 
+/** Chế tạo: tiêu nguyên liệu + tiền -> tạo thành phẩm. Trả {status} hoặc null. */
+async function craftItem(userId, recipe) {
+    try {
+        const { data, error } = await supabase.rpc('craft_item', {
+            p_user: userId, p_mats: recipe.mats, p_result: recipe.result, p_qty: recipe.qty, p_cost: recipe.cost,
+        });
+        if (error) throw error;
+        return data;
+    } catch (error) { console.error('[DATABASE ERROR] craftItem():', error); return null; }
+}
+
 /** Danh sách nợ của user: {owing:[...], owed:[...]} (khoản đang active). */
 async function loansOf(userId) {
     try {
@@ -1003,6 +1014,8 @@ module.exports = {
     loanRepay,
     loanCollect,
     loansOf,
+    // craft
+    craftItem,
     // admin
     setBalance,
     setExp,

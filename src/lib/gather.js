@@ -63,6 +63,15 @@ async function runGather(interaction, { title, table, energyCost = config.GATHER
         desc = `Cậu chỉ nhặt được ${c.emoji} **${c.name}**... chẳng đáng bao nhiêu 😅`;
     }
 
+    // Rơi nguyên liệu chế tạo (dùng cho /craft)
+    const DROPS = { mine: ['quang_sat', 'da'], chop: ['go'] };
+    if (DROPS[key] && Math.random() < 0.45) {
+        const matId = DROPS[key][Math.floor(Math.random() * DROPS[key].length)];
+        await db.giveItemAdmin(userId, matId, 1);
+        const it = await db.getItem(matId);
+        desc += `\n🎒 Nhặt thêm: **1× ${it?.name || matId}** *(để \`/craft\`)*`;
+    }
+
     desc += `\nĐộ bền ${tool.name}: **${toolResult.durability}/100** ${tool.emoji}` + (toolResult.broken ? ' *(đã hỏng! Cần mua mới hoặc sửa)*' : '');
 
     const u = await db.getUser(userId);
