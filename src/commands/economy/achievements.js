@@ -23,6 +23,11 @@ module.exports = {
             networth: Number(user.wallet) + Number(user.bank),
             jobId: user.job_id,
             items: new Set(inv.map(r => r.item_id)),
+            married: !!user.partner_id,
+            love: Number(user.love || 0),
+            clan: !!user.clan_id,
+            premium: !!(user.premium_until && new Date(user.premium_until).getTime() > Date.now()),
+            streak: Number(user.daily_streak || 0),
         };
 
         const unlocked = await db.getAchievements(userId);

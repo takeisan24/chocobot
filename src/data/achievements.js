@@ -1,5 +1,5 @@
 // Thành tựu — điều kiện tính từ trạng thái hiện tại (ctx). Mở khóa 1 lần, có thưởng.
-// ctx = { level, networth, jobId, items: Set<item_id> }
+// ctx = { level, networth, jobId, items: Set<item_id>, married, love, clan, premium, streak }
 module.exports = [
     { id: 'lv5',          name: '🌱 Tập Sự',     desc: 'Đạt Level 5',                 reward: 1000,   check: c => c.level >= 5 },
     { id: 'lv15',         name: '💼 Chuyên Nghiệp', desc: 'Đạt Level 15',             reward: 3000,   check: c => c.level >= 15 },
@@ -12,4 +12,14 @@ module.exports = [
     { id: 'own_mercedes', name: '🚙 Xe Sang',    desc: 'Sở hữu Mercedes G63',         reward: 5000,   check: c => c.items.has('mercedes') },
     { id: 'own_sieuxe',   name: '🏎️ Tốc Độ',     desc: 'Sở hữu Siêu Xe Lamborghini',  reward: 30000,  check: c => c.items.has('sieu_xe') },
     { id: 'own_duthuyen', name: '🛥️ Dân Chơi',   desc: 'Sở hữu Du Thuyền',            reward: 100000, check: c => c.items.has('du_thuyen') },
+    { id: 'lv40',         name: '🌟 Huyền Thoại', desc: 'Đạt Level 40',               reward: 30000,  check: c => c.level >= 40 },
+    { id: 'own_bietthu',  name: '🏠 An Gia',     desc: 'Sở hữu Biệt Thự',            reward: 30000,  check: c => c.items.has('biet_thu') },
+    { id: 'own_canho',    name: '🏢 An Cư',      desc: 'Sở hữu Căn Hộ Chung Cư',     reward: 8000,   check: c => c.items.has('can_ho') },
+    { id: 'craft_master', name: '💍 Nghệ Nhân',  desc: 'Chế được Trang Sức Đá Quý',  reward: 5000,   check: c => c.items.has('trang_suc') },
+    { id: 'married',      name: '💕 Đã Có Đôi',  desc: 'Kết hôn với một người',       reward: 2000,   check: c => c.married },
+    { id: 'love_500',     name: '💗 Mặn Nồng',   desc: 'Tình cảm cặp đôi đạt 500',    reward: 5000,   check: c => c.love >= 500 },
+    { id: 'love_2000',    name: '💞 Phu Thê',    desc: 'Tình cảm cặp đôi đạt 2.000',  reward: 20000,  check: c => c.love >= 2000 },
+    { id: 'has_clan',     name: '🏰 Bang Chúng', desc: 'Gia nhập một bang hội',       reward: 2000,   check: c => c.clan },
+    { id: 'is_premium',   name: '💎 Quý Tộc',    desc: 'Sở hữu gói Premium',          reward: 5000,   check: c => c.premium },
+    { id: 'streak_30',    name: '🔥 Chuyên Cần', desc: 'Điểm danh 30 ngày liên tiếp', reward: 10000,  check: c => c.streak >= 30 },
 ];
