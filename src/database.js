@@ -882,6 +882,12 @@ async function clanList(limit = 20) {
     try { const { data } = await supabase.from('clans').select('*').order('bank', { ascending: false }).limit(limit); return data || []; }
     catch { return []; }
 }
+/** Top cặp đôi theo điểm tình cảm. */
+async function getTopLove(limit = 20) {
+    try { const { data } = await supabase.from('users').select('user_id, love, partner_id').gt('love', 0).not('partner_id', 'is', null).order('love', { ascending: false }).limit(limit); return data || []; }
+    catch (error) { console.error('[DATABASE ERROR] getTopLove():', error); return []; }
+}
+
 /** EXP của các thành viên 1 bang (để tính sức mạnh chiến tranh). */
 async function clanMembersExp(clanId) {
     try { const { data } = await supabase.from('users').select('exp').eq('clan_id', clanId); return (data || []).map(r => Number(r.exp || 0)); }
@@ -1153,6 +1159,7 @@ module.exports = {
     clanList,
     clanMembersExp,
     clanWar,
+    getTopLove,
     // market
     marketList,
     marketBuy,
