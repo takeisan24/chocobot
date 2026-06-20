@@ -1,209 +1,150 @@
 // ============================================================
-// scripts/build-support-server.js — Dựng cấu trúc SERVER HỖ TRỢ + bật Community + đăng nội dung mẫu.
+// scripts/build-support-server.js — Thiết lập SERVER HỖ TRỢ, ƯU TIÊN TÁI DÙNG kênh có sẵn.
 // ------------------------------------------------------------
-// Vì bot không tự tạo được server, bạn làm theo các bước:
-//   1) Tự tạo 1 server Discord trống (nút "+").
-//   2) Mời Waguri vào server đó. Để bật Community + đăng bài vào kênh read-only,
-//      tạm cấp ADMINISTRATOR cho role bot (gỡ sau khi chạy xong) — gọn nhất.
-//   3) Bật Developer Mode (Discord Settings → Advanced) → chuột phải server → Copy Server ID.
-//   4) Chạy:  node scripts/build-support-server.js <SERVER_ID>
+// Triết lý: KHÔNG tạo bừa kênh mới. Với mỗi "vai trò kênh" (rules, hướng dẫn, ...),
+// script sẽ:  (1) dùng ID bạn map sẵn  ->  (2) tự dò kênh có tên giống (alias)
+//          -> (3) chỉ TẠO MỚI nếu bạn bật CREATE_MISSING.
+// Nội dung mẫu CHỈ đăng vào kênh đang TRỐNG (0 tin nhắn) -> không spam kênh đang dùng.
 //
-// Idempotent: chạy lại sẽ BỎ QUA category/kênh/role đã có; chỉ ĐĂNG NỘI DUNG vào kênh MỚI tạo.
+// CÁCH DÙNG:
+//   1) Mời Waguri vào server, tạm cấp ADMINISTRATOR (cho Community + đăng bài).
+//   2) (Tuỳ chọn) Điền ID kênh có sẵn vào USE_EXISTING bên dưới cho chắc ăn.
+//   3) Chạy XEM TRƯỚC:  node scripts/build-support-server.js <SERVER_ID>
+//      -> in ra "sẽ dùng kênh nào cho vai trò nào", KHÔNG đổi gì (DRY_RUN=true).
+//   4) Ưng rồi: đặt DRY_RUN=false (dòng dưới) rồi chạy lại để làm thật.
 // ============================================================
 require('dotenv').config();
 const {
-    Client, GatewayIntentBits, ChannelType, PermissionsBitField, EmbedBuilder,
+    Client, GatewayIntentBits, ChannelType, EmbedBuilder,
     GuildVerificationLevel, GuildExplicitContentFilter,
 } = require('discord.js');
 const config = require('../src/config');
 
+// ====================== TUỲ CHỈNH ======================
+const DRY_RUN = true;          // true = chỉ xem trước, không đổi gì. Đổi false để làm thật.
+const CREATE_MISSING = false;  // true = tự tạo kênh cho vai trò không tìm thấy. false = chỉ tái dùng.
+const ENABLE_COMMUNITY = true; // bật Community (cần rules + updates).
+
+// Dán ID kênh CÓ SẴN để ép dùng (để trống "" = tự dò theo tên). Bật Developer Mode -> chuột phải kênh -> Copy ID.
+const USE_EXISTING = {
+    rules: '', updates: '', guide: '', links: '', announce: '',
+    chat: '', support: '', bug: '', suggest: '', logs: '',
+};
+// =======================================================
+
 const GUILD_ID = process.argv[2] || process.env.SUPPORT_GUILD_ID;
-if (!GUILD_ID) {
-    console.error('❌ Thiếu Server ID. Dùng: node scripts/build-support-server.js <SERVER_ID>');
-    process.exit(1);
-}
-if (!process.env.DISCORD_TOKEN) {
-    console.error('❌ Thiếu DISCORD_TOKEN trong .env');
-    process.exit(1);
-}
+if (!GUILD_ID) { console.error('❌ Thiếu Server ID. Dùng: node scripts/build-support-server.js <SERVER_ID>'); process.exit(1); }
+if (!process.env.DISCORD_TOKEN) { console.error('❌ Thiếu DISCORD_TOKEN trong .env'); process.exit(1); }
 
-const P = PermissionsBitField.Flags;
 const PINK = config.COLORS.INFO;
-const PERM_INT = '1099512007760'; // bộ quyền least-privilege của Waguri (để dựng link mời)
 
-const ROLES = [
-    { name: 'Developer', color: 0xFF9EAA, hoist: true },
-    { name: 'Admin',     color: 0xF04747, hoist: true },
-    { name: 'Mod',       color: 0x5865F2, hoist: true },
-    { name: 'Helper',    color: 0x57F287, hoist: true },
-    { name: 'Voter',     color: 0xFEE75C, hoist: false },
-];
-
-const STRUCTURE = [
-    { cat: '📢・THÔNG TIN', readonly: true, channels: ['luật-lệ', 'thông-báo', 'changelog', 'hướng-dẫn', 'liên-kết'] },
-    { cat: '💬・CỘNG ĐỒNG', channels: ['chat-chung', 'thử-lệnh-bot', 'góp-ý', 'khoe-đồ'] },
-    { cat: '🛟・HỖ TRỢ', channels: ['hỗ-trợ', 'báo-lỗi'] },
-    { cat: '🔒・STAFF', staff: true, channels: ['staff-chat', 'logs', 'mod-updates'] },
-];
+// Mỗi vai trò: alias để dò tên kênh + có cần tạo mới khi thiếu không.
+const TARGETS = {
+    rules:    { aliases: ['luật', 'luat', 'rule', 'nội-quy', 'noi-quy', 'quy-định', 'quy-dinh'] },
+    updates:  { aliases: ['mod-update', 'community-update', 'cập-nhật', 'mod-log'], forceCreateForCommunity: true },
+    guide:    { aliases: ['hướng-dẫn', 'huong-dan', 'guide', 'how-to', 'huongdan'] },
+    links:    { aliases: ['liên-kết', 'lien-ket', 'link'] },
+    announce: { aliases: ['thông-báo', 'thong-bao', 'announce', 'tin-tức', 'tin-tuc'] },
+    chat:     { aliases: ['chat-chung', 'general', 'chung', 'tổng', 'sảnh', 'main'] },
+    support:  { aliases: ['hỗ-trợ', 'ho-tro', 'support', 'help', 'giúp-đỡ'] },
+    bug:      { aliases: ['báo-lỗi', 'bao-loi', 'bug', 'report', 'lỗi'] },
+    suggest:  { aliases: ['góp-ý', 'gop-y', 'suggest', 'feedback', 'đề-xuất'] },
+    logs:     { aliases: ['log', 'nhật-ký', 'nhat-ky'] },
+};
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 client.once('ready', async () => {
     console.log(`Đăng nhập: ${client.user.tag}`);
     const botId = client.user.id;
-    const inviteUrl = `https://discord.com/oauth2/authorize?client_id=${botId}&permissions=${PERM_INT}&scope=bot+applications.commands`;
+    const inviteUrl = `https://discord.com/oauth2/authorize?client_id=${botId}&permissions=1099512007760&scope=bot+applications.commands`;
     const voteUrl = `https://top.gg/bot/${botId}/vote`;
     const topggUrl = `https://top.gg/bot/${botId}`;
 
     try {
         const guild = await client.guilds.fetch(GUILD_ID);
-        await guild.roles.fetch();
         await guild.channels.fetch();
-        console.log(`🏗️  Dựng cấu trúc cho server: ${guild.name}\n`);
+        console.log(`\n🏗️  Server: ${guild.name}  ${DRY_RUN ? '【XEM TRƯỚC — không đổi gì】' : '【LÀM THẬT】'}\n`);
 
-        // --- 1) Roles ---
-        const roleMap = {};
-        for (const r of ROLES) {
-            let role = guild.roles.cache.find(x => x.name === r.name);
-            if (!role) {
-                try {
-                    role = await guild.roles.create({ name: r.name, color: r.color, hoist: r.hoist, reason: 'Waguri support setup' });
-                    console.log(`  + Role: ${r.name}`);
-                } catch (e) {
-                    console.warn(`  ! Bỏ qua role "${r.name}" (cần Manage Roles): ${e.message}`);
-                }
-            } else {
-                console.log(`  = Role đã có: ${r.name}`);
-            }
-            if (role) roleMap[r.name] = role.id;
-        }
-        const staffRoleIds = ['Developer', 'Admin', 'Mod'].map(n => roleMap[n]).filter(Boolean);
-        const everyone = guild.roles.everyone.id;
+        const isText = c => c && (c.type === ChannelType.GuildText || c.type === ChannelType.GuildAnnouncement);
 
-        // --- 2) Categories + channels ---
-        const chMap = {};       // tên kênh -> channel
-        const created = new Set(); // tên kênh MỚI tạo lần này (để chỉ đăng nội dung 1 lần)
-        for (const block of STRUCTURE) {
-            const overwrites = [];
-            if (block.staff) {
-                overwrites.push({ id: everyone, deny: [P.ViewChannel] });
-                for (const id of staffRoleIds) overwrites.push({ id, allow: [P.ViewChannel] });
-            } else if (block.readonly) {
-                overwrites.push({ id: everyone, deny: [P.SendMessages] });
-                for (const id of staffRoleIds) overwrites.push({ id, allow: [P.SendMessages] });
-            }
+        // --- Phân giải kênh cho từng vai trò ---
+        const resolved = {};   // key -> channel (đang có)
+        const toCreate = [];   // key cần tạo mới
+        for (const [key, def] of Object.entries(TARGETS)) {
+            let ch = null;
+            const id = USE_EXISTING[key];
+            if (id) ch = guild.channels.cache.get(id) || null;
+            if (!ch) ch = guild.channels.cache.find(c => isText(c) && def.aliases.some(a => c.name.toLowerCase().includes(a))) || null;
 
-            let cat = guild.channels.cache.find(c => c.type === ChannelType.GuildCategory && c.name === block.cat);
-            if (!cat) {
-                cat = await guild.channels.create({ name: block.cat, type: ChannelType.GuildCategory, permissionOverwrites: overwrites });
-                console.log(`\n+ Category: ${block.cat}`);
-            } else {
-                console.log(`\n= Category đã có: ${block.cat}`);
-            }
+            if (ch) { resolved[key] = ch; console.log(`  ✓ ${key.padEnd(9)} -> #${ch.name}`); continue; }
 
-            for (const ch of block.channels) {
-                const slug = ch.toLowerCase();
-                let channel = guild.channels.cache.find(c => c.parentId === cat.id && (c.name === slug || c.name === ch));
-                if (channel) {
-                    console.log(`    = kênh đã có: ${ch}`);
-                } else {
-                    channel = await guild.channels.create({ name: ch, type: ChannelType.GuildText, parent: cat.id });
-                    created.add(ch);
-                    console.log(`    + kênh: ${ch}`);
-                }
-                chMap[ch] = channel;
-            }
+            const needForCommunity = ENABLE_COMMUNITY && def.forceCreateForCommunity;
+            if (CREATE_MISSING || needForCommunity) { toCreate.push(key); console.log(`  + ${key.padEnd(9)} -> (sẽ TẠO MỚI${needForCommunity ? ' — cần cho Community' : ''})`); }
+            else console.log(`  – ${key.padEnd(9)} -> (không tìm thấy, bỏ qua)`);
         }
 
-        // --- 3) Bật Community (cần Manage Server) ---
-        if (guild.features.includes('COMMUNITY')) {
-            console.log('\n= Community đã bật sẵn.');
-        } else if (chMap['luật-lệ'] && chMap['mod-updates']) {
+        if (DRY_RUN) {
+            console.log('\n👀 Đây là XEM TRƯỚC. Nếu ổn: mở file sửa DRY_RUN=false rồi chạy lại để áp dụng.');
+            console.log('   (Muốn ép dùng kênh cụ thể thì điền ID vào USE_EXISTING; muốn tạo kênh thiếu thì bật CREATE_MISSING.)');
+            return;
+        }
+
+        // --- Tạo các kênh thiếu (nếu được phép) ---
+        for (const key of toCreate) {
+            const name = key === 'updates' ? 'mod-updates' : key;
+            const ch = await guild.channels.create({ name, type: ChannelType.GuildText });
+            resolved[key] = ch;
+            console.log(`  + Đã tạo #${ch.name}`);
+        }
+
+        // --- Bật Community (nếu có rules + updates) ---
+        if (ENABLE_COMMUNITY && !guild.features.includes('COMMUNITY') && resolved.rules && resolved.updates) {
             try {
                 await guild.edit({
                     features: [...guild.features, 'COMMUNITY'],
-                    rulesChannel: chMap['luật-lệ'].id,
-                    publicUpdatesChannel: chMap['mod-updates'].id,
+                    rulesChannel: resolved.rules.id,
+                    publicUpdatesChannel: resolved.updates.id,
                     verificationLevel: GuildVerificationLevel.Medium,
                     explicitContentFilter: GuildExplicitContentFilter.AllMembers,
                     description: 'Server hỗ trợ chính thức của Waguri 🌸',
-                    reason: 'Enable Community for Waguri support server',
+                    reason: 'Enable Community',
                 });
-                console.log('\n✅ Đã BẬT Community (rules=#luật-lệ, updates=#mod-updates, verify=Medium, filter=All).');
-                try {
-                    await chMap['thông-báo'].edit({ type: ChannelType.GuildAnnouncement });
-                    console.log('   + #thông-báo -> kênh Announcement.');
-                } catch (e) {
-                    console.warn('   ! Không đổi được #thông-báo sang Announcement:', e.message);
-                }
+                console.log(`\n✅ Đã bật Community (rules=#${resolved.rules.name}, updates=#${resolved.updates.name}).`);
             } catch (e) {
-                console.warn('\n! Không bật được Community tự động (cần Manage Server / Administrator):', e.message);
+                console.warn('\n! Không bật được Community (cần Manage Server):', e.message);
             }
+        } else if (ENABLE_COMMUNITY && guild.features.includes('COMMUNITY')) {
+            console.log('\n= Community đã bật sẵn.');
         }
 
-        // --- 4) Đăng nội dung mẫu (chỉ vào kênh MỚI tạo) ---
-        const post = async (name, embed, pin = false) => {
-            if (!created.has(name) || !chMap[name]) return; // đã có từ trước -> không đăng lại
-            try {
-                const msg = await chMap[name].send({ embeds: [embed] });
-                if (pin) await msg.pin().catch(() => {});
-                console.log(`    ✎ đã đăng vào #${name}`);
-            } catch (e) {
-                console.warn(`    ! không đăng được vào #${name}: ${e.message}`);
-            }
-        };
+        // --- Đăng nội dung mẫu (CHỈ vào kênh đang trống) ---
         const E = (title, desc) => new EmbedBuilder().setColor(PINK).setTitle(title).setDescription(desc);
+        const CONTENT = {
+            rules: { pin: true, embed: E('📜・Nội quy server', ['1️⃣ Tôn trọng mọi người.', '2️⃣ Không spam/quảng cáo/link độc hại.', '3️⃣ Đăng đúng kênh (hỏi ở hỗ trợ, lỗi ở báo lỗi).', '4️⃣ Nội dung lành mạnh.', '5️⃣ Nghe Mod/Admin.', '', 'Tuân thủ Điều khoản & Hướng dẫn cộng đồng Discord 🌸'].join('\n')) },
+            guide: { pin: true, embed: E('🌸・Bắt đầu với Waguri', ['• `/help` — tất cả lệnh', '• `/daily` điểm danh · `/work` kiếm tiền', '• `/shop` `/buy` · `/leaderboard`', '• `/taixiu` `/masoi`… minigame', '• `@Waguri` / `/ask` trò chuyện 💬', '• `/vote` nhận thưởng 💝', '', `*Dùng được prefix \`${config.PREFIX}\`.*`].join('\n')) },
+            links: { embed: E('🔗・Liên kết', [`➕ **[Mời Waguri](${inviteUrl})**`, `🗳️ **[Vote Top.gg](${voteUrl})**`, `⭐ **[Trang Top.gg](${topggUrl})**`, '', '*(Thêm link Privacy/Terms khi web deploy.)*'].join('\n')) },
+            announce: { embed: E('🎉・Waguri đã có mặt!', ['Chào mừng đến nhà của **Waguri Kaoruko** 🍰', 'Server hỗ trợ chính thức — cập nhật, trợ giúp, giao lưu.', '', `➕ [Mời bot](${inviteUrl}) · 🗳️ [Vote](${voteUrl})`].join('\n')) },
+            chat: { embed: E('🌸・Chào mừng!', 'Cứ thoải mái trò chuyện nhé~ Có gì cần giúp thì ghé kênh hỗ trợ! 💕') },
+            support: { embed: E('🛟・Cần giúp đỡ?', 'Mô tả vấn đề **rõ ràng** (kèm ảnh nếu có) — Mod & cộng đồng sẽ hỗ trợ sớm nhất 🌸') },
+            bug: { embed: E('🐛・Báo lỗi', ['```', 'Lệnh bị lỗi: /...', 'Mình đã làm gì: ...', 'Mong đợi vs thực tế: ...', 'Ảnh/log: ...', '```'].join('\n')) },
+            suggest: { embed: E('💡・Góp ý', 'Muốn Waguri có thêm gì? Chia sẻ ở đây nhé — mình trân trọng mọi ý tưởng! ✨') },
+        };
+        for (const [key, c] of Object.entries(CONTENT)) {
+            const ch = resolved[key];
+            if (!ch) continue;
+            try {
+                const recent = await ch.messages.fetch({ limit: 1 });
+                if (recent.size > 0) { console.log(`    = #${ch.name} đã có tin nhắn -> không đăng (giữ nguyên).`); continue; }
+                const msg = await ch.send({ embeds: [c.embed] });
+                if (c.pin) await msg.pin().catch(() => {});
+                console.log(`    ✎ đã đăng vào #${ch.name}`);
+            } catch (e) { console.warn(`    ! không đăng được vào #${ch.name}: ${e.message}`); }
+        }
 
-        await post('luật-lệ', E('📜・Nội quy server', [
-            '1️⃣ Tôn trọng mọi người — không công kích, phân biệt, quấy rối.',
-            '2️⃣ Không spam, quảng cáo, gửi link độc hại.',
-            '3️⃣ Đăng đúng kênh (hỏi ở `#hỗ-trợ`, báo lỗi ở `#báo-lỗi`).',
-            '4️⃣ Nội dung trong sạch, lành mạnh, hợp mọi lứa tuổi.',
-            '5️⃣ Nghe theo hướng dẫn của Mod/Admin.',
-            '',
-            'Tuân thủ Điều khoản & Hướng dẫn cộng đồng của Discord nha~ 🌸',
-        ].join('\n')), true);
-
-        await post('hướng-dẫn', E('🌸・Bắt đầu với Waguri', [
-            'Chào cậu! Vài bước để bắt đầu nè:',
-            '• `/help` — xem tất cả lệnh',
-            '• `/daily` — điểm danh mỗi ngày · `/work` — đi làm kiếm tiền',
-            '• `/shop` `/buy` — mua sắm · `/leaderboard` — bảng xếp hạng',
-            '• `/taixiu` `/baucua` `/masoi`… — minigame cùng bạn bè',
-            '• `@Waguri` hoặc `/ask` — trò chuyện với mình 💬',
-            '• `/vote` — vote ủng hộ nhận thưởng 💝',
-            '',
-            `*Dùng được cả prefix \`${config.PREFIX}\` (vd \`${config.PREFIX}help\`).*`,
-        ].join('\n')), true);
-
-        await post('liên-kết', E('🔗・Liên kết', [
-            `➕ **[Mời Waguri về server](${inviteUrl})**`,
-            `🗳️ **[Vote trên Top.gg](${voteUrl})**`,
-            `⭐ **[Trang Top.gg của Waguri](${topggUrl})**`,
-            '',
-            '*(Chèn thêm link Privacy Policy / Terms khi web đã deploy nhé.)*',
-        ].join('\n')));
-
-        await post('thông-báo', E('🎉・Waguri đã có mặt!', [
-            'Chào mừng đến với ngôi nhà của **Waguri Kaoruko** 🍰',
-            'Đây là server hỗ trợ chính thức — nơi cập nhật tính năng, nhận trợ giúp và giao lưu.',
-            '',
-            `➕ [Mời bot](${inviteUrl}) · 🗳️ [Vote](${voteUrl})`,
-            'Cảm ơn cậu đã đồng hành cùng mình nha~ 🌸',
-        ].join('\n')));
-
-        await post('chat-chung', E('🌸・Chào mừng!', 'Cứ thoải mái trò chuyện, khoe đồ ở `#khoe-đồ`, thử lệnh ở `#thử-lệnh-bot` nhé~ Có gì cần giúp thì ghé `#hỗ-trợ`! 💕'));
-        await post('hỗ-trợ', E('🛟・Cần giúp đỡ?', 'Mô tả vấn đề **rõ ràng** (kèm ảnh chụp màn hình nếu có) — Mod & cộng đồng sẽ hỗ trợ cậu sớm nhất 🌸'));
-        await post('báo-lỗi', E('🐛・Báo lỗi', ['Mẫu báo lỗi cho gọn nha:', '```', 'Lệnh bị lỗi: /...', 'Mình đã làm gì: ...', 'Kết quả mong đợi vs thực tế: ...', 'Ảnh/log (nếu có): ...', '```'].join('\n')));
-        await post('góp-ý', E('💡・Góp ý', 'Cậu muốn Waguri có thêm tính năng gì? Cứ mạnh dạn chia sẻ ở đây nhé — mình rất trân trọng mọi ý tưởng! ✨'));
-
-        console.log('\n✅ Xong! Việc còn lại (làm tay):');
-        console.log('   • Tạo invite VĨNH VIỄN (Never expire, no limit) → dán Top.gg + env SUPPORT_INVITE.');
-        console.log('   • Onboarding/Welcome Screen: cấu hình trong Server Settings (tuỳ chọn).');
-        console.log('   • Tạo webhook ở #logs → env LOG_WEBHOOK_URL (cho error-log).');
-        console.log('   • Gỡ bớt quyền Administrator của bot nếu lúc nãy cấp tạm.');
+        console.log('\n✅ Xong! Còn lại làm tay: invite vĩnh viễn -> Top.gg + env SUPPORT_INVITE; webhook #logs -> env LOG_WEBHOOK_URL; gỡ Administrator tạm.');
     } catch (e) {
-        console.error('❌ Lỗi dựng server:', e?.message || e);
+        console.error('❌ Lỗi:', e?.message || e);
     } finally {
         client.destroy();
         process.exit(0);
