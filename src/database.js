@@ -861,6 +861,48 @@ async function pigSetSick(userId) {
 }
 
 // ============================================================
+//  TRỒNG CÂY (plants)
+// ============================================================
+async function getPlant(userId) {
+    try { const { data, error } = await supabase.from('plants').select('*').eq('user_id', userId).maybeSingle(); if (error) throw error; return data; }
+    catch (e) { console.error('[DATABASE ERROR] getPlant():', e); return null; }
+}
+async function plantBuy(userId, cost, type, tier, flower) {
+    try { const { data, error } = await supabase.rpc('plant_buy', { p_user_id: userId, p_cost: cost, p_type: type, p_tier: tier, p_flower: flower }); if (error) throw error; return data; }
+    catch (e) { console.error('[DATABASE ERROR] plantBuy():', e); return 'error'; }
+}
+async function plantWater(userId, intervalSecs) {
+    try { const { data, error } = await supabase.rpc('plant_water', { p_user_id: userId, p_interval_secs: intervalSecs }); if (error) throw error; return data; }
+    catch (e) { console.error('[DATABASE ERROR] plantWater():', e); return { result: 'error' }; }
+}
+async function plantFertilize(userId, cost) {
+    try { const { data, error } = await supabase.rpc('plant_fertilize', { p_user_id: userId, p_cost: cost }); if (error) throw error; return data; }
+    catch (e) { console.error('[DATABASE ERROR] plantFertilize():', e); return { result: 'error' }; }
+}
+async function plantWaterHelp(helperId, ownerId) {
+    try { const { data, error } = await supabase.rpc('plant_water_help', { p_helper: helperId, p_owner: ownerId }); if (error) throw error; return data; }
+    catch (e) { console.error('[DATABASE ERROR] plantWaterHelp():', e); return { result: 'error' }; }
+}
+async function plantClaim(userId, minAge, maxAge) {
+    try { const { data, error } = await supabase.rpc('plant_claim', { p_user_id: userId, p_min_age: minAge, p_max_age: maxAge }); if (error) throw error; return data; }
+    catch (e) { console.error('[DATABASE ERROR] plantClaim():', e); return { result: 'error' }; }
+}
+async function plantRevive(userId, cost) {
+    try { const { data, error } = await supabase.rpc('plant_revive', { p_user_id: userId, p_cost: cost }); if (error) throw error; return data; }
+    catch (e) { console.error('[DATABASE ERROR] plantRevive():', e); return 'error'; }
+}
+async function plantStealFail(userId) {
+    try { const { data, error } = await supabase.rpc('plant_steal_fail', { p_user_id: userId }); if (error) throw error; return data; }
+    catch (e) { console.error('[DATABASE ERROR] plantStealFail():', e); return 0; }
+}
+async function plantSetDead(userId) {
+    try { await supabase.from('plants').update({ stage: 'dead' }).eq('user_id', userId).eq('stage', 'growing'); } catch (e) { console.error('[DATABASE ERROR] plantSetDead():', e); }
+}
+async function deletePlant(userId) {
+    try { await supabase.from('plants').delete().eq('user_id', userId); } catch (e) { console.error('[DATABASE ERROR] deletePlant():', e); }
+}
+
+// ============================================================
 //  COSMETIC (danh hiệu / màu hồ sơ)
 // ============================================================
 /** Đặt cosmetic (field: 'title' | 'profile_color'). Trả true/false. */
@@ -1202,6 +1244,17 @@ module.exports = {
     pigSetStage,
     pigSetType,
     pigSetSick,
+    // plants
+    getPlant,
+    plantBuy,
+    plantWater,
+    plantFertilize,
+    plantWaterHelp,
+    plantClaim,
+    plantRevive,
+    plantStealFail,
+    plantSetDead,
+    deletePlant,
     // cosmetic
     setCosmetic,
     // loans
