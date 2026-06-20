@@ -796,6 +796,70 @@ async function jailOrFine(userId, fine, jailHours, reason) {
     }
 }
 
+/** Giảm nửa thời gian giam còn lại (dùng khi có bảo hiểm). */
+async function halveJail(userId) {
+    try {
+        const { error } = await supabase.rpc('halve_jail', { p_user_id: userId });
+        if (error) throw error;
+        return true;
+    } catch (error) {
+        console.error('[DATABASE ERROR] halveJail():', error);
+        return false;
+    }
+}
+
+// ============================================================
+//  NUÔI HEO (pigs)
+// ============================================================
+async function getPig(userId) {
+    try { const { data, error } = await supabase.from('pigs').select('*').eq('user_id', userId).maybeSingle(); if (error) throw error; return data; }
+    catch (e) { console.error('[DATABASE ERROR] getPig():', e); return null; }
+}
+async function pigBuy(userId, cost) {
+    try { const { data, error } = await supabase.rpc('pig_buy', { p_user_id: userId, p_cost: cost }); if (error) throw error; return data; }
+    catch (e) { console.error('[DATABASE ERROR] pigBuy():', e); return 'error'; }
+}
+async function pigMature(userId, cost) {
+    try { const { data, error } = await supabase.rpc('pig_mature', { p_user_id: userId, p_cost: cost }); if (error) throw error; return data; }
+    catch (e) { console.error('[DATABASE ERROR] pigMature():', e); return { result: 'error' }; }
+}
+async function pigHeal(userId, cost) {
+    try { const { data, error } = await supabase.rpc('pig_heal', { p_user_id: userId, p_cost: cost }); if (error) throw error; return data; }
+    catch (e) { console.error('[DATABASE ERROR] pigHeal():', e); return 'error'; }
+}
+async function pigClaimSale(userId, minAgeSecs) {
+    try { const { data, error } = await supabase.rpc('pig_claim_sale', { p_user_id: userId, p_min_age_secs: minAgeSecs }); if (error) throw error; return data; }
+    catch (e) { console.error('[DATABASE ERROR] pigClaimSale():', e); return { result: 'error' }; }
+}
+async function pigStealFail(userId) {
+    try { const { data, error } = await supabase.rpc('pig_steal_fail', { p_user_id: userId }); if (error) throw error; return data; }
+    catch (e) { console.error('[DATABASE ERROR] pigStealFail():', e); return 0; }
+}
+/** Cho ăn lần 1: dùng cám tặng (baby + cam>0 -> fed). Trả true nếu thành công. */
+async function pigFeed1(userId) {
+    try {
+        const { data, error } = await supabase.from('pigs')
+            .update({ stage: 'fed', cam: 0, last_action_at: new Date().toISOString() })
+            .eq('user_id', userId).eq('stage', 'baby').eq('sick', false).gt('cam', 0).select('user_id');
+        if (error) throw error; return !!(data && data.length);
+    } catch (e) { console.error('[DATABASE ERROR] pigFeed1():', e); return false; }
+}
+/** Chuyển stage có điều kiện (chống race + chặn khi bệnh). Trả true nếu đổi được. */
+async function pigSetStage(userId, fromStage, toStage) {
+    try {
+        const { data, error } = await supabase.from('pigs')
+            .update({ stage: toStage, last_action_at: new Date().toISOString() })
+            .eq('user_id', userId).eq('stage', fromStage).eq('sick', false).select('user_id');
+        if (error) throw error; return !!(data && data.length);
+    } catch (e) { console.error('[DATABASE ERROR] pigSetStage():', e); return false; }
+}
+async function pigSetType(userId, type) {
+    try { await supabase.from('pigs').update({ type }).eq('user_id', userId); } catch (e) { console.error('[DATABASE ERROR] pigSetType():', e); }
+}
+async function pigSetSick(userId) {
+    try { await supabase.from('pigs').update({ sick: true }).eq('user_id', userId); } catch (e) { console.error('[DATABASE ERROR] pigSetSick():', e); }
+}
+
 // ============================================================
 //  COSMETIC (danh hiệu / màu hồ sơ)
 // ============================================================
@@ -1126,6 +1190,18 @@ module.exports = {
     // jail
     getJail,
     jailOrFine,
+    halveJail,
+    // pigs
+    getPig,
+    pigBuy,
+    pigMature,
+    pigHeal,
+    pigClaimSale,
+    pigStealFail,
+    pigFeed1,
+    pigSetStage,
+    pigSetType,
+    pigSetSick,
     // cosmetic
     setCosmetic,
     // loans

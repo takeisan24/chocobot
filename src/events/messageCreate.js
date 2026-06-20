@@ -7,6 +7,7 @@ const { handleMessage: handleNoiTu } = require('../lib/noitu');
 const { rateLimited } = require('../lib/ratelimit');
 const { isBanned } = require('../lib/bans');
 const { isBlocked, getJail } = require('../lib/jail');
+const { PIG_CMDS, handlePigPrefix } = require('../lib/pig');
 
 // Chat-leveling: thưởng xu/EXP khi chat (có cooldown + cap ngày chống farm)
 const chatCD = new Map();    // userId -> hết cooldown (ms)
@@ -45,6 +46,21 @@ module.exports = {
             const tokens = message.content.slice(prefix.length).trim().split(/\s+/);
             const cmdName = (tokens.shift() || '').toLowerCase();
             if (!cmdName) return;
+
+            // --- Intercept lệnh prefix nuôi heo (w!muaheo, w!heoan, ...) ---
+            if (PIG_CMDS.has(cmdName)) {
+                if (rateLimited(message.author.id)) {
+                    message.reply('Cậu thao tác hơi nhanh rồi~ chờ vài giây nhé! 🌸').catch(() => {});
+                    return;
+                }
+                try {
+                    await handlePigPrefix(message, cmdName, tokens);
+                } catch (error) {
+                    console.error(`Lỗi prefix ${prefix}${cmdName}:`, error);
+                    message.reply('Ơ, có lỗi rồi, cậu thử lại sau nhé~ 🌸').catch(() => {});
+                }
+                return;
+            }
 
             // --- Intercept Loto & Bingo prefix commands ---
             const { handleLotoPrefix, activeLotoGames } = require('../lib/loto');

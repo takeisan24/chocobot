@@ -13,7 +13,7 @@ module.exports = {
     async execute(interaction) {
         await interaction.deferReply();
 
-        const items = await db.getItems();
+        const items = (await db.getItems()).filter(i => !i.shop_hidden);
         if (!items.length) {
             const embed = buildWaguriEmbed(interaction, 'warning', {
                 title: '🏪・Cửa Hàng Trống',

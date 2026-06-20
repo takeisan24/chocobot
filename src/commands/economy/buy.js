@@ -14,7 +14,7 @@ module.exports = {
         const focused = interaction.options.getFocused().toLowerCase();
         const items = await db.getItems();
         const choices = items
-            .filter(i => i.name.toLowerCase().includes(focused) || i.id.includes(focused))
+            .filter(i => !i.shop_hidden && (i.name.toLowerCase().includes(focused) || i.id.includes(focused)))
             .slice(0, 25)
             .map(i => ({ name: `${i.name} — ${Number(i.price).toLocaleString('vi-VN')} ${config.CURRENCY}`, value: i.id }));
         await interaction.respond(choices);
