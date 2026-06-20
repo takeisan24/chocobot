@@ -1,7 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const db = require('../../database.js');
 const config = require('../../config');
-const { restFatigue } = require('../../lib/fatigue');
 const { buildWaguriEmbed } = require('../../lib/embed');
 
 module.exports = {
@@ -55,8 +54,6 @@ module.exports = {
             });
             return interaction.editReply({ embeds: [embed] });
         }
-
-        restFatigue(interaction.user.id, used); // ăn uống nghỉ ngơi -> bớt mệt
 
         let effectText;
         if (item.effect_type === 'energy') {

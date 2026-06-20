@@ -4,7 +4,7 @@ const config = require('../../config');
 const scripts = require('../../data/workScripts');
 const { getLevelFromExp, levelUpReward } = require('../../lib/leveling');
 const { onCooldown } = require('../../lib/cooldown');
-const { fatigueMultiplier } = require('../../lib/fatigue');
+const { conditionMultiplier } = require('../../lib/fatigue');
 const { getEventMult } = require('../../lib/event');
 const { buildWaguriEmbed } = require('../../lib/embed');
 
@@ -135,8 +135,8 @@ module.exports = {
                 earnedMoney = Math.round(base * buffMult);
                 color = config.COLORS.SUCCESS;
             }
-            // Mệt mỏi: làm liên tục thì thu nhập giảm dần
-            const fatigue = fatigueMultiplier(userId);
+            // Mệt mỏi: năng lượng/sức khỏe càng thấp (dưới 50%) thì thu nhập càng giảm
+            const fatigue = conditionMultiplier(energyLeft, user.health);
             const grossMoney = earnedMoney;
             if (earnedMoney > 0) earnedMoney = Math.round(earnedMoney * fatigue);
 

@@ -4,7 +4,7 @@ const db = require('../../database.js');
 const config = require('../../config');
 const FISH = require('../../data/fish');
 const { onCooldown } = require('../../lib/cooldown');
-const { fatigueMultiplier } = require('../../lib/fatigue');
+const { conditionMultiplier } = require('../../lib/fatigue');
 const { getLevelFromExp, levelUpReward } = require('../../lib/leveling');
 const { getEventMult } = require('../../lib/event');
 
@@ -69,7 +69,7 @@ module.exports = {
 
         const c = pickCatch();
         let payout = c.max > 0 ? Math.floor(Math.random() * (c.max - c.min + 1)) + c.min : 0;
-        const fatigue = fatigueMultiplier(userId);
+        const fatigue = conditionMultiplier(energyLeft, user.health);
         const gross = payout;
         if (payout > 0) payout = Math.round(payout * fatigue);
         const premium = user.premium_until && new Date(user.premium_until).getTime() > Date.now();

@@ -2,7 +2,7 @@ const { EmbedBuilder } = require('discord.js');
 const db = require('../database.js');
 const config = require('../config');
 const { onCooldown } = require('./cooldown');
-const { fatigueMultiplier } = require('./fatigue');
+const { conditionMultiplier } = require('./fatigue');
 const { getLevelFromExp, levelUpReward } = require('./leveling');
 const { getEventMult } = require('./event');
 const { buildWaguriEmbed } = require('./embed');
@@ -65,7 +65,7 @@ async function runGather(interaction, { title, table, energyCost = config.GATHER
 
     const c = pick(table);
     let payout = c.max > 0 ? Math.floor(Math.random() * (c.max - c.min + 1)) + c.min : 0;
-    const fatigue = fatigueMultiplier(userId);
+    const fatigue = conditionMultiplier(e, user.health);
     const gross = payout;
     if (payout > 0) payout = Math.round(payout * fatigue);
     const premium = user.premium_until && new Date(user.premium_until).getTime() > Date.now();

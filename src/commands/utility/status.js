@@ -2,7 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { buildWaguriEmbed } = require('../../lib/embed');
 const db = require('../../database.js');
 const config = require('../../config');
-const { peekFatigue } = require('../../lib/fatigue');
+const { conditionMultiplier } = require('../../lib/fatigue');
 const { getEventInfo } = require('../../lib/event');
 const { getLevelFromExp } = require('../../lib/leveling');
 
@@ -25,7 +25,7 @@ module.exports = {
         const energy = await db.getEnergy(id);
 
         const now = Date.now();
-        const fatigue = peekFatigue(id);
+        const fatigue = conditionMultiplier(energy, user.health);
         const buffActive = user.buff_expires_at && new Date(user.buff_expires_at).getTime() > now;
         const premium = user.premium_until && new Date(user.premium_until).getTime() > now;
         const ev = getEventInfo();
@@ -37,7 +37,9 @@ module.exports = {
             { name: '⚡ Năng lượng', value: `${energy}/${config.ENERGY.MAX}`, inline: true },
             { name: '⭐ Cấp độ', value: `Lv.${getLevelFromExp(Number(user.exp))}`, inline: true },
             { name: '❤️ Sức khỏe', value: `${user.health !== undefined ? user.health : 100}/100`, inline: true },
-            { name: '😮‍💨 Mệt mỏi', value: fatigue < 1 ? `thu nhập còn ${Math.round(fatigue * 100)}% *(nghỉ/giải trí để hồi)*` : 'sung sức (100%)', inline: false },
+            { name: '😮‍💨 Mệt mỏi', value: fatigue >= 1
+                ? 'sung sức (100%)'
+                : `thu nhập còn ${Math.round(fatigue * 100)}% *(năng lượng/sức khỏe thấp — /ngu, /eat hoặc /hospital để hồi)*`, inline: false },
             { name: '🍗 Buff thu nhập', value: buffActive ? `+${Math.round((Number(user.buff_mult) - 1) * 100)}% — hết hạn <t:${Math.floor(new Date(user.buff_expires_at).getTime() / 1000)}:R>` : 'không có', inline: false },
             { name: '💎 Premium', value: premium ? `còn hạn <t:${Math.floor(new Date(user.premium_until).getTime() / 1000)}:R> (+${Math.round(config.PREMIUM.INCOME_BONUS * 100)}% thu nhập)` : 'chưa có (/premium)', inline: false },
             { name: '💬 Lượt chat AI hôm nay', value: `${aiUsed}/${aiCap}`, inline: true },

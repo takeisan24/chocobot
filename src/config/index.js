@@ -107,12 +107,10 @@ module.exports = {
     GATHER_ENERGY_COST: 8, // /mine, /chop
     ACTION_COOLDOWN_MS: 5000, // /work /fish /mine /chop (đỡ spam, đỡ cày máy)
 
-    // Mệt mỏi: làm liên tục trong 1 khung giờ -> thu nhập giảm dần, nghỉ thì hồi
+    // Mệt mỏi: thu nhập giảm khi NĂNG LƯỢNG hoặc SỨC KHỎE tụt thấp (xem src/lib/fatigue.js)
     FATIGUE: {
-        STEP: 0.05,        // mỗi lần liên tiếp -5%
-        FLOOR: 0.5,        // giảm tối đa còn 50%
-        RESET_MS: 600_000, // nghỉ 10 phút thì hồi sức về 100%
-        DECAY_MS: 120_000, // nghỉ mỗi 2 phút thì hồi sức dần 1 bậc
+        THRESHOLD: 0.5, // còn >= 50% năng lượng & sức khỏe -> thu nhập 100%; dưới mức này mới bắt đầu giảm
+        FLOOR: 0.5,     // mệt cỡ nào thu nhập cũng không thấp hơn 50%
     },
 
     // Phương tiện: đi làm bằng xe giúp tiết kiệm năng lượng

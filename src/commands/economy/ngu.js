@@ -1,7 +1,6 @@
 const { SlashCommandBuilder } = require('discord.js');
 const db = require('../../database.js');
 const config = require('../../config');
-const { resetFatigue } = require('../../lib/fatigue');
 const { buildWaguriEmbed } = require('../../lib/embed');
 
 module.exports = {
@@ -19,8 +18,7 @@ module.exports = {
             return interaction.editReply({ embeds: [embed] });
         }
         await db.setEnergy(interaction.user.id, config.ENERGY.MAX);
-        resetFatigue(interaction.user.id); // ngủ dậy hết mệt mỏi
-        
+
         const embed = buildWaguriEmbed(interaction, 'success', {
             title: '😴 Ngủ một giấc thật ngon',
             description: `Cậu đã nghỉ ngơi, hồi đầy **${config.ENERGY.MAX}** ⚡ năng lượng và **hết mệt mỏi** hẳn! Sẵn sàng làm việc cùng tớ tiếp nào~ 🌸`

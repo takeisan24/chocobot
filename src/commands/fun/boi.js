@@ -1,7 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { buildWaguriEmbed } = require('../../lib/embed');
 const config = require('../../config');
-const { restFatigue } = require('../../lib/fatigue');
 
 const TINH_DUYEN = [
     'Hôm nay có người thầm để ý cậu đó~ 👀',
@@ -77,9 +76,7 @@ module.exports = {
                 .addChoices(...ZODIAC.map(z => ({ name: z.name, value: z.id })))))
         .addSubcommand(s => s.setName('thaydo').setDescription('Thầy đồ phán một quẻ (mỗi lần một khác)')),
     async execute(interaction) {
-        await interaction.deferReply();
-        restFatigue(interaction.user.id, 1); // giải trí giảm mệt
-        const sub = interaction.options.getSubcommand();
+        await interaction.deferReply();        const sub = interaction.options.getSubcommand();
 
         if (sub === 'cunghoangdao') {
             const cung = interaction.options.getString('cung');

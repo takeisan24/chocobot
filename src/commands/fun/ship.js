@@ -1,5 +1,4 @@
 const { SlashCommandBuilder } = require('discord.js');
-const { restFatigue } = require('../../lib/fatigue');
 const { buildWaguriEmbed } = require('../../lib/embed');
 
 // Độ hợp ổn định theo cặp (cùng cặp luôn ra cùng %)
@@ -29,7 +28,6 @@ module.exports = {
         .addUserOption(o => o.setName('user2').setDescription('Người thứ hai (mặc định: bạn)')),
     async execute(interaction) {
         await interaction.deferReply();
-        restFatigue(interaction.user.id, 1); // giải trí giảm mệt
         const a = interaction.options.getUser('user1');
         const b = interaction.options.getUser('user2') || interaction.user;
         if (a.id === b.id) {
