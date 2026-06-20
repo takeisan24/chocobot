@@ -117,6 +117,7 @@ module.exports = {
     VEHICLES: {
         xe_wave: { energy_cost: 8, name: 'Xe Honda Wave' },
         xe_sh: { energy_cost: 6, name: 'Xe Vespa Hồng Cute' },
+        sh: { energy_cost: 5, name: 'Xe Honda SH Mode' },
         o_to_vinfast: { energy_cost: 4, name: 'Ô tô VinFast VF3' },
     },
 
