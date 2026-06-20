@@ -46,6 +46,9 @@ desktop.ini
 .supabase/
 
 
+# Bản sao lưu DB (không commit dữ liệu người chơi)
+backups/
+
 # Local configuration / AI developer tools (keep repository clean)
 .claude/
 .omc/

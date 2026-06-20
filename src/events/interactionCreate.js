@@ -4,6 +4,7 @@ const { isBanned } = require('../lib/bans');
 const { isBlocked, getJail } = require('../lib/jail');
 const { buildWaguriEmbed } = require('../lib/embed');
 const { recordMembership } = require('../lib/membership');
+const { logError } = require('../lib/logger');
 
 module.exports = {
     name: Events.InteractionCreate,
@@ -64,6 +65,7 @@ module.exports = {
                 await command.execute(interaction);
             } catch (error) {
                 console.error(`Lỗi khi thực thi lệnh ${interaction.commandName}:`, error);
+                logError('Lỗi thực thi lệnh', error, { command: interaction.commandName, user: `<@${interaction.user.id}>`, guild: interaction.guildId });
                 const embed = buildWaguriEmbed(interaction, 'error', {
                     description: 'Đã có lỗi xảy ra khi thực thi lệnh này! 🥺'
                 });

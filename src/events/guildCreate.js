@@ -41,8 +41,9 @@ module.exports = {
                     `> 💬 **Trò chuyện cùng Waguri:** Gõ \`/ask\` hoặc tag tớ để tớ chia sẻ chuyện học ở Kikyo hay làm bánh cùng Rintaro nha!\n` +
                     `> 💼 **Lao động & Kinh tế:** Kiếm tiền mua bánh ngọt qua \`/work\`, nhận trợ cấp \`/daily\`, mua sắm \`/shop\`.\n` +
                     `> 🎲 **Giải trí cùng bạn bè:** Thử sức với \`/taixiu\`, \`/blackjack\`, \`/masoi\` cực kỳ kịch tính.\n` +
-                    `> 📜 **Sổ tay hướng dẫn:** Gõ \`/help\` để tớ chỉ dẫn chi tiết cách dùng các lệnh nhé!\n\n` +
-                    `*Hy vọng chúng mình sẽ có những kỷ niệm thật ngọt ngào bên nhau!* 🌸`
+                    `> 📜 **Sổ tay hướng dẫn:** Gõ \`/help\` để tớ chỉ dẫn chi tiết cách dùng các lệnh nhé!\n` +
+                    (process.env.SUPPORT_INVITE ? `> 🛟 **Cần giúp đỡ?** [Vào server hỗ trợ](${process.env.SUPPORT_INVITE}) nha!\n` : '') +
+                    `\n*Hy vọng chúng mình sẽ có những kỷ niệm thật ngọt ngào bên nhau!* 🌸`
             });
             embed.setFooter({
                 text: `Hỗ trợ cả tiền tố ${config.PREFIX} (ví dụ: ${config.PREFIX}help) • Cùng chơi vui vẻ nha!`,

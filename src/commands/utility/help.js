@@ -87,6 +87,7 @@ const CATEGORIES = [
         ['event', 'xem sự kiện x2 đang diễn ra 🎉'],
         ['vote', 'vote trên Top.gg nhận thưởng 💝'],
         ['about', 'giới thiệu bot & nhà phát triển 🌸'],
+        ['support', 'vào server hỗ trợ Waguri 🛟'],
         ['invite', 'mời Waguri về server của cậu 🌸'],
         ['ping', 'độ trễ & trạng thái bot'],
         ['server', 'thông tin server'],

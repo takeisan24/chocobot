@@ -2,6 +2,7 @@ require('dotenv').config();
 const fs = require('node:fs');
 const path = require('node:path');
 const { Client, Collection, GatewayIntentBits, REST, Routes } = require('discord.js');
+const { logError } = require('./src/lib/logger');
 
 const client = new Client({
     // Slash command + prefix command (đọc nội dung tin nhắn).
@@ -18,8 +19,8 @@ const client = new Client({
 // 0. CHỐNG CRASH TOÀN CỤC
 // Bot KHÔNG được sập vì 1 promise lỗi hay 1 exception lẻ (vd Supabase chập chờn).
 // ---------------------------------------------------------
-process.on('unhandledRejection', (reason) => console.error('[UNHANDLED REJECTION]', reason));
-process.on('uncaughtException', (error) => console.error('[UNCAUGHT EXCEPTION]', error));
+process.on('unhandledRejection', (reason) => { console.error('[UNHANDLED REJECTION]', reason); logError('Unhandled Rejection', reason); });
+process.on('uncaughtException', (error) => { console.error('[UNCAUGHT EXCEPTION]', error); logError('Uncaught Exception', error); });
 
 // Tắt mượt: đóng kết nối Discord gọn gàng khi nhận tín hiệu dừng (Wispbyte/PM2/Ctrl+C restart)
 let shuttingDown = false;
