@@ -5,8 +5,8 @@ const config = require('../../config');
 
 const fmt = n => Number(n).toLocaleString('vi-VN');
 const COMMON = ['banh_mi', 'ca_phe', 'xoi', 'nuoc_tang_luc'];
-const GOOD = ['the_sinh_vien', 'mu_bao_hiem', 'dieu_cay', 'bo_do_sua_xe'];
-const RARE = ['rolex', 'xe_wave', 'laptop'];
+const GOOD = ['the_sinh_vien', 'mu_noi', 'hop_but', 'bo_do_sua_xe'];
+const RARE = ['dong_ho_saku', 'xe_wave', 'laptop'];
 const rpick = a => a[Math.floor(Math.random() * a.length)];
 
 module.exports = {
