@@ -13,6 +13,10 @@ module.exports = {
             .addBooleanOption(o => o.setName('enabled').setDescription('Bật AI?').setRequired(true)))
         .addSubcommand(s => s.setName('ai-channel').setDescription('Giới hạn AI chỉ trả lời ở 1 kênh (bỏ trống = mọi kênh)')
             .addChannelOption(o => o.setName('channel').setDescription('Kênh (bỏ trống để gỡ giới hạn)').addChannelTypes(ChannelType.GuildText)))
+        .addSubcommand(s => s.setName('pvp').setDescription('Bật/tắt PvP: cướp /rob + trộm heo/cây')
+            .addBooleanOption(o => o.setName('enabled').setDescription('Bật PvP?').setRequired(true)))
+        .addSubcommand(s => s.setName('police-jail').setDescription('Bật/tắt tạm giam (Discord timeout) khi công an bắt cờ bạc')
+            .addBooleanOption(o => o.setName('enabled').setDescription('Bật tạm giam?').setRequired(true)))
         .addSubcommand(s => s.setName('view').setDescription('Xem cấu hình hiện tại')),
     async execute(interaction) {
         // Tự enforce quyền (phòng trường hợp gọi qua prefix)
@@ -59,6 +63,24 @@ module.exports = {
             return interaction.editReply({ embeds: [embed] });
         }
 
+        if (sub === 'pvp') {
+            const enabled = interaction.options.getBoolean('enabled');
+            await db.setGuildSetting(gid, 'pvp', enabled ? '1' : '0');
+            const embed = buildWaguriEmbed(interaction, 'success', {
+                description: `✅ Đã **${enabled ? 'BẬT' : 'TẮT'}** PvP (cướp /rob + trộm heo/cây) ở server này.`
+            });
+            return interaction.editReply({ embeds: [embed] });
+        }
+
+        if (sub === 'police-jail') {
+            const enabled = interaction.options.getBoolean('enabled');
+            await db.setGuildSetting(gid, 'police_jail', enabled ? '1' : '0');
+            const embed = buildWaguriEmbed(interaction, 'success', {
+                description: `✅ Đã **${enabled ? 'BẬT' : 'TẮT'}** tạm giam (Discord timeout) khi công an bắt cờ bạc.${enabled ? '' : ' Giờ chỉ phạt tiền, không timeout nữa.'}`
+            });
+            return interaction.editReply({ embeds: [embed] });
+        }
+
         if (sub === 'view') {
             const s = await db.getGuildSettings(gid);
             const embed = buildWaguriEmbed(interaction, 'info', {
@@ -66,7 +88,9 @@ module.exports = {
                 fields: [
                     { name: 'Kênh confession', value: s.confession_channel ? `<#${s.confession_channel}>` : '*(chưa đặt)*' },
                     { name: 'AI trò chuyện', value: s.ai_enabled === '0' ? '🔴 Tắt' : '🟢 Bật', inline: true },
-                    { name: 'Kênh AI', value: s.ai_channel ? `<#${s.ai_channel}>` : '*(mọi kênh)*', inline: true }
+                    { name: 'Kênh AI', value: s.ai_channel ? `<#${s.ai_channel}>` : '*(mọi kênh)*', inline: true },
+                    { name: 'PvP (cướp/trộm)', value: s.pvp === '0' ? '🔴 Tắt' : '🟢 Bật', inline: true },
+                    { name: 'Tạm giam cờ bạc', value: s.police_jail === '0' ? '🔴 Tắt' : '🟢 Bật', inline: true }
                 ]
             });
             return interaction.editReply({ embeds: [embed] });

@@ -4,6 +4,7 @@ const config = require('../../config');
 const { parseAmount } = require('../../lib/amount');
 const { checkBet } = require('../../lib/bet');
 const { applyPolice } = require('../../lib/police');
+const { policeJailEnabled } = require('../../lib/guildflags');
 const { buildWaguriEmbed } = require('../../lib/embed');
 
 const fmt = n => Number(n).toLocaleString('vi-VN');
@@ -96,7 +97,9 @@ module.exports = {
                 let jailTime = config.POLICE.JAIL_MS;
                 if (usedIns) jailTime = Math.round(jailTime * 0.5); // Giảm 50% thời gian giam giữ
                 let jailed = false;
-                try { await interaction.member?.timeout?.(jailTime, 'Cờ bạc bị công an bắt'); jailed = true; } catch { /* bot thiếu quyền timeout */ }
+                if (await policeJailEnabled(interaction.guildId)) {
+                    try { await interaction.member?.timeout?.(jailTime, 'Cờ bạc bị công an bắt'); jailed = true; } catch { /* bot thiếu quyền timeout */ }
+                }
                 note += `\n\n🚨 **Công an ập tới!** Cậu bị phạt **${fmt(fine)}** ${config.CURRENCY}`
                     + (usedIns ? ` (đã giảm 50% nhờ 🛡️ **Bảo hiểm Đường phố**)` : '')
                     + (jailed ? ` và **tạm giam ${Math.round(jailTime / 60000)} phút**! 🚓` : '! 😱');

@@ -34,7 +34,7 @@ module.exports = {
             case 'thuhoach': r = await plant.harvest(userId); break;
             case 'hoisinh': r = await plant.revivePlant(userId); break;
             case 'phacay': r = await plant.destroyPlant(userId); break;
-            case 'trom': r = await plant.stealPlant(userId, target); break;
+            case 'trom': r = await plant.stealPlant(userId, target, interaction.guildId); break;
             case 'box': r = await plant.plantBox(userId, target); break;
             default: r = { type: 'error', title: '🌱・Trồng cây', description: 'Lệnh con không hợp lệ~' };
         }

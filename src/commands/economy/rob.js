@@ -2,6 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { buildWaguriEmbed } = require('../../lib/embed');
 const db = require('../../database.js');
 const config = require('../../config');
+const { pvpEnabled } = require('../../lib/guildflags');
 
 const fmt = n => Number(n).toLocaleString('vi-VN');
 
@@ -25,6 +26,10 @@ module.exports = {
         }
         if (target.id === robberId) {
             const embed = buildWaguriEmbed(interaction, 'error', { title: '🦹・Trộm cướp', description: 'Cậu tự cướp mình à? 🤨' });
+            return interaction.editReply({ embeds: [embed] });
+        }
+        if (!await pvpEnabled(interaction.guildId || interaction.guild?.id)) {
+            const embed = buildWaguriEmbed(interaction, 'warning', { title: '🦹・Trộm cướp', description: 'Server này đã **tắt PvP** (cướp/trộm) rồi nha~ 🌸' });
             return interaction.editReply({ embeds: [embed] });
         }
 

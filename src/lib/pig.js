@@ -3,6 +3,7 @@ const db = require('../database.js');
 const config = require('../config');
 const { buildWaguriEmbed } = require('./embed');
 const { getJail } = require('./jail');
+const { pvpEnabled } = require('./guildflags');
 const { MEAT, COST, TIMINGS, STEAL, randType } = require('../data/pig');
 
 const C = config.CURRENCY;
@@ -129,7 +130,8 @@ async function bathHelp(helperId, target) {
     return warn('Hổng tắm hộ được lúc này~');
 }
 
-async function stealPig(thiefId, target) {
+async function stealPig(thiefId, target, guildId) {
+    if (!await pvpEnabled(guildId)) return warn('Server này đã **tắt PvP** (trộm/cướp) rồi nha~ 🌸');
     if (!target) return warn('Trộm heo của ai? Gắn @người nhé~ (mà Waguri không khuyến khích đâu 😟)');
     if (target.bot) return warn('Bot không nuôi heo đâu~');
     if (target.id === thiefId) return warn('Tự trộm heo mình làm chi~ 😆');
@@ -220,7 +222,7 @@ async function handlePigPrefix(message, cmd, tokens) {
         case 'heongu': r = await sleepPig(userId); break;
         case 'banheo': r = await sellPig(userId); break;
         case 'chuabenh': r = await healPig(userId); break;
-        case 'tromheo': r = await stealPig(userId, targetUser); break;
+        case 'tromheo': r = await stealPig(userId, targetUser, message.guild?.id); break;
         case 'pigbox': r = await pigBox(userId, targetUser); break;
         default: return;
     }

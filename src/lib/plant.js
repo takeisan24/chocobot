@@ -3,6 +3,7 @@ const db = require('../database.js');
 const config = require('../config');
 const { buildWaguriEmbed } = require('./embed');
 const { getJail } = require('./jail');
+const { pvpEnabled } = require('./guildflags');
 const { COST, TIMINGS, STEAL, randPlant, produceId } = require('../data/plant');
 
 const C = config.CURRENCY;
@@ -109,7 +110,8 @@ async function destroyPlant(userId) {
     return ok('Đã phá cây hiện tại. Cậu có thể `muagiong` trồng cây mới rồi~ 🌱');
 }
 
-async function stealPlant(thiefId, target) {
+async function stealPlant(thiefId, target, guildId) {
+    if (!await pvpEnabled(guildId)) return warn('Server này đã **tắt PvP** (trộm/cướp) rồi nha~ 🌸');
     if (!target) return warn('Trộm cây của ai? Gắn @người nhé~ (Waguri không khuyến khích đâu 😟)');
     if (target.bot) return warn('Bot không trồng cây đâu~');
     if (target.id === thiefId) return warn('Tự trộm cây mình làm chi~ 😆');
@@ -202,7 +204,7 @@ async function handlePlantPrefix(message, cmd, tokens) {
         case 'thuhoach': r = await harvest(userId); break;
         case 'hoisinh': r = await revivePlant(userId); break;
         case 'phacay': r = await destroyPlant(userId); break;
-        case 'trom': r = await stealPlant(userId, targetUser); break;
+        case 'trom': r = await stealPlant(userId, targetUser, message.guild?.id); break;
         case 'plantbox': r = await plantBox(userId, targetUser); break;
         default: return;
     }

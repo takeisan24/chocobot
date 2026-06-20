@@ -34,7 +34,7 @@ module.exports = {
             case 'ngu': r = await pig.sleepPig(userId); break;
             case 'ban': r = await pig.sellPig(userId); break;
             case 'chuabenh': r = await pig.healPig(userId); break;
-            case 'trom': r = await pig.stealPig(userId, target); break;
+            case 'trom': r = await pig.stealPig(userId, target, interaction.guildId); break;
             case 'box': r = await pig.pigBox(userId, target); break;
             default: r = { type: 'error', title: '🐷・Nuôi heo', description: 'Lệnh con không hợp lệ~' };
         }
