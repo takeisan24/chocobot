@@ -41,9 +41,9 @@ desktop.ini
 # Do NOT ignore .env.example as it serves as a template for other developers
 !.env.example
 
-# Supabase local config & state (except migrations which are committed)
+# Supabase local config & state. LƯU Ý: migrations PHẢI được commit (schema + RPC
+# là nguồn tái tạo DB) -> KHÔNG ignore supabase/migrations/.
 .supabase/
-supabase/migrations/
 
 
 # Local configuration / AI developer tools (keep repository clean)
