@@ -11,6 +11,9 @@ module.exports = {
 
     CURRENCY: 'VNĐ',
 
+    // Tên nhà phát triển (hiện trong /about). Đổi nhanh qua env BOT_CREATOR, khỏi sửa code.
+    CREATOR: process.env.BOT_CREATOR || 'takei',
+
     COLORS: {
         SUCCESS: 0x8DE0A6,   // Soft Matcha Green
         ERROR: 0xFF8E9E,     // Soft Blush/Strawberry Pink (matching Waguri)
