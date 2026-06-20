@@ -173,6 +173,9 @@ async function pigBox(userId, target) {
     const receiver = target && !target.bot ? target : null;
     const cd = await db.claimCooldown(userId, 'pigbox', 10);
     if (cd) return warn(`Mở Pigbox liên tục quá~ chờ một chút rồi mở tiếp <t:${Math.floor(cd / 1000)}:R> nhé.`);
+    // Kiểm tiền TRƯỚC khi đốt lượt/ngày: tránh người thiếu tiền vẫn bị trừ 1 lượt box.
+    const u = await db.getUser(userId);
+    if (!u || Number(u.wallet) < COST_PIGBOX) return warn(`Cần **${fmt(COST_PIGBOX)}** ${C} để mở Pigbox~`);
     if (await db.claimDailyCounter(userId, 'pigbox', 10) === -1) return warn('Cậu đã mở Pigbox đủ **10 lần hôm nay** rồi, mai quay lại nhé~ 🌸');
     if (!await db.addMoney(userId, -COST_PIGBOX, 'wallet')) return warn(`Cần **${fmt(COST_PIGBOX)}** ${C} để mở Pigbox~`);
 

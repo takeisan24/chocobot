@@ -153,6 +153,9 @@ async function plantBox(userId, target) {
     const receiver = target && !target.bot ? target : null;
     const cd = await db.claimCooldown(userId, 'plantbox', 10);
     if (cd) return warn(`Mở Plantbox liên tục quá~ chờ một chút rồi mở tiếp <t:${Math.floor(cd / 1000)}:R> nhé.`);
+    // Kiểm tiền TRƯỚC khi đốt lượt/ngày: tránh người thiếu tiền vẫn bị trừ 1 lượt box.
+    const u = await db.getUser(userId);
+    if (!u || Number(u.wallet) < COST.BOX) return warn(`Cần **${fmt(COST.BOX)}** ${C} để mở Plantbox~`);
     if (await db.claimDailyCounter(userId, 'plantbox', 10) === -1) return warn('Cậu đã mở Plantbox đủ **10 lần hôm nay** rồi, mai quay lại nhé~ 🌸');
     if (!await db.addMoney(userId, -COST.BOX, 'wallet')) return warn(`Cần **${fmt(COST.BOX)}** ${C} để mở Plantbox~`);
 

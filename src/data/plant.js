@@ -10,7 +10,9 @@ const TYPES = {
 };
 const TIER_WEIGHTS = [[1500, 0.30], [2000, 0.28], [2500, 0.22], [3000, 0.14], [3500, 0.06]];
 
-const COST = { BUY: 500, FERT: 200, REVIVE: 1000, STEAL_FEE: 100, BOX: 240 };
+// BOX: giá mở Plantbox. Đặt 600 để EV (~476) ÂM nhẹ -> là sink chống lạm phát
+// (giống pigbox), KHÔNG phải máy in tiền như bản 240 cũ.
+const COST = { BUY: 500, FERT: 200, REVIVE: 1000, STEAL_FEE: 100, BOX: 600 };
 
 const TIMINGS = {
     WATER_INTERVAL_MS: 3 * 60 * 60 * 1000, // 3h giữa các lần tưới

@@ -2,12 +2,17 @@
 
 // Tên giống (mỹ thuật) theo tier giá trị bán
 const TYPES = {
-    2000: ['Heo Mít Ướt', 'Heo Béo Ị', 'Heo Rừng', 'Heo Vằn', 'Heo Ham Học', 'Heo Ham Hát'],
-    2500: ['Heo Nhún Nhảy', 'Heo Lười', 'Heo Đốm', 'BruHeo', 'ShinHeo', 'Heo Ổi', 'Heo Sầu Riêng', 'Heo Long An'],
-    3000: ['Heo Tí Nị', 'Heo Bò Sữa', 'Heo Điệu', 'Heo Tam Thể'],
-    3500: ['MessHeo', 'RonalHeo', 'Đô Rê Heo', 'Pikaheo', 'Heo J97', 'Lee Min Heo', 'Heo Xì Trum'],
-    4000: ['Heo Bạch Tạng'],
-    50000: ['Heo Hologram'],
+    // Giữ nguyên các tên meme + thêm tên cute trung tính (vài cái theme bánh/hoa hợp Waguri) cho đa dạng.
+    2000: ['Heo Mít Ướt', 'Heo Béo Ị', 'Heo Rừng', 'Heo Vằn', 'Heo Ham Học', 'Heo Ham Hát',
+        'Heo Bông', 'Heo Sữa', 'Heo Mây', 'Heo Ú', 'Heo Bánh Bao', 'Heo Mũm Mĩm'],
+    2500: ['Heo Nhún Nhảy', 'Heo Lười', 'Heo Đốm', 'BruHeo', 'ShinHeo', 'Heo Ổi', 'Heo Sầu Riêng', 'Heo Long An',
+        'Heo Kẹo', 'Heo Dâu', 'Heo Trà Sữa', 'Heo Núc Ních', 'Heo Phính'],
+    3000: ['Heo Tí Nị', 'Heo Bò Sữa', 'Heo Điệu', 'Heo Tam Thể',
+        'Heo Mochi', 'Heo Kem', 'Heo Mật Ong', 'Heo Matcha', 'Heo Caramel', 'Heo Cục Cưng'],
+    3500: ['MessHeo', 'RonalHeo', 'Đô Rê Heo', 'Pikaheo', 'Heo J97', 'Lee Min Heo', 'Heo Xì Trum',
+        'Heo Macaron', 'Heo Pudding', 'Heo Hoa Anh Đào', 'Heo Bánh Kem'],
+    4000: ['Heo Bạch Tạng', 'Heo Tuyết', 'Heo Bơ Sữa', 'Heo Hồng Ngọc'],
+    50000: ['Heo Hologram', 'Heo Kim Cương'],
 };
 
 // tier giá trị -> id item thịt (đầu ra)
