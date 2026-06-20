@@ -105,7 +105,9 @@ module.exports = {
                 if (!p || !p.alive) continue;
                 p.alive = false;
                 announced.push(`${ROLES[p.role].emoji} <@${id}> — **${ROLES[p.role].name}**`);
-                if (p.role === 'hunter') {
+                // Thợ săn chỉ bắn theo khi chết trong đêm (bị sói cắn / phù thủy đầu độc),
+                // KHÔNG bắn nếu bị dân làng treo cổ ban ngày.
+                if (p.role === 'hunter' && cause !== 'vote') {
                     const shot = await hunterShot(id);
                     if (shot && state.players[shot]?.alive) queue.push(shot);
                 }
