@@ -11,7 +11,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: new URL("https://waguri-bot.vercel.app"),
   title: "Waguri 🌸 - AI Waifu & Game Kinh Tế RPG Việt Nam",
-  description: "Trò chuyện AI waifu cùng Waguri Kaoruko, trải nghiệm game kinh tế nhập vai thuần Việt (đi làm, mở nghề, cờ bạc, lì xì, bang hội...) ngay trên server Discord của bạn!",
+  description: "Trò chuyện AI waifu cùng Waguri Kaoruko, trải nghiệm game kinh tế nhập vai thuần Việt (đi làm, mở nghề, minigame may rủi, lì xì, bang hội...) ngay trên server Discord của bạn!",
   keywords: ["Waguri", "Discord Bot", "Economy Bot", "RPG Bot", "AI Waifu", "Game Discord tiếng Việt", "Trò chuyện AI"],
   authors: [{ name: "takei" }],
   alternates: { canonical: "/" },

@@ -52,7 +52,7 @@ export default function Home() {
           </h1>
 
           <p className="text-base sm:text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed">
-            Một cô bạn AI waifu dịu dàng biết trò chuyện tâm sự, vừa là game kinh tế nhập vai đậm chất Việt Nam (đi làm, mở nghề, cờ bạc, lì xì, bang hội...) cực kỳ vui nhộn ngay trên Discord!
+            Một cô bạn AI waifu dịu dàng biết trò chuyện tâm sự, vừa là game kinh tế nhập vai đậm chất Việt Nam (đi làm, mở nghề, minigame may rủi, lì xì, bang hội...) cực kỳ vui nhộn ngay trên Discord!
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
@@ -123,7 +123,7 @@ export default function Home() {
             {/* Feature 4 */}
             <div className="glass-panel glass-panel-hover p-6 rounded-2xl flex flex-col space-y-3">
               <span className="text-3xl">🎲</span>
-              <h3 className="text-lg font-bold text-white">Minigame Cờ Bạc Đa Dạng</h3>
+              <h3 className="text-lg font-bold text-white">Minigame May Rủi Đa Dạng</h3>
               <p className="text-slate-400 text-sm leading-relaxed">
                 Tài Xỉu, Bầu Cua, Coinflip, Blackjack, Ba Cây. Đặc biệt là Loto và Bingo chơi nhiều người ngay trong phòng voice, máy tự gọi số trực tiếp.
               </p>

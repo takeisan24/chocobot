@@ -137,10 +137,10 @@ export default function Wiki() {
           />
         </Card>
 
-        <Card id="minigame" title="Minigame & Cờ bạc" emoji="🎲">
+        <Card id="minigame" title="Minigame May Rủi" emoji="🎲">
           <CmdList
             items={[
-              { c: "/taixiu /baucua /coinflip", d: "cờ bạc nhanh, đặt cược ăn thua" },
+              { c: "/taixiu /baucua /coinflip", d: "trò may rủi nhanh, đặt cửa thắng thua bằng tiền ảo" },
               { c: "/blackjack /bacay /xocdia", d: "bài & xóc đĩa" },
               { c: "/crate", d: "mở rương bí ẩn nhận vật phẩm" },
               { c: "/duangua", d: "đặt cửa đua ngựa" },

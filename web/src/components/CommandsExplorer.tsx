@@ -150,7 +150,7 @@ export default function CommandsExplorer() {
       <input
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        placeholder={`🔎 Tìm trong ${total} lệnh... (vd: work, cờ bạc, bang)`}
+        placeholder={`🔎 Tìm trong ${total} lệnh... (vd: work, may rủi, bang)`}
         className="w-full px-5 py-3 rounded-2xl bg-[#160f1f] border border-pink-300/20 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-pink-300/50"
         aria-label="Tìm lệnh"
       />

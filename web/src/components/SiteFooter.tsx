@@ -10,6 +10,17 @@ export default function SiteFooter() {
         <div className="flex flex-col items-center md:items-start gap-1.5">
           <span className="text-sm font-extrabold tracking-wider text-pink-300">WAGURI 🌸</span>
           <p>Made with 🌸 for Vietnamese Discord communities.</p>
+          <p>
+            Phát triển bởi{" "}
+            <a
+              href="https://bio.link/takeisan204"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-pink-300 hover:underline font-semibold"
+            >
+              takei
+            </a>
+          </p>
         </div>
         <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-[13px]">
           <a href={VOTE_URL} target="_blank" rel="noopener noreferrer" className="hover:text-pink-300 transition-colors">

@@ -118,14 +118,14 @@ export default function DiscordMockup() {
           embed: win ? {
             color: "#8de0a6", // SUCCESS Green
             title: "🎲 TÀI XỈU - Chiến thắng! 🎉",
-            description: `🎲 Kết quả xúc xắc: **[${dice1}, ${dice2}, ${dice3}] ➔ ${total} (${resultType})**\n\nCậu đặt cược vào **${resultType} (50,000 VNĐ)** và đã chiến thắng ngọt ngào!\nCậu nhận lại **99,000 VNĐ**! (+49,000 VNĐ sau thuế 2%) 🪙`,
+            description: `🎲 Kết quả xúc xắc: **[${dice1}, ${dice2}, ${dice3}] ➔ ${total} (${resultType})**\n\nCậu đặt cửa vào **${resultType} (50,000 VNĐ)** và đã chiến thắng ngọt ngào!\nCậu nhận lại **99,000 VNĐ**! (+49,000 VNĐ sau thuế 2%) 🪙`,
             image: "https://media.tenor.com/TdCu1_KQmAcAAAAM/kaoruko-waguri-kaoruko.gif",
             footerText: `🌸 Waguri • ${quote}`,
             footerIcon: BOT_AVATAR
           } : {
             color: "#ff8e9e", // ERROR Red
             title: "🎲 TÀI XỈU - Thất bại!",
-            description: `🎲 Kết quả xúc xắc: **[${dice1}, ${dice2}, ${dice3}] ➔ ${total} (${resultType})**\n\nCậu đặt cược vào **${resultType === "Tài" ? "Xỉu" : "Tài"} (50,000 VNĐ)** nhưng xúc xắc lại ra **${resultType}**.\nCậu mất trắng **50,000 VNĐ** rồi... Đừng buồn nhé, làm lại ván khác vận may sẽ đến mà! 🥺`,
+            description: `🎲 Kết quả xúc xắc: **[${dice1}, ${dice2}, ${dice3}] ➔ ${total} (${resultType})**\n\nCậu đặt cửa vào **${resultType === "Tài" ? "Xỉu" : "Tài"} (50,000 VNĐ)** nhưng xúc xắc lại ra **${resultType}**.\nCậu mất trắng **50,000 VNĐ** rồi... Đừng buồn nhé, làm lại ván khác vận may sẽ đến mà! 🥺`,
             image: "https://media.tenor.com/Jz4bNe6EF-wAAAAM/the-fragrant-flower-blooms-with-dignity-kaoru-hana-wa-rin-to-saku.gif",
             footerText: `🌸 Waguri • ${quote}`,
             footerIcon: BOT_AVATAR
@@ -214,7 +214,7 @@ export default function DiscordMockup() {
               </div>
               <div className="flex items-center space-x-2 px-2 py-1.5 rounded hover:bg-[#35373c] hover:text-[#dbdee1] text-[#949ba4] cursor-pointer transition">
                 <span>#</span>
-                <span>🎲-cờ-bạc-vui-vẻ</span>
+                <span>🎲-thử-vận-may</span>
               </div>
               <div className="flex items-center space-x-2 px-2 py-1.5 rounded hover:bg-[#35373c] hover:text-[#dbdee1] text-[#949ba4] cursor-pointer transition">
                 <span>#</span>
