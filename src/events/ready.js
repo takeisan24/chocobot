@@ -107,6 +107,8 @@ function buildStatuses(client) {
         { type: ActivityType.Competing, name: 'ván Ma Sói gay cấn 🐺' },
         { type: ActivityType.Watching, name: 'tiệm bánh Gekka 月下 🧁' },
         { type: ActivityType.Listening, name: '/help để xem tất cả lệnh 🌸' },
+        { type: ActivityType.Listening, name: '/vote ủng hộ Waguri 💝' },
+        { type: ActivityType.Watching, name: 'waguri-bot.vercel.app 🌸' },
     ];
 }
 
