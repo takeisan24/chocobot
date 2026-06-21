@@ -2,6 +2,7 @@
 const config = require('../../config');
 const db = require('../../database.js');
 const { WAGURI_SYSTEM_PROMPT, tierOf } = require('./persona');
+const { getLevelFromExp } = require('../leveling');
 
 const gemini = require('./gemini'); // provider AI duy nhất: Google Gemini
 
@@ -62,11 +63,21 @@ async function chatWithWaguri(channelId, userId, userName, userText) {
     let history = contexts.get(channelId) || [];
     const framed = `${userName}: ${userText}`;
 
-    // Mức thiện cảm -> điều chỉnh độ thân mật của persona
-    let aff = 0;
-    try { const u = await db.getUser(userId); aff = Number(u?.affection || 0); } catch { /* bỏ qua */ }
+    // Mức thiện cảm + ngữ cảnh nhẹ (level, đã kết đôi chưa) -> cá nhân hóa persona.
+    // Tất cả lấy từ MỘT query getUser duy nhất, không tốn thêm DB.
+    let aff = 0, level = 1, hasPartner = false;
+    try {
+        const u = await db.getUser(userId);
+        if (u) {
+            aff = Number(u.affection || 0);
+            level = getLevelFromExp(Number(u.exp || 0));
+            hasPartner = !!u.partner_id;
+        }
+    } catch { /* bỏ qua */ }
     const t = tierOf(aff);
-    const systemPrompt = `${WAGURI_SYSTEM_PROMPT}\n\n[Mức thân thiết với ${userName}: ${t.name} (${aff} điểm). Hãy trò chuyện ${t.guide}.]`;
+    const ctxBits = [`Level ${level}`];
+    if (hasPartner) ctxBits.push('đã kết đôi với người khác trong game');
+    const systemPrompt = `${WAGURI_SYSTEM_PROMPT}\n\n[Người đang trò chuyện: ${userName} — thân thiết: ${t.name} (${aff} điểm); ${ctxBits.join('; ')}. Hãy trò chuyện ${t.guide}. Có thể nhắc khéo tới tiến độ của cậu ấy khi hợp ngữ cảnh, nhưng tuyệt đối đừng đọc thông số ra như máy.]`;
 
     let reply;
     try {
