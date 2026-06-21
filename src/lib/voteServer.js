@@ -79,10 +79,13 @@ function startVoteServer(client) {
 
     const auth = process.env.TOPGG_WEBHOOK_AUTH;
     const port = Number(process.env.PORT || process.env.SERVER_PORT || 0);
-    if (!auth || !port) {
-        console.log('[VOTE] Bỏ qua vote webhook (cần TOPGG_WEBHOOK_AUTH + PORT/SERVER_PORT).');
+    if (!port) {
+        console.log('[VOTE] Bỏ qua HTTP server (chưa có PORT/SERVER_PORT).');
         return;
     }
+    // /stats + health chỉ cần PORT là chạy. Webhook chỉ kích hoạt khi có TOPGG_WEBHOOK_AUTH
+    // (lấy sau khi bot được duyệt). Chưa có secret -> webhook trả 503, các route khác vẫn ổn.
+    if (!auth) console.log('[VOTE] Chưa có TOPGG_WEBHOOK_AUTH -> webhook tạm tắt (/stats + health vẫn chạy).');
     // Khi chạy sharding: chỉ shard 0 bind cổng (tránh nhiều process tranh cùng port).
     if (client.shard && !client.shard.ids.includes(0)) return;
 
@@ -117,6 +120,9 @@ function startVoteServer(client) {
         });
         req.on('end', () => {
             if (aborted) return;
+
+            // Chưa cấu hình secret -> không thể xác thực -> từ chối mọi webhook (chống lỗ hổng).
+            if (!auth) { res.writeHead(503); res.end(); return; }
 
             const sig = req.headers['x-topgg-signature'];
             if (sig) {
