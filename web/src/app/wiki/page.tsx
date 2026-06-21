@@ -11,9 +11,9 @@ export const metadata = {
 
 type Cmd = { c: string; d: string };
 
-function Card({ title, emoji, children }: { title: string; emoji: string; children: React.ReactNode }) {
+function Card({ title, emoji, id, children }: { title: string; emoji: string; id?: string; children: React.ReactNode }) {
   return (
-    <section className="glass-panel w-full p-6 md:p-8 rounded-2xl border border-pink-300/15 space-y-4 shadow-xl">
+    <section id={id} className="glass-panel w-full p-6 md:p-8 rounded-2xl border border-pink-300/15 space-y-4 shadow-xl scroll-mt-24">
       <h2 className="text-xl font-black text-white flex items-center gap-2">
         <span>{emoji}</span> <span>{title}</span>
       </h2>
@@ -59,7 +59,28 @@ export default function Wiki() {
           </p>
         </div>
 
-        <Card title="Bắt đầu" emoji="🌱">
+        <nav className="glass-panel w-full p-5 rounded-2xl border border-pink-300/15">
+          <p className="text-sm font-bold text-white mb-3">📑 Mục lục</p>
+          <div className="flex flex-wrap gap-2 text-[13px]">
+            {[
+              ["#bat-dau", "🌱 Bắt đầu"],
+              ["#kiem-tien", "💼 Kiếm tiền"],
+              ["#cua-hang", "🏪 Cửa hàng & Buff"],
+              ["#minigame", "🎲 Minigame"],
+              ["#nuoi-heo", "🐷 Nuôi heo"],
+              ["#trong-cay", "🌱 Trồng cây"],
+              ["#nong-trai", "🔁 Nông trại"],
+              ["#he-giam", "🚓 Hệ giam"],
+              ["#ai-chat", "💬 Trò chuyện AI"],
+            ].map(([href, label]) => (
+              <a key={href} href={href} className="px-3 py-1.5 rounded-full bg-pink-500/10 border border-pink-300/15 text-pink-200 hover:border-pink-300/50 hover:text-white transition-colors">
+                {label}
+              </a>
+            ))}
+          </div>
+        </nav>
+
+        <Card id="bat-dau" title="Bắt đầu" emoji="🌱">
           <p>Vài bước đầu để làm quen:</p>
           <CmdList
             items={[
@@ -71,7 +92,7 @@ export default function Wiki() {
           />
         </Card>
 
-        <Card title="Kiếm tiền · Năng lượng · Mệt mỏi" emoji="💼">
+        <Card id="kiem-tien" title="Kiếm tiền · Năng lượng · Mệt mỏi" emoji="💼">
           <p>
             Mỗi lần làm việc tốn <strong>năng lượng ⚡</strong> (tối đa 100, tự hồi +1/phút). Khi{" "}
             <strong>năng lượng hoặc sức khỏe tụt dưới 50%</strong>, thu nhập bắt đầu giảm dần (tối đa còn 50%) — nên
@@ -89,7 +110,7 @@ export default function Wiki() {
           />
         </Card>
 
-        <Card title="Cửa hàng · Mua bán · Đồ ăn & Buff" emoji="🏪">
+        <Card id="cua-hang" title="Cửa hàng · Mua bán · Đồ ăn & Buff" emoji="🏪">
           <p>
             <code className="text-pink-300">/shop</code> xem hàng, <code className="text-pink-300">/buy</code> mua,{" "}
             <code className="text-pink-300">/sell</code> bán lại (thu về <strong>50% giá</strong> — nên đừng mua đi bán
@@ -116,7 +137,7 @@ export default function Wiki() {
           />
         </Card>
 
-        <Card title="Minigame & Cờ bạc" emoji="🎲">
+        <Card id="minigame" title="Minigame & Cờ bạc" emoji="🎲">
           <CmdList
             items={[
               { c: "/taixiu /baucua /coinflip", d: "cờ bạc nhanh, đặt cược ăn thua" },
@@ -129,7 +150,7 @@ export default function Wiki() {
           />
         </Card>
 
-        <Card title="Nuôi heo 🐷" emoji="🐷">
+        <Card id="nuoi-heo" title="Nuôi heo 🐷" emoji="🐷">
           <p>
             Chu trình: <strong>mua → cho ăn → tắm → cho ngủ → cho ăn lần 2 (trưởng thành) → bán</strong>. Mỗi bước chăm
             sóc cách nhau ~15 phút; bỏ bê quá 4 tiếng heo sẽ bệnh. Bán heo cho ra <strong>Thịt Heo</strong> (vào kho){" "}
@@ -150,7 +171,7 @@ export default function Wiki() {
           />
         </Card>
 
-        <Card title="Trồng cây 🌱" emoji="🌱">
+        <Card id="trong-cay" title="Trồng cây 🌱" emoji="🌱">
           <p>
             Chu trình: <strong>mua giống → tưới 3 lần (mỗi lần cách 3 tiếng) → trưởng thành → thu hoạch (sau 1 giờ)</strong>.
             Bón phân hoặc nhờ người tưới hộ để nhanh hơn. Bỏ tưới quá 5 tiếng cây chết (cần hồi sinh). Thu hoạch ra{" "}
@@ -171,7 +192,7 @@ export default function Wiki() {
           />
         </Card>
 
-        <Card title="Vòng khép kín nông trại 🔁" emoji="🔁">
+        <Card id="nong-trai" title="Vòng khép kín nông trại 🔁" emoji="🔁">
           <p>
             Nuôi heo và trồng cây liên kết với nhau và với việc kiếm nguyên liệu, giúp tiết kiệm tiền:
           </p>
@@ -197,7 +218,7 @@ export default function Wiki() {
           </ul>
         </Card>
 
-        <Card title="Hệ giam 🚓" emoji="🚓">
+        <Card id="he-giam" title="Hệ giam 🚓" emoji="🚓">
           <p>
             Các hành vi "phạm pháp" — <code>/rob</code> cướp tiền, trộm heo/cây — nếu <strong>thất bại 3 lần</strong> mà
             không đủ tiền nộp phạt, cậu sẽ bị <strong>giam giữ</strong>: tạm thời không dùng được các lệnh kiếm tiền, cờ
@@ -206,7 +227,7 @@ export default function Wiki() {
           </p>
         </Card>
 
-        <Card title="Trò chuyện cùng Waguri 💬" emoji="💬">
+        <Card id="ai-chat" title="Trò chuyện cùng Waguri 💬" emoji="💬">
           <CmdList
             items={[
               { c: "/ask · @Waguri", d: "trò chuyện với Waguri Kaoruko (AI dịu dàng)" },
@@ -215,6 +236,30 @@ export default function Wiki() {
             ]}
           />
         </Card>
+
+        <section className="glass-panel w-full p-6 md:p-8 rounded-2xl border border-pink-300/20 flex flex-col sm:flex-row items-center justify-between gap-5">
+          <p className="text-slate-300 text-sm text-center sm:text-left">
+            Sẵn sàng bắt đầu chưa nào? Mời Waguri về server và cùng nhau làm giàu nhé! 🌸
+          </p>
+          <div className="flex gap-3 flex-shrink-0">
+            <a
+              href="https://discord.com/oauth2/authorize?client_id=1482620714690543738&permissions=1099512007760&integration_type=0&scope=bot+applications.commands"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-6 py-3 rounded-full font-bold bg-pink-300 text-[#0d0812] hover:bg-pink-400 transition-all whitespace-nowrap"
+            >
+              Mời Waguri 🌸
+            </a>
+            <a
+              href="https://top.gg/bot/1482620714690543738/vote"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-6 py-3 rounded-full font-bold border border-pink-300/30 text-pink-200 hover:border-pink-300/60 transition-all whitespace-nowrap"
+            >
+              💝 Vote
+            </a>
+          </div>
+        </section>
       </main>
 
       <SiteFooter />

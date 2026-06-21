@@ -10,6 +10,7 @@ const INVITE_URL = `https://discord.com/oauth2/authorize?client_id=${BOT_ID}&per
 const VOTE_URL = `https://top.gg/bot/${BOT_ID}/vote`;
 
 const NAV = [
+  { href: "/commands", label: "Lệnh" },
   { href: "/wiki", label: "Wiki" },
   { href: "/leaderboard", label: "Bảng xếp hạng" },
   { href: VOTE_URL, label: "💝 Vote", external: true },
