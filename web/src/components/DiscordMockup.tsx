@@ -40,8 +40,8 @@ const WAGURI_QUOTES = [
   "Cố lên nhé! Hôm nay cậu đã vất vả rồi, tớ luôn ở sau cổ vũ cậu! 💪🌸"
 ];
 
-const BOT_AVATAR = "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=150&auto=format&fit=crop&q=60&ixlib=rb-4.0.3"; // placeholder for anime avatar
-const USER_AVATAR = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=60&ixlib=rb-4.0.3";
+const BOT_AVATAR = "/waguri-avatar.svg";
+const USER_AVATAR = "/user-avatar.svg";
 
 export default function DiscordMockup() {
   const [messages, setMessages] = useState<Message[]>([
