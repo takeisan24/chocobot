@@ -9,7 +9,7 @@ import { toggleProfilePublic, toggleVoteReminder } from "./actions";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Bảng điều khiển — Waguri 🌸" };
+export const metadata = { title: "Bảng điều khiển — Waguri 🌸", robots: { index: false } };
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (

@@ -8,6 +8,22 @@ import SiteFooter from "../components/SiteFooter";
 export default function Home() {
   return (
     <div className="relative min-h-screen flex flex-col bg-[#0d0812]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            name: "Waguri",
+            applicationCategory: "GameApplication",
+            operatingSystem: "Discord",
+            description: "Discord bot kinh tế · nhập vai · AI waifu bản địa hóa Việt Nam.",
+            url: "https://waguri-bot.vercel.app",
+            inLanguage: "vi",
+            offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+          }),
+        }}
+      />
       {/* Background decoration gradients */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
         <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[60%] rounded-full bg-pink-500/10 blur-[120px]" />
