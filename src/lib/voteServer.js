@@ -7,12 +7,28 @@
 // Bind vào cổng panel cấp (Wispbyte): PORT hoặc SERVER_PORT -> public qua subdomain.
 // No-op nếu thiếu TOPGG_WEBHOOK_AUTH hoặc PORT (an toàn khi dev/local).
 const http = require('node:http');
+const crypto = require('node:crypto');
 const db = require('../database.js');
 const config = require('../config');
 const { logError } = require('./logger');
 const { computeVoteReward } = require('./voteReward');
 
 const fmt = n => Number(n).toLocaleString('vi-VN');
+
+// Xác thực chữ ký webhook v1 của Top.gg.
+// Header: x-topgg-signature: "t={unix},v1={hex}"; ký HMAC-SHA256("{t}.{rawBody}") bằng secret whs_...
+function verifyV1Signature(rawBody, sigHeader, secret) {
+    try {
+        const parts = Object.fromEntries(String(sigHeader).split(',').map(kv => kv.split('=')));
+        const t = parts.t, recv = parts.v1;
+        if (!t || !recv) return false;
+        const expected = crypto.createHmac('sha256', secret).update(`${t}.${rawBody}`).digest('hex');
+        const a = Buffer.from(expected), b = Buffer.from(recv);
+        return a.length === b.length && crypto.timingSafeEqual(a, b);
+    } catch {
+        return false;
+    }
+}
 
 // Số server + thành viên toàn bot (gộp mọi shard nếu có) — cho widget công khai trên web.
 async function getPublicStats(client) {
@@ -92,31 +108,45 @@ function startVoteServer(client) {
         if (req.method !== 'POST' || !req.url.startsWith('/topgg/vote')) {
             res.writeHead(404); res.end(); return;
         }
-        if (req.headers.authorization !== auth) {
-            res.writeHead(401); res.end(); return;
-        }
 
         let body = '';
         let aborted = false;
         req.on('data', chunk => {
             body += chunk;
-            if (body.length > 10_000) { aborted = true; req.destroy(); } // chặn payload bất thường
+            if (body.length > 20_000) { aborted = true; req.destroy(); } // chặn payload bất thường
         });
         req.on('end', () => {
             if (aborted) return;
+
+            const sig = req.headers['x-topgg-signature'];
+            if (sig) {
+                // --- Webhook v1: xác thực chữ ký HMAC (secret = whs_..., đặt ở TOPGG_WEBHOOK_AUTH) ---
+                if (!verifyV1Signature(body, sig, auth)) { res.writeHead(401); res.end(); return; }
+                res.writeHead(200); res.end(); // ACK trong 5s
+                try {
+                    const data = JSON.parse(body || '{}');
+                    if (data.type === 'webhook.test') { console.log('[VOTE] Nhận test webhook v1 từ Top.gg ✅'); return; }
+                    const uid = data?.data?.user?.platform_id;
+                    if (data.type === 'vote.create' && uid) {
+                        grantVoteReward(client, String(uid), Number(data?.data?.weight) === 2)
+                            .catch(e => logError('vote reward', e));
+                    }
+                } catch (e) { logError('vote webhook v1 parse', e); }
+                return;
+            }
+
+            // --- Webhook v0 (legacy): so khớp secret ở header Authorization ---
+            if (req.headers.authorization !== auth) { res.writeHead(401); res.end(); return; }
             res.writeHead(200); res.end(); // ACK ngay cho Top.gg (tránh bị retry)
             try {
                 const data = JSON.parse(body || '{}');
-                if (data.type === 'test') {
-                    console.log('[VOTE] Nhận test webhook từ Top.gg ✅');
-                    return;
-                }
+                if (data.type === 'test') { console.log('[VOTE] Nhận test webhook v0 từ Top.gg ✅'); return; }
                 if (data.type === 'upvote' && data.user) {
                     grantVoteReward(client, String(data.user), Boolean(data.isWeekend))
                         .catch(e => logError('vote reward', e));
                 }
             } catch (e) {
-                logError('vote webhook parse', e);
+                logError('vote webhook v0 parse', e);
             }
         });
     });
