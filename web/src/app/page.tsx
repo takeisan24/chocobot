@@ -32,8 +32,9 @@ export default function Home() {
             <a href="#features" className="hover:text-pink-300 transition-colors duration-200">Tính Năng</a>
             <a href="#commands" className="hover:text-pink-300 transition-colors duration-200">Trải Nghiệm</a>
             <Link href="/wiki" className="hover:text-pink-300 transition-colors duration-200">Wiki</Link>
+            <Link href="/leaderboard" className="hover:text-pink-300 transition-colors duration-200">BXH</Link>
             <Link href="/tos" className="hover:text-pink-300 transition-colors duration-200">Điều Khoản</Link>
-            <Link href="/privacy" className="hover:text-pink-300 transition-colors duration-200">Bảo Mật</Link>
+            <Link href="/login" className="hover:text-pink-300 transition-colors duration-200">Đăng nhập</Link>
           </nav>
           <div className="flex items-center gap-2">
             <a
