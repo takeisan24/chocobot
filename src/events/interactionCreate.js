@@ -6,6 +6,7 @@ const { buildWaguriEmbed } = require('../lib/embed');
 const { recordMembership } = require('../lib/membership');
 const { logError } = require('../lib/logger');
 const db = require('../database.js');
+const config = require('../config');
 
 module.exports = {
     name: Events.InteractionCreate,
@@ -100,6 +101,29 @@ module.exports = {
                 } catch (error) {
                     logError('vote_remind_off', error);
                 }
+                return;
+            }
+
+            // Nút "Nhận quà chào mừng" của /start & lời chào server.
+            if (interaction.customId === 'start:claim') {
+                const fmt = n => Number(n).toLocaleString('vi-VN');
+                try {
+                    const bonus = await db.claimWelcomeBonus(interaction.user.id, config.WELCOME.BONUS);
+                    if (bonus > 0) {
+                        await interaction.update({
+                            embeds: [buildWaguriEmbed(interaction, 'success', {
+                                title: '🎁・Quà chào mừng của cậu đây!',
+                                description: `Waguri tặng cậu **${fmt(bonus)}** ${config.CURRENCY}! 💝\nGiờ thử \`/daily\` điểm danh và \`/work\` đi làm nha — mình tin cậu sẽ sớm thành đại gia! 🌸`
+                            })],
+                            components: [],
+                        });
+                    } else {
+                        await interaction.reply({ content: 'Cậu nhận quà chào mừng rồi nha~ Cảm ơn cậu đã luôn ủng hộ Waguri 🌸', flags: MessageFlags.Ephemeral });
+                    }
+                } catch (error) {
+                    logError('start:claim', error);
+                }
+                return;
             }
             return;
         }

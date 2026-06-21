@@ -38,6 +38,7 @@ module.exports = {
                     `*Hân hạnh được chào đón các quý khách ghé thăm tiệm bánh Gekka!* 🍰\n\n` +
                     `Cảm ơn cậu rất nhiều vì đã mời tớ ghé thăm **${guild.name}**! Tớ sẽ là người bạn đồng hành kiêm "quản lý tiệm bánh" siêu năng nổ của cậu đó~\n\n` +
                     `**✨ Các Dịch Vụ Tại Tiệm:**\n` +
+                    `> 🎁 **Người mới bắt đầu từ đây:** Gõ \`/start\` để nhận **quà chào mừng** & hướng dẫn nhanh nha!\n` +
                     `> 💬 **Trò chuyện cùng Waguri:** Gõ \`/ask\` hoặc tag tớ để tớ chia sẻ chuyện học ở Kikyo hay làm bánh cùng Rintaro nha!\n` +
                     `> 💼 **Lao động & Kinh tế:** Kiếm tiền mua bánh ngọt qua \`/work\`, nhận trợ cấp \`/daily\`, mua sắm \`/shop\`.\n` +
                     `> 🎲 **Giải trí cùng bạn bè:** Thử sức với \`/taixiu\`, \`/blackjack\`, \`/masoi\` cực kỳ kịch tính.\n` +

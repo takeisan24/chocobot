@@ -1286,9 +1286,35 @@ async function setVoteReminder(userId, on) {
     }
 }
 
+/** Nhận quà chào mừng 1 lần (nguyên tử). Trả số tiền (>0) nếu nhận được, 0 nếu đã nhận. */
+async function claimWelcomeBonus(userId, amount) {
+    try {
+        const { data, error } = await supabase.rpc('claim_welcome_bonus', { p_user_id: userId, p_amount: amount });
+        if (error) throw error;
+        return Number(data) || 0;
+    } catch (error) {
+        console.error('[DATABASE ERROR] claimWelcomeBonus:', error);
+        return 0;
+    }
+}
+
+/** Cập nhật last_seen=now(), trả về mốc CŨ (ms) hoặc null. Dùng để chào người vắng lâu. */
+async function touchLastSeen(userId) {
+    try {
+        const { data, error } = await supabase.rpc('touch_last_seen', { p_user_id: userId });
+        if (error) throw error;
+        return data ? new Date(data).getTime() : null;
+    } catch (error) {
+        console.error('[DATABASE ERROR] touchLastSeen:', error);
+        return null;
+    }
+}
+
 module.exports = {
     supabase,
     getUser,
+    claimWelcomeBonus,
+    touchLastSeen,
     bumpVoteStreak,
     getVoteReminderCandidates,
     markVoteReminded,

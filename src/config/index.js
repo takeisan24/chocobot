@@ -194,4 +194,8 @@ module.exports = {
         STREAK_BONUS_MAX: 7,      // cap số mốc cộng (tối đa +7.000)
         REMINDER: true,           // bật nhắc vote qua DM khi đủ 12h
     },
+
+    // Onboarding theo từng user
+    WELCOME: { BONUS: 5000 },     // quà chào mừng 1 lần (~1 lần /daily, không gây lạm phát)
+    RETURN_GREET_DAYS: 3,         // vắng >= 3 ngày thì Waguri chào quay lại (ở /daily)
 };

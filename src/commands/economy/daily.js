@@ -28,6 +28,14 @@ module.exports = {
         db.questIncr(interaction.user.id, 'daily', 1); // nhiệm vụ điểm danh
         const u = await db.getUser(interaction.user.id);
 
+        // Chào người vắng lâu (last_seen = mốc điểm danh hiện diện gần nhất).
+        const prevSeen = await db.touchLastSeen(interaction.user.id);
+        let greet = '';
+        if (prevSeen && Date.now() - prevSeen >= config.RETURN_GREET_DAYS * 86400000) {
+            const days = Math.floor((Date.now() - prevSeen) / 86400000);
+            greet = `🌸 Lâu rồi mới gặp cậu (${days} ngày)~ Mừng cậu quay lại nha, mình nhớ cậu lắm đó! 💕\n\n`;
+        }
+
         let desc = `Cậu nhận được **${fmt(r.reward)}** ${config.CURRENCY}!`;
         if (r.milestone && Number(r.milestone) > 0) {
             desc += `\n🏆 **Mốc ${r.streak} ngày liên tiếp!** Thưởng thêm **+${fmt(r.milestone)}** ${config.CURRENCY} 🎉`;
@@ -42,7 +50,10 @@ module.exports = {
             desc += `\n🏰 Cổ tức bang hội: **+${fmt(r.clan_dividend)}** ${config.CURRENCY}`;
         }
 
-        const description = `> ${desc}\n\n> 💡 Giờ thì đi \`/work\` kiếm thêm và xem \`/quest\` nhận nhiệm vụ hôm nay nha~ 🌸\n`;
+        const nudge = (u && !u.onboarded)
+            ? '> 💡 Người mới hả? Gõ `/start` nhận **quà chào mừng** nha~ 🎁\n'
+            : '> 💡 Giờ thì đi `/work` kiếm thêm và xem `/quest` nhận nhiệm vụ hôm nay nha~ 🌸\n';
+        const description = greet + `> ${desc}\n\n` + nudge;
         const embed = buildWaguriEmbed(interaction, 'success', {
             title: '🎁・Điểm danh thành công!',
             description,
