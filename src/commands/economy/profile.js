@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const db = require('../../database.js');
 const config = require('../../config');
 const { getProgress } = require('../../lib/leveling');
@@ -50,6 +50,15 @@ module.exports = {
             embed.addFields({ name: '💞 Người thương', value: `<@${user.partner_id}> · Tình cảm: **${Number(user.love || 0)}** 💞`, inline: false });
         }
 
+        // Link hồ sơ web (share được)
+        const isSelf = target.id === interaction.user.id;
+        const isPublic = user.profile_public !== false;
+        if (isPublic) {
+            embed.addFields({ name: '🔗 Hồ sơ web', value: `[waguri-bot.vercel.app/u/${target.id}](https://waguri-bot.vercel.app/u/${target.id})`, inline: false });
+        } else if (isSelf) {
+            embed.addFields({ name: '🔗 Hồ sơ web', value: '*(đang ẩn — bấm nút bên dưới để hiện)*', inline: false });
+        }
+
         const footerObj = getWaguriFooter(interaction.client);
         if (user.buff_expires_at && new Date(user.buff_expires_at).getTime() > Date.now()) {
             const pct = Math.round((Number(user.buff_mult) - 1) * 100);
@@ -57,6 +66,14 @@ module.exports = {
         }
         embed.setFooter(footerObj).setTimestamp();
 
-        await interaction.editReply({ embeds: [embed] });
+        // Chủ hồ sơ được nút bật/tắt hiển thị web
+        const components = isSelf
+            ? [new ActionRowBuilder().addComponents(
+                new ButtonBuilder().setCustomId('profile:toggle')
+                    .setLabel(isPublic ? '🙈 Ẩn hồ sơ web' : '👁️ Hiện hồ sơ web')
+                    .setStyle(ButtonStyle.Secondary))]
+            : [];
+
+        await interaction.editReply({ embeds: [embed], components });
     },
 };

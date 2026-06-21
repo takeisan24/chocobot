@@ -148,6 +148,24 @@ module.exports = {
                 try { if (work) await work.execute(interaction); } catch (error) { logError('work:again', error); }
                 return;
             }
+
+            // Nút bật/tắt hiển thị hồ sơ web (trong /profile của chính mình).
+            if (interaction.customId === 'profile:toggle') {
+                try {
+                    const u = await db.getUser(interaction.user.id);
+                    const newPublic = (u?.profile_public === false); // đang ẩn -> bật; đang hiện -> tắt
+                    await db.setProfilePublic(interaction.user.id, newPublic);
+                    await interaction.reply({
+                        content: newPublic
+                            ? `👁️ Đã **HIỆN** hồ sơ web của cậu nha~ Mọi người xem được tại waguri-bot.vercel.app/u/${interaction.user.id} 🌸`
+                            : '🙈 Đã **ẨN** hồ sơ web của cậu rồi~ Người khác sẽ không xem được nữa nhé.',
+                        flags: MessageFlags.Ephemeral,
+                    });
+                } catch (error) {
+                    logError('profile:toggle', error);
+                }
+                return;
+            }
             return;
         }
         // Các component khác: định tuyến theo customId (phase sau sẽ nạp động).
