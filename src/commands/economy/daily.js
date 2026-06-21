@@ -42,7 +42,7 @@ module.exports = {
             desc += `\n🏰 Cổ tức bang hội: **+${fmt(r.clan_dividend)}** ${config.CURRENCY}`;
         }
 
-        const description = `> ${desc}\n\n`;
+        const description = `> ${desc}\n\n> 💡 Giờ thì đi \`/work\` kiếm thêm và xem \`/quest\` nhận nhiệm vụ hôm nay nha~ 🌸\n`;
         const embed = buildWaguriEmbed(interaction, 'success', {
             title: '🎁・Điểm danh thành công!',
             description,

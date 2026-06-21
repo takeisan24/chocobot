@@ -181,8 +181,12 @@ module.exports = {
             const newExp = await db.updateExp(userId, gainedExp);
             const newLevel = newExp === null ? oldLevel : getLevelFromExp(newExp);
 
-            // 6. Embed
-            const description = `> ${resultMessage}\n\n`;
+            // 6. Embed — kèm 1 gợi ý "bước tiếp theo" theo ngữ cảnh (dẫn dắt người mới)
+            let tip = '';
+            if (!user.job_id) tip = 'Cậu đang làm **nghề tự do** — gõ `/jobs` xin nghề để lương cao hơn nha~ 💼';
+            else if (energyLeft < energyCost * 2) tip = 'Năng lượng sắp cạn rồi, `/eat` hoặc `/ngu` nghỉ chút cho lại sức nhé~ 🌸';
+            else if (newLevel > oldLevel) tip = 'Lên cấp rồi nè! Ghé `/jobs` xem có mở nghề xịn hơn không nha~ ✨';
+            const description = `> ${resultMessage}\n\n` + (tip ? `> 💡 ${tip}\n` : '');
             const fields = [
                 { name: '💵 Số dư ví', value: `${earnedMoney >= 0 ? '+' : '-'}${fmt(Math.abs(earnedMoney))}${fatigue < 1 && grossMoney > 0 ? ` *(gốc ${fmt(grossMoney)}, mệt -${Math.round((1 - fatigue) * 100)}%)*` : ''} → **${fmt(newWallet)}** ${config.CURRENCY}`, inline: false },
                 { name: 'Kinh nghiệm', value: `+${gainedExp} EXP`, inline: true },

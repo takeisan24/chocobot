@@ -22,8 +22,8 @@ module.exports = {
             return;
         }
 
-        // --- Slash command ---
-        if (interaction.isChatInputCommand()) {
+        // --- Slash command + Context menu (User/Message right-click) ---
+        if (interaction.isChatInputCommand() || interaction.isUserContextMenuCommand() || interaction.isMessageContextMenuCommand()) {
             const command = interaction.client.commands.get(interaction.commandName);
 
             if (!command) {
