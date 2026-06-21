@@ -59,6 +59,7 @@ const CATEGORIES = [
     { name: '🎀 Vui & Cộng đồng', cmds: [
         ['ship', 'đo độ hợp giữa hai người'],
         ['boi', 'xem bói: hằng ngày / cung hoàng đạo / thầy đồ 🔮'],
+        ['amlich', 'xem âm lịch, can-chi, giờ hoàng đạo + lời Waguri 🌙'],
         ['lixi', 'phát lì xì cho cả kênh 🧧'],
         ['marry', 'cầu hôn kết đôi 💍'],
         ['hug', 'ôm người ấy/bạn bè 🤗'],

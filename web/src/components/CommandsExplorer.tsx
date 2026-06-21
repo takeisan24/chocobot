@@ -72,6 +72,7 @@ const CATEGORIES: Cat[] = [
     cmds: [
       ["ship", "đo độ hợp giữa hai người"],
       ["boi", "xem bói 🔮"],
+      ["amlich", "âm lịch · can-chi · giờ hoàng đạo 🌙"],
       ["lixi", "phát lì xì cho cả kênh 🧧"],
       ["marry", "cầu hôn kết đôi 💍"],
       ["hug", "ôm 🤗"],
