@@ -32,7 +32,8 @@ export default async function Dashboard() {
   if (!id) redirect("/login");
 
   const guilds =
-    (user.user_metadata?.guilds as { id: string; name: string; icon: string | null }[] | undefined) ?? [];
+    (user.user_metadata?.guilds as { id: string; name: string; icon: string | null; manage?: boolean }[] | undefined) ?? [];
+  const manageGuilds = guilds.filter((g) => g.manage);
 
   const admin = createAdminClient();
   const { data: row } = await admin.from("users").select("*").eq("user_id", id).single();
@@ -167,6 +168,24 @@ export default async function Dashboard() {
             </div>
           </>
         )}
+
+        {manageGuilds.length > 0 ? (
+          <div className="glass-panel rounded-3xl p-6 space-y-3 border border-pink-300/10">
+            <h2 className="text-lg font-extrabold text-white">🛠️ Quản lý server</h2>
+            <p className="text-xs text-slate-400">Server cậu có quyền Quản lý — bấm để chỉnh cài đặt bot:</p>
+            <div className="flex flex-wrap gap-2">
+              {manageGuilds.map((g) => (
+                <Link
+                  key={g.id}
+                  href={`/dashboard/server/${g.id}`}
+                  className="px-4 py-2 rounded-full text-xs font-bold border border-pink-300/30 text-pink-100 hover:border-pink-300/60 bg-pink-500/5 transition-all"
+                >
+                  ⚙️ {g.name}
+                </Link>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         {guilds.length > 0 ? (
           <div className="glass-panel rounded-3xl p-6 space-y-3 border border-pink-300/10">

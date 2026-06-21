@@ -24,7 +24,13 @@ export async function GET(request: Request) {
             const botIds = new Set<string>((await bg.json()).ids || []);
             const mutual = (Array.isArray(userGuilds) ? userGuilds : [])
               .filter((g: { id: string }) => botIds.has(g.id))
-              .map((g: { id: string; name: string; icon: string | null }) => ({ id: g.id, name: g.name, icon: g.icon }))
+              .map((g: { id: string; name: string; icon: string | null; owner?: boolean; permissions?: string }) => ({
+                id: g.id,
+                name: g.name,
+                icon: g.icon,
+                // Có quyền Quản lý Server? (owner hoặc bit MANAGE_GUILD 0x20)
+                manage: g.owner === true || (BigInt(g.permissions || "0") & BigInt(32)) === BigInt(32),
+              }))
               .slice(0, 30);
             await supabase.auth.updateUser({ data: { guilds: mutual } });
           }
