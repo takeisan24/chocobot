@@ -8,6 +8,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
+    "shard": "node shard.js",
     "dev": "nodemon index.js",
     "clear": "node clear-commands.js",
     "backup": "node scripts/backup-db.js",
