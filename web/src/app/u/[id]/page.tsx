@@ -26,6 +26,8 @@ type Profile = {
   affectionTier: string | null;
   partner: string | null;
   clan: string | null;
+  title: string | null;
+  color: string | null;
   achievements: number;
   rank: number;
 };
@@ -114,7 +116,14 @@ export default async function ProfilePage({ params }: { params: Promise<{ id: st
                     />
                   ) : null}
                   <div className="flex-1 text-center sm:text-left">
-                    <h1 className="text-2xl md:text-3xl font-black text-white">{prof.username}</h1>
+                    {prof.title ? (
+                      <p className="text-xs font-semibold mb-0.5" style={prof.color ? { color: prof.color } : undefined}>
+                        🏷️ {prof.title}
+                      </p>
+                    ) : null}
+                    <h1 className="text-2xl md:text-3xl font-black text-white" style={prof.color ? { color: prof.color } : undefined}>
+                      {prof.username}
+                    </h1>
                     <p className="text-pink-300 text-sm mt-1">
                       {prof.job || "Nghề tự do"} · Lv.{prof.level}
                       {prof.clan ? ` · 🏰 ${prof.clan}` : ""}

@@ -96,6 +96,8 @@ async function buildProfilePayload(client, id) {
         job: prof.job || null,
         affection: Number(prof.affection || 0), affectionTier: tier ? tier.name : null,
         partner, clan: prof.clan || null,
+        title: prof.title || null,
+        color: /^[0-9a-fA-F]{6}$/.test(prof.color || '') ? `#${prof.color}` : null,
         achievements: Number(prof.achievements || 0),
         rank: Number(prof.wealth_rank || 0),
     };
