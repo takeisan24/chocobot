@@ -6,6 +6,7 @@ import { createAdminClient } from "../../lib/supabase/admin";
 import { getDiscordIdentity } from "../../lib/discord";
 import { getLevelProgress, affectionTier, fmtVND } from "../../lib/game";
 import { toggleProfilePublic, toggleVoteReminder } from "./actions";
+import ShareProfileButton from "../../components/ShareProfileButton";
 
 export const dynamic = "force-dynamic";
 
@@ -140,11 +141,14 @@ export default async function Dashboard() {
                     )}
                   </p>
                 </div>
-                <form action={toggleProfilePublic}>
-                  <button className="px-4 py-2 rounded-full text-xs font-bold border border-pink-300/30 text-pink-200 hover:border-pink-300/60 transition-all whitespace-nowrap">
-                    {isPublic ? "🙈 Ẩn đi" : "👁️ Hiện"}
-                  </button>
-                </form>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {isPublic ? <ShareProfileButton id={id} /> : null}
+                  <form action={toggleProfilePublic}>
+                    <button className="px-4 py-2 rounded-full text-xs font-bold border border-pink-300/30 text-pink-200 hover:border-pink-300/60 transition-all whitespace-nowrap">
+                      {isPublic ? "🙈 Ẩn đi" : "👁️ Hiện"}
+                    </button>
+                  </form>
+                </div>
               </div>
 
               <div className="flex items-center justify-between gap-4 border-t border-slate-800 pt-4">
