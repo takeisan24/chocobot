@@ -25,20 +25,41 @@ async function cleanupDuplicateGuildCommands(client) {
 }
 
 // ---------------------------------------------------------
-// Top.gg autoposter: định kỳ gửi số server lên Top.gg (cần TOPGG_TOKEN).
+// Đếm tổng số server TOÀN BOT — an toàn cả khi sharding.
+// Mỗi shard chỉ thấy phần guild của nó, nên phải gộp giá trị từ mọi shard.
+// ---------------------------------------------------------
+async function getTotalGuildCount(client) {
+    if (client.shard) {
+        try {
+            const counts = await client.shard.fetchClientValues('guilds.cache.size');
+            return counts.reduce((sum, n) => sum + (n || 0), 0);
+        } catch {
+            return client.guilds.cache.size; // fallback: ít nhất báo phần của shard này
+        }
+    }
+    return client.guilds.cache.size;
+}
+
+// ---------------------------------------------------------
+// Top.gg autoposter: định kỳ gửi TỔNG số server lên Top.gg (cần TOPGG_TOKEN).
 // Không có token -> bỏ qua (no-op). Dùng global fetch (Node >= 18).
+// Khi sharding: chỉ shard 0 post (gửi tổng + shard_count) để tránh ghi đè lẫn nhau.
 // ---------------------------------------------------------
 function startTopggAutopost(client) {
     const token = process.env.TOPGG_TOKEN;
     if (!token) return;
+    if (client.shard && !client.shard.ids.includes(0)) return; // chỉ 1 shard chịu trách nhiệm post
     const post = async () => {
         try {
+            const server_count = await getTotalGuildCount(client);
+            const payload = { server_count };
+            if (client.shard) payload.shard_count = client.shard.count;
             const res = await fetch(`https://top.gg/api/bots/${client.user.id}/stats`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', Authorization: token },
-                body: JSON.stringify({ server_count: client.guilds.cache.size }),
+                body: JSON.stringify(payload),
             });
-            if (res.ok) console.log(`[TOPGG] Đã cập nhật server_count = ${client.guilds.cache.size}`);
+            if (res.ok) console.log(`[TOPGG] Đã cập nhật server_count = ${server_count}`);
             else console.error(`[TOPGG] autopost lỗi HTTP ${res.status}`);
         } catch (e) {
             console.error('[TOPGG] autopost lỗi:', e?.message || e);
@@ -80,6 +101,10 @@ module.exports = {
 
         // Gửi số server lên Top.gg định kỳ (nếu có TOPGG_TOKEN)
         startTopggAutopost(client);
+
+        // Bật HTTP server nhận webhook vote Top.gg (thưởng tức thì) + health check
+        // (nếu có TOPGG_WEBHOOK_AUTH + PORT). No-op khi thiếu cấu hình.
+        require('../lib/voteServer').startVoteServer(client);
 
         // Tự backup DB mỗi 24h vào kênh riêng (nếu có BACKUP_CHANNEL_ID)
         require('../lib/autobackup').scheduleAutoBackup(client);

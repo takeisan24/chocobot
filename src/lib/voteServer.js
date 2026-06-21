@@ -1,0 +1,93 @@
+// lib/voteServer.js — HTTP server nhận webhook vote từ Top.gg (thưởng TỨC THÌ) + health check.
+//
+// Top.gg gọi: POST /topgg/vote  body JSON { bot, user, type, isWeekend, query }
+//   kèm header  Authorization: <chuỗi bí mật bạn đặt trong Top.gg dashboard = TOPGG_WEBHOOK_AUTH>.
+// GET /  -> 200 "Waguri OK" (dùng cho uptime ping / kiểm tra sống).
+//
+// Bind vào cổng panel cấp (Wispbyte): PORT hoặc SERVER_PORT -> public qua subdomain.
+// No-op nếu thiếu TOPGG_WEBHOOK_AUTH hoặc PORT (an toàn khi dev/local).
+const http = require('node:http');
+const db = require('../database.js');
+const config = require('../config');
+const { logError } = require('./logger');
+
+const fmt = n => Number(n).toLocaleString('vi-VN');
+
+// Cộng thưởng cho 1 lượt vote. Dùng CHUNG cooldown 'vote_reward' với lệnh /vote
+// (claim nguyên tử) -> không bao giờ phát thưởng trùng dù user vừa bấm /vote.
+async function grantVoteReward(client, userId, isWeekend) {
+    const cd = await db.claimCooldown(userId, 'vote_reward', config.VOTE.COOLDOWN_HOURS * 3600);
+    if (cd) return; // đã nhận trong chu kỳ 12h này -> bỏ qua
+
+    const mult = isWeekend ? 2 : 1; // Top.gg tính cuối tuần = 2 lượt -> thưởng x2
+    await db.getUser(userId);       // đảm bảo có hồ sơ (tự tạo nếu lần đầu) trước khi cộng
+    await db.addMoney(userId, config.VOTE.REWARD * mult, 'wallet');
+    await db.updateExp(userId, config.VOTE.EXP * mult);
+
+    // DM cảm ơn (im lặng nếu user tắt DM)
+    try {
+        const user = await client.users.fetch(userId);
+        await user.send(
+            `🌸 Cảm ơn cậu đã vote cho Waguri${isWeekend ? ' (cuối tuần x2)' : ''}! ` +
+            `Mình tặng cậu **${fmt(config.VOTE.REWARD * mult)}** ${config.CURRENCY} + **${config.VOTE.EXP * mult} EXP** nè 💝\n` +
+            `Nhớ ghé vote tiếp sau 12 tiếng nha~`
+        );
+    } catch { /* user tắt DM -> bỏ qua */ }
+}
+
+function startVoteServer(client) {
+    if (process.env.DISABLE_VOTE_SERVER === '1') return;
+
+    const auth = process.env.TOPGG_WEBHOOK_AUTH;
+    const port = Number(process.env.PORT || process.env.SERVER_PORT || 0);
+    if (!auth || !port) {
+        console.log('[VOTE] Bỏ qua vote webhook (cần TOPGG_WEBHOOK_AUTH + PORT/SERVER_PORT).');
+        return;
+    }
+    // Khi chạy sharding: chỉ shard 0 bind cổng (tránh nhiều process tranh cùng port).
+    if (client.shard && !client.shard.ids.includes(0)) return;
+
+    const server = http.createServer((req, res) => {
+        // Health check (uptime ping)
+        if (req.method === 'GET') {
+            res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+            res.end('Waguri OK 🌸');
+            return;
+        }
+        if (req.method !== 'POST' || !req.url.startsWith('/topgg/vote')) {
+            res.writeHead(404); res.end(); return;
+        }
+        if (req.headers.authorization !== auth) {
+            res.writeHead(401); res.end(); return;
+        }
+
+        let body = '';
+        let aborted = false;
+        req.on('data', chunk => {
+            body += chunk;
+            if (body.length > 10_000) { aborted = true; req.destroy(); } // chặn payload bất thường
+        });
+        req.on('end', () => {
+            if (aborted) return;
+            res.writeHead(200); res.end(); // ACK ngay cho Top.gg (tránh bị retry)
+            try {
+                const data = JSON.parse(body || '{}');
+                if (data.type === 'test') {
+                    console.log('[VOTE] Nhận test webhook từ Top.gg ✅');
+                    return;
+                }
+                if (data.type === 'upvote' && data.user) {
+                    grantVoteReward(client, String(data.user), Boolean(data.isWeekend))
+                        .catch(e => logError('vote reward', e));
+                }
+            } catch (e) {
+                logError('vote webhook parse', e);
+            }
+        });
+    });
+
+    server.on('error', e => console.error('[VOTE] Lỗi HTTP server:', e?.message || e));
+    server.listen(port, () => console.log(`[VOTE] Vote webhook + health check chạy ở cổng ${port}.`));
+}
+
+module.exports = { startVoteServer };
