@@ -5,6 +5,7 @@ import DiscordMockup from "../components/DiscordMockup";
 import LiveStats from "../components/LiveStats";
 import LeaderboardTeaser from "../components/LeaderboardTeaser";
 import FaqSection from "../components/FaqSection";
+import Testimonials from "../components/Testimonials";
 import SiteHeader from "../components/SiteHeader";
 import SiteFooter from "../components/SiteFooter";
 import { PREMIUM_PLANS, PLAN_ORDER } from "../lib/premium";
@@ -160,7 +161,7 @@ export default function Home() {
         {/* Đặc sản Việt */}
         <section className="w-full py-16 md:py-20">
           <div className="text-center max-w-2xl mx-auto mb-12 space-y-3">
-            <h2 className="text-3xl md:text-4xl font-extrabold text-white">Đậm Chất Việt Nam 🇻🇳</h2>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-white">Đậm Chất Việt Nam 🌸</h2>
             <p className="text-slate-400 text-sm md:text-base">Những thứ chỉ Waguri mới có — không đụng hàng Mee6 hay Dank Memer.</p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -256,6 +257,9 @@ export default function Home() {
             </Link>
           </div>
         </section>
+
+        {/* Đánh giá cộng đồng (khung sẵn) */}
+        <Testimonials />
 
         {/* FAQ */}
         <FaqSection />

@@ -56,7 +56,10 @@ export default function DiscordMockup() {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    // Chỉ cuộn TRONG khung chat (container overflow-y-auto), KHÔNG cuộn cả trang
+    // — scrollIntoView trước đây kéo cả trang xuống mockup khi vừa tải.
+    const container = messagesEndRef.current?.parentElement;
+    if (container) container.scrollTop = container.scrollHeight;
   };
 
   useEffect(() => {
