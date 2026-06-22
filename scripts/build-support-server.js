@@ -27,7 +27,8 @@ const HARDEN_ROLES = false;      // ⚠️ gỡ quyền @everyone khỏi role th
 const CLEANUP_CLUTTER = false;   // ⚠️ XOÁ các kênh rác trong CLUTTER_NAMES. Bật khi chắc chắn.
 
 // Tên kênh rác/trùng nên xoá (chỉ dùng khi CLEANUP_CLUTTER=true). Khớp CHÍNH XÁC theo tên.
-const CLUTTER_NAMES = ['general', 'choco-test', 'mod-updates'];
+// (KHÔNG để 'mod-updates'/'feedback' ở đây vì trùng vai trò updates/suggest — xoá tay nếu muốn.)
+const CLUTTER_NAMES = ['general', 'choco-test'];
 
 // Dán ID kênh CÓ SẴN để ép dùng (để trống "" = tự dò theo tên).
 const USE_EXISTING = {
