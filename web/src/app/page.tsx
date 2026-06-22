@@ -29,6 +29,10 @@ export default function Home() {
         <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[60%] rounded-full bg-pink-500/10 blur-[120px]" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[60%] h-[70%] rounded-full bg-purple-600/10 blur-[130px]" />
         <div className="absolute top-[30%] right-[20%] w-[40%] h-[50%] rounded-full bg-pink-600/5 blur-[100px]" />
+        {/* Hoa sakura trang trí (SVG nguyên bản, an toàn bản quyền) */}
+        <div className="absolute top-[12%] left-[6%] w-16 h-16 bg-[url('/sakura.svg')] bg-contain bg-no-repeat opacity-20 animate-float" />
+        <div className="absolute top-[26%] right-[8%] w-10 h-10 bg-[url('/sakura.svg')] bg-contain bg-no-repeat opacity-[0.15] animate-float" style={{ animationDelay: "1.5s" }} />
+        <div className="absolute top-[9%] right-[30%] w-7 h-7 bg-[url('/sakura.svg')] bg-contain bg-no-repeat opacity-10 animate-float" style={{ animationDelay: "3s" }} />
       </div>
 
       {/* Cherry Blossom falling petals effect */}
