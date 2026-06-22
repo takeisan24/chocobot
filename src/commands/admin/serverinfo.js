@@ -150,13 +150,44 @@ module.exports = {
         const report = buildReport(guild, me, settings);
         const file = new AttachmentBuilder(Buffer.from(report, 'utf8'), { name: `waguri-server-${guild.id}.md` });
 
+        // Đếm kênh theo loại cho bảng tóm tắt.
+        const chans = [...guild.channels.cache.values()];
+        const count = (t) => chans.filter(c => c.type === t).length;
+        const chanLine =
+            `💬 ${count(ChannelType.GuildText)} text · 🔊 ${count(ChannelType.GuildVoice)} voice · ` +
+            `📢 ${count(ChannelType.GuildAnnouncement)} thông báo · 🗂️ ${count(ChannelType.GuildForum)} forum · ` +
+            `📁 ${count(ChannelType.GuildCategory)} nhóm`;
+
+        // Quyền bot còn THIẾU (để admin biết cần cấp gì).
+        const P = PermissionFlagsBits;
+        const need = [
+            ['Quản lý Kênh', P.ManageChannels], ['Quản lý Role', P.ManageRoles],
+            ['Quản lý Tin nhắn', P.ManageMessages], ['Tạm giam', P.ModerateMembers],
+            ['Embed', P.EmbedLinks], ['Đính kèm file', P.AttachFiles],
+        ];
+        const missing = need.filter(([, f]) => !me.permissions.has(f)).map(([l]) => l);
+        const community = guild.features.includes('COMMUNITY');
+        const s = settings || {};
+
         const embed = buildWaguriEmbed(interaction, 'success', {
-            title: '📋 Đã xuất báo cáo server',
-            description:
-                `Mình đã tổng hợp **${guild.channels.cache.size} kênh** + **${guild.roles.cache.size - 1} role** + cấu hình hiện tại vào file đính kèm 🌸\n` +
-                'Tải file `.md` này và gửi cho người hỗ trợ để được audit & polish server nhé~ 💕\n' +
-                '*(Chỉ mình cậu thấy tin này.)*'
+            title: `📋 Tổng quan server "${guild.name}"`,
+            fields: [
+                { name: '👥 Thành viên', value: `${guild.memberCount}`, inline: true },
+                { name: '🎭 Roles', value: `${guild.roles.cache.size - 1}`, inline: true },
+                { name: '✨ Boost', value: `Cấp ${guild.premiumTier} (${guild.premiumSubscriptionCount || 0})`, inline: true },
+                { name: '📚 Kênh', value: chanLine, inline: false },
+                { name: '🏛️ Community Mode', value: community ? '🟢 Bật' : '🔴 Tắt (chưa có rules/onboarding của Discord)', inline: false },
+                { name: '🌸 Cấu hình Waguri', value:
+                    `AI ${s.ai_enabled === '0' ? '🔴' : '🟢'} · PvP ${s.pvp === '0' ? '🔴' : '🟢'} · ` +
+                    `May rủi ${s.gambling === '0' ? '🔴' : '🟢'} · Tạm giam ${s.police_jail === '0' ? '🔴' : '🟢'}\n` +
+                    `Confession: ${s.confession_channel ? `<#${s.confession_channel}>` : '(chưa đặt)'} · Kênh AI: ${s.ai_channel ? `<#${s.ai_channel}>` : '(mọi kênh)'}`,
+                    inline: false },
+                { name: '🔑 Quyền Waguri còn thiếu', value: missing.length ? `❌ ${missing.join(', ')}` : '✅ Đủ quyền cần thiết', inline: false },
+                { name: '📎 Chi tiết đầy đủ', value: 'Danh sách **từng kênh + từng role + quyền** nằm trong file `.md` đính kèm (Discord không hiện hết được trong 1 tin). Tải về & gửi lại để audit nhé~ 💕', inline: false },
+            ]
         });
+        const icon = guild.iconURL({ size: 128 });
+        if (icon) embed.setThumbnail(icon);
         await interaction.editReply({ embeds: [embed], files: [file] });
     },
 };
