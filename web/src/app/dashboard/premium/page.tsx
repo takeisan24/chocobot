@@ -31,6 +31,7 @@ export default async function PremiumPage() {
   const admin = createAdminClient();
   const { data: row } = await admin.from("users").select("premium_until").eq("user_id", id).single();
   const until = row?.premium_until ? new Date(row.premium_until) : null;
+  // eslint-disable-next-line react-hooks/purity -- server component: kiểm tra hạn Premium theo thời điểm request
   const active = until ? until.getTime() > Date.now() : false;
 
   return (

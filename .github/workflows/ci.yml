@@ -37,6 +37,5 @@ jobs:
       - run: npm ci
       # build là cổng chính (không cần secret — trang động render lúc request).
       - run: npm run build
-      # lint chạy thông tin, không chặn CI (còn nợ lint cũ cần dọn dần).
+      # lint đã sạch (0 errors) -> gate chặn thật.
       - run: npm run lint
-        continue-on-error: true
