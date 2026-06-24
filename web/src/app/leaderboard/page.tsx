@@ -3,13 +3,14 @@ import Link from "next/link";
 import CherryBlossom from "../../components/CherryBlossom";
 import SiteHeader from "../../components/SiteHeader";
 import SiteFooter from "../../components/SiteFooter";
+import { BOT_API } from "../../lib/botApi";
 
 export const metadata = {
   title: "Bảng xếp hạng 🏆 — Waguri",
   description: "Top đại gia và cao thủ của Waguri — ai giàu nhất, ai chăm chỉ nhất?",
 };
 
-const API = "https://waguribot.wispbyte.app";
+const API = BOT_API;
 const fmt = (n: number) => Number(n || 0).toLocaleString("vi-VN");
 const MEDALS = ["🥇", "🥈", "🥉"];
 
