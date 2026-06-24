@@ -146,12 +146,17 @@ module.exports = {
         FLOOR: 0.5,     // mệt cỡ nào thu nhập cũng không thấp hơn 50%
     },
 
-    // Phương tiện: đi làm bằng xe giúp tiết kiệm năng lượng
+    // Phương tiện: đi làm bằng xe giúp tiết kiệm năng lượng (work cơ bản tốn 10).
+    // energy_cost CÀNG THẤP = càng xịn (giá càng cao). PHẢI khớp item catalog (id + name)
+    // và thứ tự ưu tiên trong RPC use_vehicle. /work tự chọn xe có energy_cost THẤP NHẤT đang sở hữu.
     VEHICLES: {
+        xe_dap: { energy_cost: 9, name: 'Xe Đạp Mini Nhật Bản' },
         xe_wave: { energy_cost: 8, name: 'Xe Honda Wave' },
         xe_sh: { energy_cost: 6, name: 'Xe Vespa Hồng Cute' },
-        sh: { energy_cost: 5, name: 'Xe Honda SH Mode' },
-        o_to_vinfast: { energy_cost: 4, name: 'Ô tô VinFast VF3' },
+        o_to_vinfast: { energy_cost: 5, name: 'Ô tô VinFast VF3' },
+        sh: { energy_cost: 4, name: 'Xe Honda SH Mode' },
+        o_to_cu: { energy_cost: 4, name: 'Ô Tô Cũ Của Rintaro' },
+        mercedes: { energy_cost: 3, name: 'Xe Rolls-Royce Kikyo' },
     },
 
     // Thuế chuyển tiền /give (sink chống lạm phát)

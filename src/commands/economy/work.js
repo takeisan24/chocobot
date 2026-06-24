@@ -51,14 +51,16 @@ module.exports = {
                 return interaction.editReply({ embeds: [embed] });
             }
 
-            // 2. Kiểm tra phương tiện di chuyển trong kho đồ để tính chi phí năng lượng
+            // 2. Kiểm tra phương tiện di chuyển trong kho đồ để tính chi phí năng lượng.
+            //    Xét MỌI xe trong config.VEHICLES, chọn xe có energy_cost THẤP NHẤT đang sở hữu
+            //    (khớp thứ tự ưu tiên của RPC use_vehicle).
             const inv = await db.getInventory(userId);
-            const vehicles = inv.filter(i => ['o_to_vinfast', 'xe_sh', 'xe_wave'].includes(i.item_id));
+            const vehKeys = Object.keys(config.VEHICLES);
+            const ownedVehicles = inv.filter(i => vehKeys.includes(i.item_id)).map(i => i.item_id);
             let bestVehicleId = null;
-            if (vehicles.length > 0) {
-                if (vehicles.some(v => v.item_id === 'o_to_vinfast')) bestVehicleId = 'o_to_vinfast';
-                else if (vehicles.some(v => v.item_id === 'xe_sh')) bestVehicleId = 'xe_sh';
-                else if (vehicles.some(v => v.item_id === 'xe_wave')) bestVehicleId = 'xe_wave';
+            if (ownedVehicles.length > 0) {
+                bestVehicleId = ownedVehicles.reduce((best, id) =>
+                    config.VEHICLES[id].energy_cost < config.VEHICLES[best].energy_cost ? id : best, ownedVehicles[0]);
             }
 
             let energyCost = config.ENERGY.COST_PER_WORK; // 10
