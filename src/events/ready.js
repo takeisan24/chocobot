@@ -135,6 +135,14 @@ module.exports = {
         // Tự backup DB mỗi 24h vào kênh riêng (nếu có BACKUP_CHANNEL_ID)
         require('../lib/autobackup').scheduleAutoBackup(client);
 
+        // Hoàn cược các ván game đa người (loto/bingo/masoi) bị treo do bot restart.
+        // Chỉ 1 shard chịu trách nhiệm (tránh hoàn trùng).
+        if (!client.shard || client.shard.ids.includes(0)) {
+            require('../database.js').stakeRefundOrphans()
+                .then(r => { if (r && r.count > 0) console.log(`[STAKES] Đã hoàn ${r.total} cho ${r.count} cược treo sau restart.`); })
+                .catch(e => console.error('[STAKES] Lỗi hoàn cược treo:', e?.message || e));
+        }
+
         let i = 0;
         const rotate = () => {
             const list = buildStatuses(client); // tính lại mỗi lần -> số liệu luôn mới

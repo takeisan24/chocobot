@@ -90,6 +90,33 @@ async function chargeAssets(userId, amount) {
     }
 }
 
+// ============================================================
+//  GAME STAKES — cược game đa người (ghi DB để hoàn khi bot restart)
+// ============================================================
+/** Thu cược nguyên tử (trừ ví + ghi dòng cược). Trả true nếu đủ tiền. */
+async function stakeCollect(sessionId, game, channelId, userId, amount) {
+    try {
+        const { data, error } = await supabase.rpc('stake_collect', { p_session: sessionId, p_game: game, p_channel: channelId, p_user: userId, p_amount: amount });
+        if (error) throw error;
+        return data === true;
+    } catch (error) { console.error('[DATABASE ERROR] stakeCollect():', error); return false; }
+}
+/** Ván xong bình thường: xoá dòng cược (cược đã thành pot & trả thưởng). */
+async function stakeSettle(sessionId) {
+    try { const { error } = await supabase.rpc('stake_settle', { p_session: sessionId }); if (error) throw error; return true; }
+    catch (error) { console.error('[DATABASE ERROR] stakeSettle():', error); return false; }
+}
+/** Huỷ ván: hoàn cược cho mọi người chơi rồi xoá. Trả tổng đã hoàn. */
+async function stakeRefundSession(sessionId) {
+    try { const { data, error } = await supabase.rpc('stake_refund_session', { p_session: sessionId }); if (error) throw error; return Number(data) || 0; }
+    catch (error) { console.error('[DATABASE ERROR] stakeRefundSession():', error); return 0; }
+}
+/** Khởi động bot: hoàn mọi cược còn sót (ván chết do restart). Trả { count, total }. */
+async function stakeRefundOrphans() {
+    try { const { data, error } = await supabase.rpc('stake_refund_orphans'); if (error) throw error; return data || { count: 0, total: 0 }; }
+    catch (error) { console.error('[DATABASE ERROR] stakeRefundOrphans():', error); return { count: 0, total: 0 }; }
+}
+
 /**
  * Chuyển tiền giữa 2 user trong 1 transaction (atomic).
  * @returns {boolean} - true nếu thành công, false nếu thiếu tiền / input sai.
@@ -1436,6 +1463,10 @@ module.exports = {
     useVehicle,
     addHealth,
     chargeAssets,
+    stakeCollect,
+    stakeSettle,
+    stakeRefundSession,
+    stakeRefundOrphans,
     // energy / buff
     spendEnergy,
     getEnergy,
