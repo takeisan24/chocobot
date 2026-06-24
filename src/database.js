@@ -556,6 +556,32 @@ async function claimDailyCounter(userId, key, max) {
     }
 }
 
+/** Tăng mức độ cờ bạc (police_heat) và trả về count mới. */
+async function bumpPoliceHeat(userId, decayMs) {
+    try {
+        const { data, error } = await supabase.rpc('bump_police_heat', { p_user_id: userId, p_decay_ms: decayMs });
+        if (error) throw error;
+        return Number(data) || 0;
+    } catch (error) {
+        console.error('[DATABASE ERROR] bumpPoliceHeat():', error);
+        return 0;
+    }
+}
+
+/** Reset mức độ cờ bạc về 0 (khi bị bắt). */
+async function resetPoliceHeat(userId) {
+    try {
+        const { error } = await supabase
+            .from('police_heat')
+            .upsert({ user_id: userId, count: 0, last_action_at: Date.now() });
+        if (error) throw error;
+        return true;
+    } catch (error) {
+        console.error('[DATABASE ERROR] resetPoliceHeat():', error);
+        return false;
+    }
+}
+
 // ============================================================
 //  DAILY / BANK / LEADERBOARD (Sprint 2)
 // ============================================================
@@ -1523,6 +1549,8 @@ module.exports = {
     takeItem,
     transferItem,
     claimDailyCounter,
+    bumpPoliceHeat,
+    resetPoliceHeat,
     // cosmetic
     setCosmetic,
     // loans

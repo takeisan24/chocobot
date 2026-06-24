@@ -15,7 +15,7 @@ function hoursUntilEndOfDay(now) {
     return Math.max(1, Math.ceil((end.getTime() - now.getTime()) / 3600000));
 }
 
-async function runDecision() {
+async function runDecision(client) {
     const now = new Date();
     const ev = eventForDate(now);
     const info = getEventInfo();
@@ -27,6 +27,34 @@ async function runDecision() {
             if (!(info.active && currentAuto === ev.id && info.name === label)) {
                 await setEvent(ev.mult, hoursUntilEndOfDay(now), label);
                 console.log(`[EVENT] Tự bật sự kiện "${ev.name}" x${ev.mult} (tới hết ngày).`);
+
+                // Gửi thông báo đến kênh thông báo sự kiện
+                const channelId = process.env.ANNOUNCEMENT_CHANNEL_ID;
+                if (channelId && client) {
+                    try {
+                        const channel = await client.channels.fetch(channelId);
+                        if (channel && channel.isTextBased()) {
+                            const { EmbedBuilder } = require('discord.js');
+                            const config = require('../config');
+                            const { getWaguriFooter, pickWaguriImage } = require('./embed');
+
+                            const embed = new EmbedBuilder()
+                                .setColor(config.COLORS.JACKPOT)
+                                .setTitle(`🌸・Sự Kiện: ${ev.name} ${ev.emoji}・🌸`)
+                                .setDescription(
+                                    `**Hệ số:** Nhân **x${ev.mult}** mọi thu nhập cờ bạc và lao động hôm nay! 🧧\n\n` +
+                                    `💬 *Lời chúc từ Waguri:*\n> ${ev.blessing}`
+                                )
+                                .setImage(pickWaguriImage('JACKPOT') || null)
+                                .setFooter(getWaguriFooter(client));
+
+                            await channel.send({ embeds: [embed] });
+                            console.log(`[EVENT] Đã gửi thông báo sự kiện tới kênh ${channelId}.`);
+                        }
+                    } catch (err) {
+                        console.error('[EVENT] Lỗi gửi thông báo sự kiện:', err);
+                    }
+                }
             }
             currentAuto = ev.id;
         }
@@ -45,7 +73,7 @@ function scheduleEventCalendar(client) {
     const isPrimary = !client.shard || client.shard.ids.includes(0);
     const tick = async () => {
         try {
-            if (isPrimary) await runDecision();
+            if (isPrimary) await runDecision(client);
             await loadEvent(); // mọi shard refresh cache hệ số từ DB
         } catch (e) {
             console.error('[EVENT] Lỗi lịch sự kiện:', e?.message || e);
