@@ -21,15 +21,12 @@ test('conditionMultiplier: năng lượng cao + khỏe -> 100%, không phạt oa
     assert.strictEqual(conditionMultiplier(config.ENERGY.MAX * 0.5, 100), 1.0);
 });
 
-test('conditionMultiplier: lấy theo chỉ số tệ hơn (năng lượng vs sức khỏe)', () => {
-    // Năng lượng đầy nhưng sức khỏe thấp -> bị sức khỏe kéo xuống
-    const lowHealth = conditionMultiplier(config.ENERGY.MAX, 20);
-    assert.ok(lowHealth < 1.0);
-    // Cả hai đều thấp -> lấy cái thấp hơn
+test('conditionMultiplier: CHỈ theo năng lượng (sức khỏe không phạt thu nhập)', () => {
+    // Năng lượng đầy, sức khỏe thấp -> KHÔNG bị phạt (sức khỏe chỉ là cổng chặn, không trừ tiền)
+    assert.strictEqual(conditionMultiplier(config.ENERGY.MAX, 20), 1.0);
+    // Chỉ năng lượng quyết định hệ số
     const m = conditionMultiplier(config.ENERGY.MAX * 0.2, 40);
-    const onlyEnergy = conditionFactor(0.2);
-    const onlyHealth = conditionFactor(0.4);
-    assert.strictEqual(m, Math.min(onlyEnergy, onlyHealth));
+    assert.strictEqual(m, conditionFactor(0.2));
 });
 
 test('conditionMultiplier: không bao giờ thấp hơn FLOOR', () => {

@@ -6,7 +6,7 @@ const { buildWaguriEmbed } = require('../../lib/embed');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('hospital')
-        .setDescription('🏥 Nhập viện hồi phục sức khỏe toàn diện (Tốn 10% tổng tài sản, tối thiểu 500 VNĐ)'),
+        .setDescription('🏥 Nhập viện hồi phục sức khỏe toàn diện (Viện phí cố định 3.000 VNĐ)'),
     async execute(interaction) {
         await interaction.deferReply();
         const userId = interaction.user.id;
@@ -41,7 +41,7 @@ module.exports = {
             const u = await db.getUser(userId);
             const embed = buildWaguriEmbed(interaction, 'success', {
                 title: '🏥 Bệnh Viện Waguri',
-                description: `🩺 Cậu đã được bác sĩ chăm sóc đặc biệt và hồi phục sức khỏe về **100/100 ❤️**!\n\n💵 Viện phí đã thanh toán (10% tài sản): **-${fmt(result.fee)}** ${config.CURRENCY}.\n💰 Ví: **${fmt(u?.wallet || 0)}** · 🏦 Ngân hàng: **${fmt(u?.bank || 0)}** ${config.CURRENCY}`
+                description: `🩺 Cậu đã được bác sĩ chăm sóc đặc biệt và hồi phục sức khỏe về **100/100 ❤️**!\n\n💵 Viện phí đã thanh toán: **-${fmt(result.fee)}** ${config.CURRENCY}.\n💰 Ví: **${fmt(u?.wallet || 0)}** · 🏦 Ngân hàng: **${fmt(u?.bank || 0)}** ${config.CURRENCY}`
             }).setTimestamp();
             return interaction.editReply({ embeds: [embed] });
         }

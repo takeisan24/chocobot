@@ -123,10 +123,7 @@ module.exports = {
                 }
                 earnedMoney = -loss;
                 color = config.COLORS.WARNING;
-
-                // Giảm sức khỏe ngẫu nhiên từ 10 đến 20 điểm
-                const healthLoss = Math.floor(Math.random() * 11) + 10;
-                await db.addHealth(userId, -healthLoss);
+                // (Bỏ trừ sức khỏe khi /work — sức khỏe chỉ giảm khi có BỆNH; xem hệ Disease.)
             } else if (Math.random() < (catBuff ? (config.WORK.JACKPOT_CHANCE + 0.05) : config.WORK.JACKPOT_CHANCE)) {
                 category = 'jackpot';
                 earnedMoney = Math.round(maxWage * config.WORK.JACKPOT_MULT * buffMult);

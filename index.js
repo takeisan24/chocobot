@@ -1,3 +1,5 @@
+// Ép ưu tiên IPv4: tránh treo bắt tay WebSocket do IPv6 hỏng/định tuyến sai trên host (gây "Opening handshake has timed out").
+require('node:dns').setDefaultResultOrder('ipv4first');
 require('dotenv').config();
 const fs = require('node:fs');
 const path = require('node:path');
@@ -128,4 +130,46 @@ require('./src/lib/event').loadEvent()
     .then(e => console.log(`[SYSTEM] Sự kiện: ${e.until && Date.now() < e.until ? `x${e.mult} (${e.name || 'không tên'})` : 'không có'}.`))
     .catch(() => {});
 
-client.login(process.env.DISCORD_TOKEN);
+// ---------------------------------------------------------
+// 5. VÒNG ĐỜI GATEWAY + ĐĂNG NHẬP CÓ RETRY
+//    Chịu được mạng host chập chờn / "Opening handshake has timed out".
+// ---------------------------------------------------------
+let lastReady = Date.now();
+client.on('ready', () => { lastReady = Date.now(); });
+client.on('shardReady', () => { lastReady = Date.now(); });
+client.on('error', (e) => logError('client_error', e));
+client.on('shardError', (e, id) => logError('shard_error', e, { shard: id }));
+client.on('shardDisconnect', (ev, id) => console.warn(`[GATEWAY] Shard ${id} ngắt (code ${ev?.code}) — sẽ tự kết nối lại...`));
+client.on('shardReconnecting', (id) => console.log(`[GATEWAY] Shard ${id} đang kết nối lại...`));
+client.on('invalidated', () => {
+    logError('session_invalidated', new Error('Session invalidated'));
+    console.error('[GATEWAY] Session bị vô hiệu hoá — thoát để panel khởi động lại.');
+    process.exit(1); // Wispbyte/Pterodactyl auto-restart
+});
+
+// Watchdog: gateway không Ready quá 5 phút -> thoát để panel restart sạch (chống trạng thái "zombie").
+setInterval(() => {
+    if (shuttingDown) return;
+    const ready = client.ws?.status === 0; // 0 = Ready
+    if (!ready && Date.now() - lastReady > 5 * 60_000) {
+        console.error('[WATCHDOG] Gateway không Ready > 5 phút — thoát để restart.');
+        process.exit(1);
+    }
+}, 60_000).unref();
+
+// Đăng nhập có retry/backoff (5s, 10s, ... tối đa 60s) — không bỏ cuộc khi bắt tay timeout lúc khởi động.
+(async function startBot() {
+    let attempt = 0;
+    for (;;) {
+        try {
+            await client.login(process.env.DISCORD_TOKEN);
+            return; // thành công — discord.js tự lo reconnect về sau
+        } catch (err) {
+            attempt++;
+            const wait = Math.min(5000 * 2 ** (attempt - 1), 60000);
+            logError('login_retry', err, { attempt });
+            console.error(`[GATEWAY] Login lỗi (lần ${attempt}): ${err?.message}. Thử lại sau ${wait / 1000}s...`);
+            await new Promise(r => setTimeout(r, wait));
+        }
+    }
+})();

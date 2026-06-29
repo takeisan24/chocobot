@@ -17,11 +17,11 @@ function conditionFactor(ratio) {
     return FLOOR + (1 - FLOOR) * (r / THRESHOLD); // 0 -> FLOOR, THRESHOLD -> 1.0
 }
 
-/** Hệ số thu nhập do mệt: lấy theo chỉ số tệ hơn giữa năng lượng & sức khỏe. */
+/** Hệ số thu nhập do mệt: CHỈ theo NĂNG LƯỢNG.
+ * (Sức khỏe KHÔNG phạt thu nhập — nó chỉ là cổng chặn hành động; máu chỉ giảm khi có bệnh.)
+ * Vẫn giữ tham số `health` để không phá chữ ký các nơi đang gọi. */
 function conditionMultiplier(energy, health, maxEnergy = config.ENERGY.MAX) {
-    const e = conditionFactor(Number(energy) / maxEnergy);
-    const h = conditionFactor(Number(health ?? 100) / 100);
-    return Math.min(e, h);
+    return conditionFactor(Number(energy) / maxEnergy);
 }
 
 module.exports = { conditionMultiplier, conditionFactor };
