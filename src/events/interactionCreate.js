@@ -68,6 +68,8 @@ module.exports = {
             } catch (error) {
                 console.error(`Lỗi khi thực thi lệnh ${interaction.commandName}:`, error);
                 logError('Lỗi thực thi lệnh', error, { command: interaction.commandName, user: `<@${interaction.user.id}>`, guild: interaction.guildId });
+                // Interaction đã hết hạn (10062) / đã ack (40060) do mạng chậm -> không thể phản hồi nữa, bỏ qua tránh lỗi dây chuyền.
+                if (error?.code === 10062 || error?.code === 40060) return;
                 const embed = buildWaguriEmbed(interaction, 'error', {
                     description: 'Đã có lỗi xảy ra khi thực thi lệnh này! 🥺'
                 });

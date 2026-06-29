@@ -18,7 +18,8 @@ function pick(table) {
 
 /** Logic chung cho /fish-like (mine/chop): tốn năng lượng → random theo bảng → tiền. */
 async function runGather(interaction, { title, table, energyCost = config.GATHER_ENERGY_COST, key = 'gather' }) {
-    await interaction.deferReply();
+    // Interaction có thể hết hạn (10062) nếu mạng host chậm -> defer fail thì bỏ qua, tránh lỗi dây chuyền.
+    try { await interaction.deferReply(); } catch { return; }
     const userId = interaction.user.id;
 
     const toolMap = {

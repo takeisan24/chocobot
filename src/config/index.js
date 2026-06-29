@@ -83,8 +83,8 @@ module.exports = {
     // Năng lượng: gate chính thay cho cooldown phẳng (bản cân bằng hardcore)
     ENERGY: {
         MAX: 100,
-        REGEN_SECONDS: 60,    // hồi +1 mỗi 1 phút (phải khớp RPC regen_energy)
-        COST_PER_WORK: 10,    // /work tốn 10 năng lượng
+        REGEN_SECONDS: 30,    // hồi +1 mỗi 30 giây (phải khớp RPC regen_energy)
+        COST_PER_WORK: 10,    // /work — CHƯA giảm: gắn ladder VEHICLES (energy_cost 3..9 < 10). Hạ xuống cần rebalance xe.
     },
 
     WORK: {
@@ -135,9 +135,9 @@ module.exports = {
 
     // Câu cá / đào mỏ / chặt gỗ (nguồn thu PvE, tốn năng lượng)
     FISH: {
-        ENERGY_COST: 8,
+        ENERGY_COST: 5,
     },
-    GATHER_ENERGY_COST: 8, // /mine, /chop
+    GATHER_ENERGY_COST: 5, // /mine, /chop
     ACTION_COOLDOWN_MS: 5000, // /work /fish /mine /chop (đỡ spam, đỡ cày máy)
 
     // Mệt mỏi: thu nhập giảm khi NĂNG LƯỢNG hoặc SỨC KHỎE tụt thấp (xem src/lib/fatigue.js)
